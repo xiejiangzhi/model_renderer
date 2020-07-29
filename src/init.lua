@@ -15,8 +15,8 @@ function M.draw(projection, view, model, transforms)
   Renderer.draw(projection, view, model, transforms)
 end
 
-function M.set_light_pos(x, y, z)
-  Renderer.light_pos = { x, y, z }
+function M.set_render_opts(opts)
+  Renderer.set_render_opts(opts)
 end
 
 return M

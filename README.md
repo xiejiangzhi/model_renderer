@@ -1,7 +1,7 @@
 Simple 3D Model Renderer
 ========================
 
-A simple 3D model renderer for Love2D 11.3.
+A simple 3D model renderer for Love2D 11.3. Support ambient light and diffuse.
 
 ## Example
 
@@ -15,6 +15,15 @@ local MR = require 'src'
 local Cpml = require 'cpml'
 
 local model = MR.new_model('box.obj')
+
+function love.load()
+  MR.set_render_opts({
+    light_pos = { 1000, 2000, 1000 },
+    light_color = { 1, 1, 1 },
+    diffuse_strength = 0.4,
+    ambient_color = { 0.6, 0.6, 0.6 },
+  })
+end
 
 function love.draw()
   local w, h = love.graphics.getDimensions()
@@ -47,7 +56,6 @@ function love.draw()
   })
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  MR.set_light_pos(1000, 2000, 1000)
   MR.draw(projection, view, model, instance_transforms)
 end
 ```

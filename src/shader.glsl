@@ -4,7 +4,11 @@ varying vec3 normal;
 varying vec3 fragPos;
 varying vec4 modelColor;
 
+uniform vec3 ambient_color;
 uniform vec3 light_pos;
+uniform vec3 light_color;
+uniform float diffuse_strength;
+/* uniform float specular_strength; */
 /* uniform vec3 view_pos; */
 
 mat4 rotate_mat(float angle, vec3 axis) {
@@ -62,14 +66,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 }
 #endif
 
-const vec3 lightColor = vec3(1, 1, 1);
-const float ambientStrength = 0.6;
-const vec3 ambient = lightColor * ambientStrength;
-const float diffuseStrength = 0.4;
-const vec3 diffuseColor = lightColor * diffuseStrength;
-
-const float specularStrength = 0.5;
-const vec3 specularColor = lightColor * specularStrength;
+/* const float specularStrength = 0.5; */
+/* const vec3 specularColor = light_color * specularStrength; */
 
 #ifdef PIXEL
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
@@ -79,14 +77,14 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
   vec3 light_dir = normalize(light_pos - fragPos);
   float diff = max(dot(norm, light_dir), 1 - tcolor.a);
-  vec3 diffuse = diff * diffuseColor;
+  vec3 diffuse = diff * light_color * diffuse_strength;
 
   /* vec3 view_dir = normalize(view_pos - fragPos); */
   /* vec3 reflect_dir = reflect(-light_dir, norm); */
   /* float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 8 + 8 * tcolor.a); */
-  /* vec3 specular = spec * specularColor * tcolor.a; */
+  /* vec3 specular = spec * light_color * specular_strength * tcolor.a; */
 
-  tcolor.rgb *= ambient + diffuse;
+  tcolor.rgb *= ambient_color + diffuse;
 
   return tcolor * color;
 }
