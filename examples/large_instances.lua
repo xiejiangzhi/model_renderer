@@ -8,15 +8,17 @@ local lkb = love.keyboard
 
 local move_speed = 200
 local rotate_speed = 1
-local camera_pos = Cpml.vec3(0, 0, 100)
+local camera_pos = Cpml.vec3(0, 0, 0)
 local camera_angle = Cpml.vec3(math.rad(60), 0, 0)
+local eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
 
 local model_pos = Cpml.vec3(0, 0, 0)
 local model_angle = Cpml.vec3(0, math.rad(45), 0)
 local model_scale = 20
 local model_alpha = 1
 
-local near, far = -1000, 1000
+
+local near, far = 1, 3000
 
 local model = MR.new_model('box.obj')
 local model2 = MR.new_model('xxx.obj')
@@ -33,15 +35,17 @@ end
 function love.update(dt)
   local mv = move_speed * dt
   local dv = Cpml.vec3(0, 0, 0)
-  if lkb.isDown('a') then dv.x = dv.x + mv end
-  if lkb.isDown('d') then dv.x = dv.x - mv end
-  if lkb.isDown('w') then dv.y = dv.y - mv end
-  if lkb.isDown('s') then dv.y = dv.y + mv end
+  if lkb.isDown('a') then dv.x = dv.x - mv end
+  if lkb.isDown('d') then dv.x = dv.x + mv end
+  if lkb.isDown('w') then dv.y = dv.y + mv end
+  if lkb.isDown('s') then dv.y = dv.y - mv end
   if lkb.isDown('q') then dv.z = dv.z - mv end
   if lkb.isDown('e') then dv.z = dv.z + mv end
 
   if lkb.isDown('lctrl') then
     model_pos = model_pos + dv
+  elseif lkb.isDown('lshift') then
+    eye_offset = eye_offset + dv
   else
     camera_pos = camera_pos + dv
   end
@@ -79,8 +83,9 @@ function love.update(dt)
   if lkb.isDown('x') then model_alpha = model_alpha + dt end
 
   if lkb.isDown('r') then
-    camera_pos = Cpml.vec3(0, 0, 100)
+    camera_pos = Cpml.vec3(0, 0, 0)
     camera_angle = Cpml.vec3(math.rad(60), 0, 0)
+    eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
     model_pos = Cpml.vec3(0, 0, 0)
     model_angle = Cpml.vec3(0, math.rad(45), 0)
     model_scale = 20
@@ -94,10 +99,7 @@ function love.draw()
 
   local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, near, far)
   local view = Cpml.mat4()
-  view:translate(view, camera_pos)
-  -- view:rotate(view, camera_angle.z, Cpml.vec3.unit_z)
-  view:rotate(view, camera_angle.x, Cpml.vec3.unit_x)
-  view:rotate(view, camera_angle.y, Cpml.vec3.unit_y)
+  view:look_at(view, camera_pos + eye_offset, camera_pos, Cpml.vec3(0, 1, 0))
 
   local tfs = {}
   local time = love.timer.getTime()
@@ -106,7 +108,7 @@ function love.draw()
   table.insert(tfs, {
     0, -10, 0,
     0, 0, 0,
-    w, 10, h,
+    w * 2, 10, h * 2,
     0, 1, 0, 1
   })
 
@@ -151,8 +153,9 @@ end
 function private.print_debug_info(projection, view)
   lg.setColor(1, 1, 1)
   local str = ''
-  str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos.x, camera_pos.y, camera_pos.z)
-  str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle.x, camera_angle.y, camera_angle.z)
+  str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos:unpack())
+  str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle:unpack())
+  str = str..string.format('\neye offset: %.2f, %.2f, %.2f', eye_offset:unpack())
 
   str = str..string.format('\nmodel pos: %.2f, %.2f %.2f', model_pos.x, model_pos.y, model_pos.z)
   str = str..string.format('\nmodel angle: %.2f, %.2f, %.2f', model_angle.x, model_angle.y, model_angle.z)
