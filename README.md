@@ -8,7 +8,7 @@ A simple 3D model renderer for Love2D 11.3.
 ![Example Image](./example.png)
 
 
-##Usage
+## Usage
 
 ```
 local MR = require 'src'
