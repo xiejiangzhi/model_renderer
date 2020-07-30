@@ -25,8 +25,6 @@ local camera_dist = math.sqrt(far^2 / 2)
 local model = MR.new_model('box.obj')
 local model2 = MR.new_model('3d.obj')
 
-print(model.data.mtllib)
-
 function love.load()
   MR.set_render_opts({
     light_pos = { 1000, 2000, 1000 },
@@ -114,6 +112,9 @@ function love.draw()
   view:look_at(view, look_at + offset, look_at, Cpml.vec3(0, 1, 0))
   view:scale(view, Cpml.vec3(view_scale, view_scale, view_scale))
 
+  MR.set_projection(projection)
+  MR.set_view(view)
+
   local tfs = {}
   local time = love.timer.getTime()
 
@@ -141,8 +142,8 @@ function love.draw()
 
 
   lg.clear(0.5, 0.5, 0.5)
-  MR.draw(projection, view, model, tfs)
-  MR.draw(projection, view, model2, {
+  MR.draw(model, tfs)
+  MR.draw(model2, {
     { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 }
   })
 
@@ -161,7 +162,7 @@ function love.draw()
       math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1
     })
   end
-  MR.draw(projection, view, model, tfs)
+  MR.draw(model, tfs)
 
   private.print_debug_info(projection, view)
 end

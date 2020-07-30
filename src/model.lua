@@ -4,16 +4,30 @@ local private = {}
 
 local empty = {}
 
+M.mesh_format = {
+  { 'VertexPosition', 'float', 3 },
+  { 'VertexTexCoord', 'float', 2 },
+  { 'VertexNormal', 'float', 3 },
+}
+
+function M.new_by_path(path)
+	local data = private.parse_file(path)
+  local mesh = private.new_mesh(data)
+  local m = M.new(mesh, true)
+  m.path = path
+  m.data = data
+  return m
+end
+
 function M.new(...)
   local obj = setmetatable({}, M)
   obj:init(...)
   return obj
 end
 
-function M:init(path)
-  self.path = path
-	self.data = private.parse_file(self.path)
-  self.mesh = private.new_mesh(self.data)
+function M:init(mesh, write_depth)
+  self.mesh = mesh
+  self.write_depth = write_depth
 end
 
 -----------------------
@@ -31,7 +45,7 @@ function private.parse_file(path)
 
   local dir = path:gsub('[^/]+$', '')
   for i, name in ipairs(data.mtllib) do
-    data.mtllib[name] = private.parse_mtl_file(dir..name)
+    private.parse_mtl_file(dir..name, data.mtllib)
   end
   return data
 end
@@ -81,11 +95,7 @@ end
 function private.new_mesh(data)
   local vertices = private.parse_face(data)
 
-  return love.graphics.newMesh({
-    { 'VertexPosition', 'float', 3 },
-    { 'VertexTexCoord', 'float', 2 },
-    { 'VertexNormal', 'float', 3 },
-  }, vertices, "triangles")
+  return love.graphics.newMesh(M.mesh_format, vertices, "triangles")
 end
 
 function private.parse_face(data)
@@ -112,13 +122,12 @@ function private.parse_face(data)
   return vertices
 end
 
-function private.parse_mtl_file(path)
+function private.parse_mtl_file(path, data)
 	if not (path and love.filesystem.getInfo(path)) then
     print("Not found mtl file "..tostring(path))
     return
   end
 
-  local data = {}
   for line in love.filesystem.lines(path) do
     private.parse_mtl_line(line, data)
 	end

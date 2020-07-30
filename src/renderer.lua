@@ -19,12 +19,15 @@ local render_opts = {
   diffuse_strength = 0.4,
 }
 
--- projection, view: mat4, 1-based, column major matrices
-function M.draw(projection, view, model, model_transforms)
-  local mesh = model.mesh
-  M.attach_transforms(mesh, model_transforms)
+M.projection = nil
+M.view = nil
 
-  local old_shader = lg.getShader()
+-- projection, view: mat4, 1-based, column major matrices
+function M.begin(projection, view)
+  if not projection then projection = M.projection end
+  if not view then view = M.view end
+
+  M.old_shader = lg.getShader()
 	lg.setShader(shader)
 	shader:send("projection_mat", 'column', projection)
 	shader:send("view_mat", 'column', view)
@@ -32,12 +35,21 @@ function M.draw(projection, view, model, model_transforms)
 	shader:send("light_color", render_opts.light_color)
 	shader:send("diffuse_strength", render_opts.diffuse_strength)
 	shader:send("ambient_color", render_opts.ambient_color)
-	love.graphics.setDepthMode("lequal", true)
+end
 
+function M.clean()
+	lg.setShader(M.old_shader)
+end
+
+function M.draw(model, model_transforms)
+  M.begin()
+  local mesh = model.mesh
+  M.attach_transforms(mesh, model_transforms)
+  local write_depth = (model.write_depth == nil) and true or model.write_depth
+	love.graphics.setDepthMode("lequal", write_depth)
   lg.drawInstanced(mesh, #model_transforms)
-
   love.graphics.setDepthMode("always", false)
-	lg.setShader(old_shader)
+  M.clean()
 end
 
 function M.attach_transforms(model_mesh, model_transforms)

@@ -7,6 +7,9 @@ function love.keyreleased(key)
   elseif key == '2' then
     lfs.load('examples/large_instances.lua')()
     love.load()
+  elseif key == '3' then
+    lfs.load('examples/custom_content.lua')()
+    love.load()
   end
 end
 
