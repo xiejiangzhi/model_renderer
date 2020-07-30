@@ -7,21 +7,25 @@ local lg = love.graphics
 local lkb = love.keyboard
 
 local move_speed = 200
-local rotate_speed = 1
-local look_at = Cpml.vec3(0, -100, 0)
+local rotate_speed = math.pi
+
+local look_at = Cpml.vec3(0, 0, 0)
 local camera_angle = Cpml.vec3(math.rad(60), 0, 0)
-local eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
+local view_scale = 0.2
+local eye_offset = Cpml.vec3(0, 1000, 0)
 
 local model_pos = Cpml.vec3(0, 0, 0)
 local model_angle = Cpml.vec3(0, math.rad(45), 0)
 local model_scale = 20
 local model_alpha = 1
 
-
 local near, far = 1, 3000
+local camera_dist = math.sqrt(far^2 / 2)
 
 local model = MR.new_model('box.obj')
-local model2 = MR.new_model('xxx.obj')
+local model2 = MR.new_model('3d.obj')
+
+print(model.data.mtllib)
 
 function love.load()
   MR.set_render_opts({
@@ -56,8 +60,8 @@ function love.update(dt)
   if lkb.isDown('l') then av.y = av.y + rv end
   if lkb.isDown('i') then av.x = av.x - rv end
   if lkb.isDown('k') then av.x = av.x + rv end
-  if lkb.isDown('y') then av.z = av.z - rv end
-  if lkb.isDown('h') then av.z = av.z + rv end
+  if lkb.isDown('u') then av.z = av.z - rv end
+  if lkb.isDown('o') then av.z = av.z + rv end
   if lkb.isDown('lctrl') then
     model_angle = model_angle + av
   else
@@ -67,8 +71,10 @@ function love.update(dt)
   local sv = 0
   if lkb.isDown(',') then sv = -dt end
   if lkb.isDown('.') then sv = dt end
-  if sv ~= 0 then
+  if lkb.isDown('lctrl') then
     model_scale = model_scale + sv
+  else
+    view_scale = view_scale + sv
   end
 
   if lkb.isDown('[') then near = near - mv end
@@ -84,12 +90,14 @@ function love.update(dt)
 
   if lkb.isDown('r') then
     look_at = Cpml.vec3(0, 0, 0)
-    camera_angle = Cpml.vec3(math.rad(60), 0, 0)
-    eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
+    camera_angle = Cpml.vec3(math.rad(30), 0, 0)
+    eye_offset = Cpml.vec3(0, 1000, 0)
+    view_scale = 1
     model_pos = Cpml.vec3(0, 0, 0)
     model_angle = Cpml.vec3(0, math.rad(45), 0)
     model_scale = 20
     model_alpha = 1
+    near, far = 1, 3000
   end
 end
 
@@ -99,7 +107,12 @@ function love.draw()
 
   local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, near, far)
   local view = Cpml.mat4()
-  view:look_at(view, look_at + eye_offset, look_at, Cpml.vec3(0, 1, 0))
+  local offset = Cpml.vec3(0, camera_dist, 0)
+    :rotate(camera_angle.x, Cpml.vec3.unit_x)
+    :rotate(camera_angle.y, Cpml.vec3.unit_y)
+    :rotate(camera_angle.z, Cpml.vec3.unit_z)
+  view:look_at(view, look_at + offset, look_at, Cpml.vec3(0, 1, 0))
+  view:scale(view, Cpml.vec3(view_scale, view_scale, view_scale))
 
   local tfs = {}
   local time = love.timer.getTime()
@@ -122,7 +135,7 @@ function love.draw()
   table.insert(tfs, {
     100, math.sin(time) * 50, 100,
     math.sin(time), math.cos(time), model_angle.z,
-    30, 30, 30,
+    20, 20, 20,
     0, 1, 1, 0.75
   })
 
@@ -134,12 +147,15 @@ function love.draw()
   })
 
   tfs = {}
-  local rts = time * 0.1
+  local rts = time * 0.05
   local cts = time * 0.1
+  local sts = time * 0.2
   for i = 1, 10000 do
-    local size = math.sin(i) * 30
+    local n = i * 0.1
+    local size = 3 + math.sin(sts + n * 0.1) * 1
+    local dist = math.sqrt(i^2 / 2, 2)
     table.insert(tfs, {
-      500 + math.cos(rts + i) * i, math.abs(math.sin(rts + i)) * 200, math.sin(rts + i) * i,
+      500 + math.cos(rts + n) * i, 250 + math.sin(rts + dist) * 200, math.sin(rts + n) * i,
       math.sin(time), math.cos(time), 0,
       size, size, size,
       math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1
@@ -156,6 +172,7 @@ function private.print_debug_info(projection, view)
   str = str..string.format('\nlook at: %.2f, %.2f %.2f', look_at:unpack())
   str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle:unpack())
   str = str..string.format('\neye offset: %.2f, %.2f, %.2f', eye_offset:unpack())
+  str = str..string.format('\nview scale: %.2f', view_scale)
 
   str = str..string.format('\nmodel pos: %.2f, %.2f %.2f', model_pos.x, model_pos.y, model_pos.z)
   str = str..string.format('\nmodel angle: %.2f, %.2f, %.2f', model_angle.x, model_angle.y, model_angle.z)

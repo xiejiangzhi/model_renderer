@@ -19,14 +19,20 @@ end
 -----------------------
 
 function private.parse_file(path)
-	assert(path and love.filesystem.getInfo(path), "Invalid model path "..tostring(path))
+	assert(path and love.filesystem.getInfo(path), "Not found model file "..tostring(path))
   local data = {
 		v	= {}, vt	= {}, vn	= {}, vp	= {}, f	= {},
     mtllib = {}, usemtl = {}, o = {}, g = {},
+    last_obj_idx = 0, last_group_idx = 0, last_mtl_idx = 0,
 	}
 	for line in love.filesystem.lines(path) do
     private.parse_line(line, data)
 	end
+
+  local dir = path:gsub('[^/]+$', '')
+  for i, name in ipairs(data.mtllib) do
+    data.mtllib[name] = private.parse_mtl_file(dir..name)
+  end
   return data
 end
 
@@ -55,6 +61,20 @@ function private.parse_line(line, data)
     end
 
     table.insert(data[ctg], f)
+  elseif ctg == 'mtllib' then
+    table.insert(data[ctg], l[2])
+  elseif ctg == 'usemtl' then
+    local fidx = #data.f
+    table.insert(data[ctg], { l[2], data.last_mtl_idx + 1, fidx })
+    data.last_mtl_idx = fidx
+  elseif ctg == 'o' then
+    local fidx = #data.f
+    table.insert(data[ctg], { l[2], data.last_obj_idx + 1, fidx })
+    data.last_obj_idx = fidx
+  elseif ctg == 'g' then
+    local fidx = #data.f
+    table.insert(data[ctg], { l[2], data.last_group_idx + 1, fidx })
+    data.last_group_idx = fidx
   end
 end
 
@@ -91,6 +111,56 @@ function private.parse_face(data)
 
   return vertices
 end
+
+function private.parse_mtl_file(path)
+	if not (path and love.filesystem.getInfo(path)) then
+    print("Not found mtl file "..tostring(path))
+    return
+  end
+
+  local data = {}
+  for line in love.filesystem.lines(path) do
+    private.parse_mtl_line(line, data)
+	end
+
+  return data
+end
+
+local mtl_attrs = {
+  Ns = 'number',
+  Ka = 'number',
+  Kd = 'number',
+  Ks = 'number',
+  Ke = 'number',
+  Ni = 'number',
+  d = 'number',
+  illum = 'number',
+  Tr = 'number',
+}
+function private.parse_mtl_line(line, data)
+	local l = private.split(line)
+  local ctg = l[1]
+
+  local last_mtl = data.__last_mtl
+
+  if ctg == 'newmtl' then
+    last_mtl = {}
+    data[l[2]] = last_mtl
+    data.__last_mtl = last_mtl
+  elseif ctg and ctg ~= '' and ctg ~= '#' then
+    local vtype = mtl_attrs[ctg]
+    if vtype then
+      local r = {}
+      for i = 2, #l do
+        table.insert(r, tonumber(l[i]))
+      end
+      last_mtl[ctg] = r
+    else
+      last_mtl[ctg] = { unpack(l, 2) }
+    end
+  end
+end
+
 
 function private.split(str, seq)
 	local t = {}

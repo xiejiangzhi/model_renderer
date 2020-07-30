@@ -33,14 +33,14 @@ function love.draw()
   table.insert(instance_transforms, {
     0, -10, 0,
     0, math.sin(ts) * math.pi * 2, 0,
-    50, 20, 50,
+    5, 2, 5,
     0, 1, 0, 1
   })
 
   table.insert(instance_transforms, {
     math.sin(ts) * 100, -10, math.cos(ts) * 100,
     0, math.rad(45), 0,
-    30, 30, 30,
+    5, 5, 5,
     1, 0, 0, 1
   })
 
