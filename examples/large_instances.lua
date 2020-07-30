@@ -8,7 +8,7 @@ local lkb = love.keyboard
 
 local move_speed = 200
 local rotate_speed = 1
-local camera_pos = Cpml.vec3(0, 0, 0)
+local look_at = Cpml.vec3(0, -100, 0)
 local camera_angle = Cpml.vec3(math.rad(60), 0, 0)
 local eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
 
@@ -37,17 +37,17 @@ function love.update(dt)
   local dv = Cpml.vec3(0, 0, 0)
   if lkb.isDown('a') then dv.x = dv.x - mv end
   if lkb.isDown('d') then dv.x = dv.x + mv end
-  if lkb.isDown('w') then dv.y = dv.y + mv end
-  if lkb.isDown('s') then dv.y = dv.y - mv end
-  if lkb.isDown('q') then dv.z = dv.z - mv end
-  if lkb.isDown('e') then dv.z = dv.z + mv end
+  if lkb.isDown('w') then dv.z = dv.z - mv end
+  if lkb.isDown('s') then dv.z = dv.z + mv end
+  if lkb.isDown('q') then dv.y = dv.y - mv end
+  if lkb.isDown('e') then dv.y = dv.y + mv end
 
   if lkb.isDown('lctrl') then
     model_pos = model_pos + dv
   elseif lkb.isDown('lshift') then
     eye_offset = eye_offset + dv
   else
-    camera_pos = camera_pos + dv
+    look_at = look_at + dv
   end
 
   local rv = rotate_speed * dt
@@ -83,7 +83,7 @@ function love.update(dt)
   if lkb.isDown('x') then model_alpha = model_alpha + dt end
 
   if lkb.isDown('r') then
-    camera_pos = Cpml.vec3(0, 0, 0)
+    look_at = Cpml.vec3(0, 0, 0)
     camera_angle = Cpml.vec3(math.rad(60), 0, 0)
     eye_offset = Cpml.vec3(0, math.sin(math.rad(60)) * 1000, 1000)
     model_pos = Cpml.vec3(0, 0, 0)
@@ -99,7 +99,7 @@ function love.draw()
 
   local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, near, far)
   local view = Cpml.mat4()
-  view:look_at(view, camera_pos + eye_offset, camera_pos, Cpml.vec3(0, 1, 0))
+  view:look_at(view, look_at + eye_offset, look_at, Cpml.vec3(0, 1, 0))
 
   local tfs = {}
   local time = love.timer.getTime()
@@ -153,7 +153,7 @@ end
 function private.print_debug_info(projection, view)
   lg.setColor(1, 1, 1)
   local str = ''
-  str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos:unpack())
+  str = str..string.format('\nlook at: %.2f, %.2f %.2f', look_at:unpack())
   str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle:unpack())
   str = str..string.format('\neye offset: %.2f, %.2f, %.2f', eye_offset:unpack())
 

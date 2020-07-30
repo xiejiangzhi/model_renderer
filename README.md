@@ -60,3 +60,7 @@ function love.draw()
 end
 ```
 
+## TODO
+
+* Support parse model group and mtl
+

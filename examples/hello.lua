@@ -18,8 +18,10 @@ function love.draw()
 
   local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, -500, 1000)
   local view = Cpml.mat4()
-  view:translate(view, Cpml.vec3(0, 200, 0))
-  view:rotate(view, math.rad(60), Cpml.vec3.unit_x)
+  -- z is face to user
+  local eye = Cpml.vec3(0, math.sin(math.rad(60)) * 200, 200)
+  local target = Cpml.vec3(0, 0, 0)
+  view:look_at(view, eye, target, Cpml.vec3(0, 1, 0))
 
   local instance_transforms = {}
   local ts = love.timer.getTime()
