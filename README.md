@@ -113,4 +113,4 @@ end
 
 ## References
 
-* [LearnOpenGL](https://learnopengl.com/）
+* [LearnOpenGL](https://learnopengl.com/)
