@@ -108,4 +108,5 @@ end
 
 * More support for model file
 * Better render shader
+* Support shadow
 
