@@ -1,7 +1,7 @@
 # Blender v2.83.3 OBJ File: ''
 # www.blender.org
 mtllib xx.mtl
-o 球体
+o Sphere
 v 0.000000 0.980785 -0.195090
 v 0.000000 0.923880 -0.382683
 v 0.000000 0.831470 -0.555570

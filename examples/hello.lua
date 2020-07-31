@@ -1,8 +1,10 @@
 local MR = require 'src'
 local Cpml = require 'cpml'
 
--- local model = MR.model.load('box.obj')
-local model = MR.model.new_box(10)
+local model = MR.model.load('3d.obj')
+local box = MR.model.new_box(50)
+local sphere = MR.model.new_sphere(30)
+local cylinder = MR.model.new_cylinder(30, 100)
 
 function love.load()
   MR.set_render_opts({
@@ -27,27 +29,30 @@ function love.draw()
   MR.set_projection(projection)
   MR.set_view(view)
 
-  local instance_transforms = {}
   local ts = love.timer.getTime()
 
   -- pos.x, pos.y, pos.z
-  -- scale
   -- angle.x, angle.y, angle.z
+  -- scale
   -- r, g, b, a
-  table.insert(instance_transforms, {
-    0, -10, 0,
-    0, math.sin(ts) * math.pi * 2, 0,
-    5,
-    0, 1, 0, 1
-  })
-
-  table.insert(instance_transforms, {
-    math.sin(ts) * 100, -10, math.cos(ts) * 100,
-    0, math.rad(45), 0,
-    5,
-    1, 0, 0, 1
-  })
+  local instance_transforms = {
+    {
+      0, -10, 0,
+      0, math.sin(ts) * math.pi * 2, 0,
+      10,
+      0, 1, 0, 1
+    },
+    {
+      math.sin(ts) * 100, -10, math.cos(ts) * 100,
+      0, math.rad(45), 0,
+      10,
+      1, 0, 0, 1
+    }
+  }
 
   love.graphics.clear(0.5, 0.5, 0.5)
   MR.draw(model, instance_transforms)
+  MR.draw(box, {{ -300, 0, 0, 0, 0, 0, 1 }})
+  MR.draw(sphere, {{ -300, 0, 300, 0, 0, 0, 1, 1, 1, 0 }})
+  MR.draw(cylinder, {{ 300, 0, 300, 0, 0, 0, 1 }})
 end
