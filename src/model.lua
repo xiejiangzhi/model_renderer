@@ -43,7 +43,7 @@ function M.new_plane(w, h)
 end
 
 function M.new_circle(radius, n)
-  if not n then n = 10 end
+  if not n then n = 16 end
   local vs = {}
   local p = math.pi * 2 / n
   local f = {}
@@ -81,20 +81,67 @@ function M.new_box(xlen, ylen, zlen)
   return M.new(vertices, false)
 end
 
--- density: 3 - n, how many parts for each axis
--- rx, ry, rz: radius of axis
--- function M.new_sphere(density, rx, ry, rz)
---   if not density then density = 10 end
---   assert(density > 2, "Density must >= 3")
---   assert(rx, "radius cannot be nil")
---   if not ry then ry = rx end
---   if not rz then rz = rx end
+function M.new_cylinder(radius, height, n)
+  if not n then n = 16 end
 
---   for i = 1, density do
---     for j = 1, density do
---     end
---   end
--- end
+  local vs, vs2 = {}, {}
+  local p = math.pi * 2 / n
+  local tf, bf = {}, {}
+  for i = 1, n do
+    local v = i * p
+    local c, s = cos(v), sin(v)
+    table.insert(vs, { c * radius, 0, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(vs2, { c * radius, height, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(bf, i)
+    table.insert(tf, n + n - i + 1)
+  end
+
+  local fs = { tf, bf }
+  private.link_vertices(vs, fs, vs2)
+
+  local vertices = private.gen_vertices(vs, fs)
+  return M.new(vertices)
+end
+
+
+-- rx, ry, rz: radius of axis
+-- n: segments of split
+function M.new_sphere(rx, ry, rz, n)
+  assert(rx, "Radius cannot be nil")
+  if not ry then ry = rx end
+  if not rz then rz = rx end
+  if not n then n = 16 end
+
+  local pr = math.pi * 2 / n
+  local hpr = pr * 0.5
+  local vs, fs = { {0, ry, 0 } }, {}
+  local last_layer = nil
+  for i = 1, n - 1 do
+    local tvs = {}
+    local y = cos(i * hpr) * ry
+    for j = n, 1, - 1 do
+      local s = sin(i * pr * 0.5)
+      table.insert(tvs, {
+        cos(j * pr) * rx * s,
+        y,
+        sin(j * pr) * rz * s
+      })
+    end
+    if last_layer then
+      private.link_vertices(vs, fs, tvs)
+    end
+    last_layer = tvs
+  end
+
+  private.link_vertices(vs, fs, {{ 0, -ry, 0 }}, #last_layer)
+
+  -- local vs, fs = private.link_vertices(vs1, vs2)
+  -- fs[#fs + 1] = tf
+  -- fs[#fs + 1] = bf
+
+  local vertices = private.gen_vertices(vs, fs)
+  return M.new(vertices)
+end
 
 --------------------
 
@@ -159,6 +206,46 @@ function private.get_normal(v1, v2, v3)
   local ny = (v2[3] - v1[3]) * (v3[1] - v1[1]) - (v2[1] - v1[1]) * (v3[3] - v1[3])
   local nz = (v2[1] - v1[1]) * (v3[2] - v1[2]) - (v2[2] - v1[2]) * (v3[1] - v1[1])
   return { nx , ny, nz }
+end
+
+-- sidx: start index of vs
+function private.link_vertices(vs, fs, new_vs, s_total)
+  local t_total = #new_vs
+  if not s_total then s_total = math.min(#vs, t_total) end
+
+  local eidx = #vs
+  local sidx = eidx - s_total + 1
+
+  if s_total == t_total then
+    -- n - n
+    local last = t_total
+    for i, v in ipairs(new_vs) do
+      table.insert(vs, v)
+      table.insert(fs, { sidx + i - 1, sidx + last - 1, eidx + last, eidx + i })
+      last = i
+    end
+  elseif s_total == 1 then
+    -- 1 - n
+    local last = t_total
+    for i, v in ipairs(new_vs) do
+      table.insert(vs, v)
+      table.insert(fs, { sidx, sidx + last, sidx + i })
+      last = i
+    end
+  elseif t_total == 1 then
+    -- n - 1
+    table.insert(vs, new_vs[1])
+    local nv = #vs
+    local last = eidx
+    for i = 1, s_total do
+      table.insert(fs, { last, nv, sidx + i - 1 })
+      last = sidx + i - 1
+    end
+  else
+    error(string.format("Invalid new vertices: s: %i t: %i", s_total, t_total))
+  end
+
+  return vs, fs
 end
 
 return M

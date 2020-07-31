@@ -58,6 +58,27 @@ function love.draw()
     1, 1, 1, 0.5
   }})
 
+  MR.draw(MR.model.new_cylinder(100, 300), {{
+    -300, -10, -100,
+    0, math.rad(45), 0,
+    1,
+    1, 1, 1, 1
+  }})
+
+  MR.draw(MR.model.new_sphere(150), {{
+    -300, -10, 300,
+    math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi,
+    1,
+    1, 1, 1, 1
+  }})
+
+  MR.draw(MR.model.new_box(150), {{
+    300, -10, 300,
+    math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi,
+    1,
+    1, 1, 1, 1
+  }})
+
   MR.draw(image_model, {
     { 100, 100, 100,  0, 0, 0,  2,  1, 1, 1, 1 },
     { 100, 0, 100,  0, math.sin(ts * 0.3) * math.pi * 2, 0,  2,  1, 1, 1, 1 },
