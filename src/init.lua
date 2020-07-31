@@ -16,8 +16,6 @@ function M.set_view(mat4)
   Renderer.view = mat4
 end
 
-
-
 -- transforms: a list of transform
 --  { { pos_x, pos_y, pos_z, angle_x, angle_y, angle_z, scale_x, scale_y, scale_z }, ... },
 function M.draw(model, transforms)
