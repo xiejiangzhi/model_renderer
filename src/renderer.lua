@@ -8,7 +8,7 @@ local lg = love.graphics
 local transform_mesh_format = {
   { 'ModelPos', 'float', 3 },
   { 'ModelAngle', 'float', 3 },
-  { 'ModelScale', 'float', 3 },
+  { 'ModelScale', 'float', 1 },
   { 'ModelColor', 'byte', 4 },
 }
 
@@ -45,7 +45,7 @@ function M.draw(model, model_transforms)
   M.begin()
   local mesh = model.mesh
   M.attach_transforms(mesh, model_transforms)
-  local write_depth = (model.write_depth == nil) and true or model.write_depth
+  local write_depth = (model.options.write_depth == nil) and true or model.options.write_depth
 	love.graphics.setDepthMode("lequal", write_depth)
   lg.drawInstanced(mesh, #model_transforms)
   love.graphics.setDepthMode("always", false)

@@ -1,7 +1,8 @@
 local MR = require 'src'
 local Cpml = require 'cpml'
 
-local model = MR.new_model('box.obj')
+-- local model = MR.model.load('box.obj')
+local model = MR.model.new_box(10)
 
 function love.load()
   MR.set_render_opts({
@@ -30,20 +31,20 @@ function love.draw()
   local ts = love.timer.getTime()
 
   -- pos.x, pos.y, pos.z
+  -- scale
   -- angle.x, angle.y, angle.z
-  -- scale.x, scale.y, scale.z
   -- r, g, b, a
   table.insert(instance_transforms, {
     0, -10, 0,
     0, math.sin(ts) * math.pi * 2, 0,
-    5, 2, 5,
+    5,
     0, 1, 0, 1
   })
 
   table.insert(instance_transforms, {
     math.sin(ts) * 100, -10, math.cos(ts) * 100,
     0, math.rad(45), 0,
-    5, 5, 5,
+    5,
     1, 0, 0, 1
   })
 

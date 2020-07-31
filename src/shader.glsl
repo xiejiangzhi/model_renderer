@@ -25,14 +25,14 @@ mat4 rotate_mat(float angle, vec3 axis) {
   );
 }
 
-mat4 transform_mat(vec3 angle, vec3 scale) {
+mat4 transform_mat(vec3 angle, float scale) {
   mat4 r = rotate_mat(angle.x, vec3(1, 0, 0))
     * rotate_mat(angle.y, vec3(0, 1, 0))
     * rotate_mat(angle.z, vec3(0, 0, 1));
   mat4 s = mat4(
-    scale.x, 0, 0, 0,
-    0, scale.y, 0, 0,
-    0, 0, scale.z, 0,
+    scale, 0, 0, 0,
+    0, scale, 0, 0,
+    0, 0, scale, 0,
     0, 0, 0, 1
   );
 
@@ -49,7 +49,7 @@ uniform mat4 model_mat;
 attribute vec3 VertexNormal;
 attribute vec3 ModelPos;
 attribute vec3 ModelAngle;
-attribute vec3 ModelScale;
+attribute float ModelScale;
 attribute vec4 ModelColor;
 
 vec4 position(mat4 transform_projection, vec4 vertex_position) {

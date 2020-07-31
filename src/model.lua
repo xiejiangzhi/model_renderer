@@ -1,8 +1,15 @@
 local M = {}
 M.__index = M
+
 local private = {}
 
-local empty = {}
+local dir = (...):gsub('.[^%.]+$', '')
+local ObjParser = require(dir..'.obj_parser')
+
+local sin = math.sin
+local cos = math.cos
+
+local new_mesh = love.graphics.newMesh
 
 M.mesh_format = {
   { 'VertexPosition', 'float', 3 },
@@ -10,111 +17,136 @@ M.mesh_format = {
   { 'VertexNormal', 'float', 3 },
 }
 
-function M.new_by_path(path)
-	local data = private.parse_file(path)
-  local mesh = private.new_mesh(data)
-  local m = M.new(mesh, true)
-  m.path = path
-  m.data = data
-  return m
-end
-
 function M.new(...)
   local obj = setmetatable({}, M)
   obj:init(...)
   return obj
 end
 
-function M:init(mesh, write_depth)
-  self.mesh = mesh
-  self.write_depth = write_depth
+function M.load(path)
+	local data = ObjParser.parse_file(path)
+  local vertices = ObjParser.parse_face(data)
+  local m = M.new(vertices)
+  m.path = path
+  m.data = data
+  return m
+end
+
+function M.new_plane(w, h)
+  local vertices = private.gen_vertices({
+    { 0, 0, 0, 0, 0 },
+    { w, 0, 0, 1, 0 },
+    { w, 0, h, 1, 1 },
+    { 0, 0, h, 0, 1 },
+  }, { { 4, 3, 2, 1 } })
+  return M.new(vertices)
+end
+
+function M.new_circle(radius, n)
+  if not n then n = 10 end
+  local vs = {}
+  local p = math.pi * 2 / n
+  local f = {}
+  for i = 1, n do
+    local v = i * p
+    local c, s = cos(v), sin(v)
+    table.insert(vs, { c * radius, 0, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(f, i)
+  end
+
+  local vertices = private.gen_vertices(vs, { f })
+  return M.new(vertices)
+end
+
+-- xlen: size of x axis
+-- ylen: optional, size of y axis, default equal to xlen
+-- zlen: optional, size of z axis, default equal to xlen
+function M.new_box(xlen, ylen, zlen)
+  assert(xlen, "Invalid box size")
+  if not ylen then ylen = xlen end
+  if not zlen then zlen = xlen end
+
+  local vs = {
+    { 0, 0, 0, 0, 0 }, { xlen, 0, 0, 1, 0 }, { xlen, 0, zlen, 1, 1 }, { 0, 0, zlen, 0, 1 },
+    { 0, ylen, 0, 0, 0 }, { xlen, ylen, 0, 1, 0 }, { xlen, ylen, zlen, 1, 1 }, { 0, ylen, zlen, 0, 1 },
+  }
+
+  local fs = {
+    { 1, 2, 3, 4 }, { 8, 7, 6, 5 },
+    { 5, 6, 2, 1 }, { 7, 8, 4, 3 },
+    { 6, 7, 3, 2 }, { 8, 5, 1, 4 },
+  }
+
+  local vertices = private.gen_vertices(vs, fs)
+  return M.new(vertices, false)
+end
+
+-- density: 3 - n, how many parts for each axis
+-- rx, ry, rz: radius of axis
+-- function M.new_sphere(density, rx, ry, rz)
+--   if not density then density = 10 end
+--   assert(density > 2, "Density must >= 3")
+--   assert(rx, "radius cannot be nil")
+--   if not ry then ry = rx end
+--   if not rz then rz = rx end
+
+--   for i = 1, density do
+--     for j = 1, density do
+--     end
+--   end
+-- end
+
+--------------------
+
+local valid_opts = {
+  write_depth = true
+}
+
+-- vertices:
+-- texture
+-- optsions:
+--  write_depth:
+function M:init(vertices, texture, opts)
+  self.mesh = new_mesh(M.mesh_format, vertices, "triangles", 'static')
+  self.options = {}
+
+  if texture then self:set_texture(texture) end
+  if opts then self:set_opts(opts) end
+end
+
+function M:set_opts(opts)
+  for k, v in pairs(opts) do
+    if valid_opts[k] then
+      self.options[k] = v
+    else
+      error("Invalid option "..k)
+    end
+  end
+end
+
+function M:set_texture(tex)
+  self.mesh:setTexture(tex)
 end
 
 -----------------------
 
-function private.parse_file(path)
-	assert(path and love.filesystem.getInfo(path), "Not found model file "..tostring(path))
-  local data = {
-		v	= {}, vt	= {}, vn	= {}, vp	= {}, f	= {},
-    mtllib = {}, usemtl = {}, o = {}, g = {},
-    last_obj_idx = 0, last_group_idx = 0, last_mtl_idx = 0,
-	}
-	for line in love.filesystem.lines(path) do
-    private.parse_line(line, data)
-	end
-
-  local dir = path:gsub('[^/]+$', '')
-  for i, name in ipairs(data.mtllib) do
-    private.parse_mtl_file(dir..name, data.mtllib)
-  end
-  return data
-end
-
--- https://en.wikipedia.org/wiki/Wavefront_.obj_file
-function private.parse_line(line, data)
-	local l = private.split(line)
-  local ctg = l[1]
-  if ctg == "v" then
-    table.insert(data[ctg], { tonumber(l[2]), tonumber(l[3]), tonumber(l[4]), tonumber(l[5]) })
-  elseif l[1] == "vt" then
-    table.insert(data[ctg], { tonumber(l[2]), tonumber(l[3]), tonumber(l[4]) })
-  elseif ctg == "vn" then
-    table.insert(data[ctg], { tonumber(l[2]), tonumber(l[3]), tonumber(l[4]) })
-  elseif ctg == "vp" then
-    table.insert(data[ctg], { tonumber(l[2]), tonumber(l[3]), tonumber(l[4]) })
-  elseif ctg == "f" then
-    local f = {}
-
-    for i = 2, #l do
-      local fdesc = private.split(l[i], "/")
-      local v = {}
-      v.v = tonumber(fdesc[1])
-      v.vt = tonumber(fdesc[2])
-      v.vn = tonumber(fdesc[3])
-      table.insert(f, v)
-    end
-
-    table.insert(data[ctg], f)
-  elseif ctg == 'mtllib' then
-    table.insert(data[ctg], l[2])
-  elseif ctg == 'usemtl' then
-    local fidx = #data.f
-    table.insert(data[ctg], { l[2], data.last_mtl_idx + 1, fidx })
-    data.last_mtl_idx = fidx
-  elseif ctg == 'o' then
-    local fidx = #data.f
-    table.insert(data[ctg], { l[2], data.last_obj_idx + 1, fidx })
-    data.last_obj_idx = fidx
-  elseif ctg == 'g' then
-    local fidx = #data.f
-    table.insert(data[ctg], { l[2], data.last_group_idx + 1, fidx })
-    data.last_group_idx = fidx
-  end
-end
-
-function private.new_mesh(data)
-  local vertices = private.parse_face(data)
-
-  return love.graphics.newMesh(M.mesh_format, vertices, "triangles")
-end
-
-function private.parse_face(data)
+function private.gen_vertices(vs, fs)
+  if not fs then return vs end
   local vertices = {}
-  local v, vt, vn = data.v, data.vt, data.vn
 
-  for i, face in ipairs(data.f) do
+  for i, face in ipairs(fs) do
     local first = face[1]
     local last = face[2]
+
     for j = 3, #face do
-      local vi1, vi2, vi3 = first.v, last.v, face[j].v
-      local ti1, ti2, ti3 = first.vt or -1, last.vt or -1, face[j].vt or -1
-      local ni1, ni2, ni3 = first.vn or -1, last.vn or -1, face[j].vn or -1
-      local v1, v2, v3 = v[vi1], v[vi2], v[vi3]
-      local vt1, vt2, vt3 = vt[ti1] or empty, vt[ti2] or empty, vt[ti3] or empty
-      local vn1, vn2, vn3 = vn[ni1] or empty, vn[ni2] or empty, vn[ni3] or empty
-      table.insert(vertices, { v1[1], v1[2], v1[3], vt1[1] or 0, vt1[2] or 0, vn1[1], vn1[2], vn1[3] })
-      table.insert(vertices, { v2[1], v2[2], v2[3], vt2[1] or 0, vt2[2] or 0, vn2[1], vn2[2], vn2[3] })
-      table.insert(vertices, { v3[1], v3[2], v3[3], vt3[1] or 0, vt3[2] or 0, vn3[1], vn3[2], vn3[3] })
+      local vi1, vi2, vi3 = first, last, face[j]
+      local v1, v2, v3 = vs[vi1], vs[vi2], vs[vi3]
+
+      local vn = private.get_normal(v1, v2, v3)
+
+      table.insert(vertices, { v1[1], v1[2], v1[3], v1[4] or 0, v1[5] or 0, vn[1], vn[2], vn[3] })
+      table.insert(vertices, { v2[1], v2[2], v2[3], v2[4] or 0, v2[5] or 0, vn[1], vn[2], vn[3] })
+      table.insert(vertices, { v3[1], v3[2], v3[3], v3[4] or 0, v3[5] or 0, vn[1], vn[2], vn[3] })
       last = face[j]
     end
   end
@@ -122,73 +154,11 @@ function private.parse_face(data)
   return vertices
 end
 
-function private.parse_mtl_file(path, data)
-	if not (path and love.filesystem.getInfo(path)) then
-    print("Not found mtl file "..tostring(path))
-    return
-  end
-
-  for line in love.filesystem.lines(path) do
-    private.parse_mtl_line(line, data)
-	end
-
-  return data
-end
-
-local mtl_attrs = {
-  Ns = 'number',
-  Ka = 'number',
-  Kd = 'number',
-  Ks = 'number',
-  Ke = 'number',
-  Ni = 'number',
-  d = 'number',
-  illum = 'number',
-  Tr = 'number',
-}
-function private.parse_mtl_line(line, data)
-	local l = private.split(line)
-  local ctg = l[1]
-
-  local last_mtl = data.__last_mtl
-
-  if ctg == 'newmtl' then
-    last_mtl = {}
-    data[l[2]] = last_mtl
-    data.__last_mtl = last_mtl
-  elseif ctg and ctg ~= '' and ctg ~= '#' then
-    local vtype = mtl_attrs[ctg]
-    if vtype then
-      local r = {}
-      for i = 2, #l do
-        table.insert(r, tonumber(l[i]))
-      end
-      last_mtl[ctg] = r
-    else
-      last_mtl[ctg] = { unpack(l, 2) }
-    end
-  end
-end
-
-
-function private.split(str, seq)
-	local t = {}
-	local i = 0
-  local match
-  if seq then
-    match = '(.-)('..seq..')'
-  else
-    seq = ' '
-    match = '([%S]+)'
-  end
-
-	for sub, j in string.gmatch(str..seq, match) do
-		i = i + 1
-		t[i] = sub
-	end
-	if i == 0 then t[0] = str end
-
-	return t
+function private.get_normal(v1, v2, v3)
+  local nx = (v2[2] - v1[2]) * (v3[3] - v1[3]) - (v2[3] - v1[3]) * (v3[2] - v1[2])
+  local ny = (v2[3] - v1[3]) * (v3[1] - v1[1]) - (v2[1] - v1[1]) * (v3[3] - v1[3])
+  local nz = (v2[1] - v1[1]) * (v3[2] - v1[2]) - (v2[2] - v1[2]) * (v3[1] - v1[1])
+  return { nx , ny, nz }
 end
 
 return M

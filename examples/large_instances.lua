@@ -16,14 +16,15 @@ local eye_offset = Cpml.vec3(0, 1000, 0)
 
 local model_pos = Cpml.vec3(0, 0, 0)
 local model_angle = Cpml.vec3(0, math.rad(45), 0)
-local model_scale = 20
+local model_scale = 10
 local model_alpha = 1
 
 local near, far = 1, 3000
 local camera_dist = math.sqrt(far^2 / 2)
 
-local model = MR.new_model('box.obj')
-local model2 = MR.new_model('3d.obj')
+local model = MR.model.load('box.obj')
+local model2 = MR.model.load('3d.obj')
+local ground = MR.model.new_plane(2000, 2000)
 
 function love.load()
   MR.set_render_opts({
@@ -93,7 +94,7 @@ function love.update(dt)
     view_scale = 1
     model_pos = Cpml.vec3(0, 0, 0)
     model_angle = Cpml.vec3(0, math.rad(45), 0)
-    model_scale = 20
+    model_scale = 10
     model_alpha = 1
     near, far = 1, 3000
   end
@@ -118,33 +119,26 @@ function love.draw()
   local tfs = {}
   local time = love.timer.getTime()
 
-  -- ground
-  table.insert(tfs, {
-    0, -10, 0,
-    0, 0, 0,
-    w * 2, 10, h * 2,
-    0, 1, 0, 1
-  })
-
   table.insert(tfs, {
     model_pos.x, model_pos.z, model_pos.y,
     model_angle.x, model_angle.y, model_angle.z,
-    model_scale, model_scale, model_scale,
+    model_scale,
     1, 1, 0, model_alpha
   })
 
   table.insert(tfs, {
     100, math.sin(time) * 50, 100,
     math.sin(time), math.cos(time), model_angle.z,
-    20, 20, 20,
+    20,
     0, 1, 1, 0.75
   })
 
 
   lg.clear(0.5, 0.5, 0.5)
+  MR.draw(ground, {{ -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 1 }})
   MR.draw(model, tfs)
   MR.draw(model2, {
-    { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 }
+    { 100, 0, -100, 0, 0, 0, 50, 0.7, 0.7, 1, 1 }
   })
 
   tfs = {}
@@ -158,7 +152,7 @@ function love.draw()
     table.insert(tfs, {
       500 + math.cos(rts + n) * i, 250 + math.sin(rts + dist) * 200, math.sin(rts + n) * i,
       math.sin(time), math.cos(time), 0,
-      size, size, size,
+      size,
       math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1
     })
   end
