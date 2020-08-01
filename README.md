@@ -116,3 +116,4 @@ end
 ## References
 
 * [LearnOpenGL](https://learnopengl.com/)
+* [LOVEPBR](https://github.com/pablomayobre/LOVEPBR)
