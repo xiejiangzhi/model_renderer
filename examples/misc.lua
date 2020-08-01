@@ -13,8 +13,10 @@ function love.load()
   MR.set_render_opts({
     light_pos = { 1000, 2000, 1000 },
     light_color = { 0, 1, 1 },
-    diffuse_strength = 0.5,
+    diffuse_strength = 0.4,
     ambient_color = { 0.3, 0.3, 0.3 },
+    specular_strength = 0.4,
+    specular_shininess = 16,
   })
 
   local tex = lg.newCanvas(80, 30)
@@ -42,6 +44,7 @@ function love.draw()
 
   MR.set_projection(projection)
   MR.set_view(view)
+  MR.set_view_pos(eye:unpack())
 
   lg.clear(0.5, 0.5, 0.5)
   MR.draw(model, {{

@@ -106,15 +106,16 @@ function love.draw()
 
   local projection = Cpml.mat4.from_perspective(fov, w / h, near, far)
   local view = Cpml.mat4()
-  local offset = Cpml.vec3(0, camera_dist, 0)
+  local eye = look_at + Cpml.vec3(0, camera_dist, 0)
     :rotate(camera_angle.x, Cpml.vec3.unit_x)
     :rotate(camera_angle.y, Cpml.vec3.unit_y)
     :rotate(camera_angle.z, Cpml.vec3.unit_z)
-  view:look_at(view, look_at + offset, look_at, Cpml.vec3(0, 1, 0))
+  view:look_at(view, eye, look_at, Cpml.vec3(0, 1, 0))
   view:scale(view, Cpml.vec3(view_scale, view_scale, view_scale))
 
   MR.set_projection(projection)
   MR.set_view(view)
+  MR.set_view_pos(eye:unpack())
 
   local tfs = {}
   local time = love.timer.getTime()

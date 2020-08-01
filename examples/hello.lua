@@ -28,6 +28,7 @@ function love.draw()
 
   MR.set_projection(projection)
   MR.set_view(view)
+  MR.set_view_pos(eye:unpack())
 
   local ts = love.timer.getTime()
 

@@ -17,17 +17,22 @@ local render_opts = {
   light_pos = { 1000, 2000, 1000 },
   light_color = { 1, 1, 1 },
   diffuse_strength = 0.4,
+  specular_strength = 0.5, -- require view_pos
+  specular_shininess = 32, -- require view_pos
 }
 
 M.projection = nil
 M.view = nil
+M.view_pos = nil
 
 M.shadow_depth_map = lg.newCanvas(1024, 1024, { type = '2d', format = 'depth24', readable = true })
 
 -- projection, view: mat4, 1-based, column major matrices
-function M.begin(projection, view)
+-- view_pos: required for specular
+function M.begin(projection, view, view_pos)
   if not projection then projection = M.projection end
   if not view then view = M.view end
+  if not view_pos then view_pos = M.view_pos end
 
   M.old_shader = lg.getShader()
 	lg.setShader(shader)
@@ -37,6 +42,12 @@ function M.begin(projection, view)
 	shader:send("light_color", render_opts.light_color)
 	shader:send("diffuse_strength", render_opts.diffuse_strength)
 	shader:send("ambient_color", render_opts.ambient_color)
+
+	if view_pos then
+    shader:send("view_pos", view_pos)
+	  shader:send("specular_strength", render_opts.specular_strength)
+	  shader:send("specular_shininess", render_opts.specular_shininess)
+  end
 end
 
 function M.clean()

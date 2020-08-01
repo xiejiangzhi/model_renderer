@@ -8,12 +8,18 @@ local Renderer = require(dir..'.'..'renderer')
 M.model = Model
 M.renderer = Renderer
 
+-- mat4: column major matrices
 function M.set_projection(mat4)
   Renderer.projection = mat4
 end
 
+-- mat4: column major matrices
 function M.set_view(mat4)
   Renderer.view = mat4
+end
+
+function M.set_view_pos(x, y, z)
+  Renderer.view_pos = { x, y, z }
 end
 
 -- transforms: a list of transform

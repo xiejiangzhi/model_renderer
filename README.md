@@ -10,7 +10,9 @@ A simple 3D model renderer for Love2D 11.3. Support ambient light and diffuse.
 
 ## Installation
 
-Copy `src` to your project
+Copy `src` to your project.
+
+And recommend use [CPML](https://github.com/excessive/cpml) to build projection and view matrix.
 
 
 ## Usage

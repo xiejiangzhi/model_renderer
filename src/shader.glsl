@@ -8,8 +8,9 @@ uniform vec3 ambient_color;
 uniform vec3 light_pos;
 uniform vec3 light_color;
 uniform float diffuse_strength;
-/* uniform float specular_strength; */
-/* uniform vec3 view_pos; */
+uniform float specular_strength;
+uniform float specular_shininess;
+uniform vec3 view_pos;
 
 mat4 rotate_mat(float angle, vec3 axis) {
   float l = length(axis);
@@ -72,19 +73,25 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #ifdef PIXEL
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tcolor = Texel(tex, texture_coords) * modelColor;
+  vec3 light = ambient_color;
 
   vec3 norm = normalize(normal);
 
+  // diffuse
   vec3 light_dir = normalize(light_pos - fragPos);
   float diff = max(dot(norm, light_dir), 1 - tcolor.a);
-  vec3 diffuse = diff * light_color * diffuse_strength;
+  light += diff * light_color * diffuse_strength;
 
-  /* vec3 view_dir = normalize(view_pos - fragPos); */
-  /* vec3 reflect_dir = reflect(-light_dir, norm); */
-  /* float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 8 + 8 * tcolor.a); */
-  /* vec3 specular = spec * light_color * specular_strength * tcolor.a; */
+  // specular
+  if (specular_strength > 0) {
+    vec3 view_dir = normalize(view_pos - fragPos);
+    vec3 reflect_dir = reflect(-light_dir, norm);
+    float ss = specular_shininess * 0.5;
+    float spec = pow(max(dot(view_dir, reflect_dir), 0.0), ss + ss * tcolor.a);
+    light += spec * light_color * specular_strength * tcolor.a;
+  }
 
-  tcolor.rgb *= ambient_color + diffuse;
+  tcolor.rgb *= light;
 
   return tcolor * color;
 }
