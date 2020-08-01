@@ -21,6 +21,7 @@ local model_alpha = 1
 
 local near, far = 1, 3000
 local camera_dist = math.sqrt(far^2 / 2)
+local fov = 70
 
 local model = MR.model.load('box.obj')
 local model2 = MR.model.load('3d.obj')
@@ -81,8 +82,8 @@ function love.update(dt)
   if lkb.isDown('-') then far = far - mv end
   if lkb.isDown('=') then far = far + mv end
 
-  if lkb.isDown('t') then camera_angle.x = camera_angle.x + math.rad(dt * 5) end
-  if lkb.isDown('g') then camera_angle.x = camera_angle.x - math.rad(dt * 5) end
+  if lkb.isDown('t') then fov = fov + dt * 10 end
+  if lkb.isDown('g') then fov = fov - dt * 10 end
 
   if lkb.isDown('z') then model_alpha = model_alpha - dt end
   if lkb.isDown('x') then model_alpha = model_alpha + dt end
@@ -102,9 +103,8 @@ end
 
 function love.draw()
   local w, h = lg.getDimensions()
-  local hw, hh = w * 0.5, h * 0.5
 
-  local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, near, far)
+  local projection = Cpml.mat4.from_perspective(fov, w / h, near, far)
   local view = Cpml.mat4()
   local offset = Cpml.vec3(0, camera_dist, 0)
     :rotate(camera_angle.x, Cpml.vec3.unit_x)
@@ -174,6 +174,7 @@ function private.print_debug_info(projection, view)
   str = str..string.format('\nmodel scale: %.2f', model_scale)
   str = str..string.format('\nmodel color: %.2f', model_alpha)
   str = str..string.format('\nnear fac: %.2f, %2.f', near, far)
+  str = str..string.format('\nfov: %.2f', fov)
 
   str = str..string.format('\nFPS: %i', love.timer.getFPS())
 

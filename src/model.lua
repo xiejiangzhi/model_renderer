@@ -145,25 +145,30 @@ end
 
 --------------------
 
-local valid_opts = {
-  write_depth = true
+local default_opts = {
+  write_depth = true,
+  face_culling = 'back', -- 'back', 'front', 'none'
 }
 
 -- vertices:
 -- texture
 -- optsions:
 --  write_depth:
+--  face_culling: 'back' or 'front' or 'none'
 function M:init(vertices, texture, opts)
   self.mesh = new_mesh(M.mesh_format, vertices, "triangles", 'static')
   self.options = {}
+  for k, v in pairs(default_opts) do
+    self.options[k] = v
+  end
 
   if texture then self:set_texture(texture) end
-  if opts then self:set_opts(opts) end
+  self:set_opts(opts or default_opts)
 end
 
 function M:set_opts(opts)
   for k, v in pairs(opts) do
-    if valid_opts[k] then
+    if default_opts[k] ~= nil then
       self.options[k] = v
     else
       error("Invalid option "..k)

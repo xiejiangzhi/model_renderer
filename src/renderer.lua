@@ -22,6 +22,8 @@ local render_opts = {
 M.projection = nil
 M.view = nil
 
+M.shadow_depth_map = lg.newCanvas(1024, 1024, { type = '2d', format = 'depth24', readable = true })
+
 -- projection, view: mat4, 1-based, column major matrices
 function M.begin(projection, view)
   if not projection then projection = M.projection end
@@ -42,12 +44,17 @@ function M.clean()
 end
 
 function M.draw(model, model_transforms)
-  M.begin()
+  local model_opts = model.options
   local mesh = model.mesh
   M.attach_transforms(mesh, model_transforms)
-  local write_depth = (model.options.write_depth == nil) and true or model.options.write_depth
-	love.graphics.setDepthMode("lequal", write_depth)
+
+  M.begin()
+	love.graphics.setDepthMode("lequal", model_opts.write_depth)
+	love.graphics.setMeshCullMode(model_opts.face_culling)
+
   lg.drawInstanced(mesh, #model_transforms)
+
+	love.graphics.setMeshCullMode('none')
   love.graphics.setDepthMode("always", false)
   M.clean()
 end
