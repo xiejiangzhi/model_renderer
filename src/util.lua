@@ -68,7 +68,7 @@ end
 
 function M.vec3_normalize(a)
   local out = {}
-  local len = math.sqrt(a[1]^2 + a[2]^2 + a[3]^2)
+  local len = M.vec3_len(a)
   out[1] = a[1] / len
   out[2] = a[2] / len
   out[3] = a[3] / len
@@ -89,6 +89,10 @@ function M.vec3_sub(a, b)
     a[2] - b[2],
     a[3] - b[3],
   }
+end
+
+function M.vec3_len(a)
+  return math.sqrt(a[1]^2 + a[2]^2 + a[3]^2)
 end
 
 return M

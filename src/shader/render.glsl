@@ -3,7 +3,7 @@
 varying vec3 normal;
 varying vec3 fragPos;
 varying vec4 modelColor;
-varying vec3 fragPosLightSpace;
+varying vec3 shadowPos;
 
 #ifdef VERTEX
 uniform mat4 projection_mat;
@@ -57,7 +57,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   modelColor = ModelColor;
 
   vec4 light_pos = light_projection_mat * (light_view_mat * worldPos);
-  fragPosLightSpace = light_pos.xyz / light_pos.w;
+  // -1 - 1 to 0 - 1
+  shadowPos = light_pos.xyz / light_pos.w * 0.5 + 0.5;
 
   return projection_mat * (view_mat * worldPos);
 }
@@ -95,8 +96,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   }
 
   // shadow
-  vec3 proj_coords = fragPosLightSpace * 0.5 + 0.5;
-  float shadow = Texel(shadow_depth_map, proj_coords);
+  float shadow = Texel(shadow_depth_map, shadowPos);
 
   tcolor.rgb *= ambient_color + light * (1 - shadow);
   return tcolor * color;

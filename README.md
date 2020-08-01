@@ -1,7 +1,7 @@
 Simple 3D Model Renderer
 ========================
 
-A simple 3D model renderer for Love2D 11.3. Support ambient light and diffuse.
+A simple 3D model renderer for Love2D 11.3. Support simple lighting.
 
 ## Example
 
@@ -26,12 +26,13 @@ local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
 local cylinder = MR.model.new_cylinder(30, 100)
 
+local renderer
+
 function love.load()
-  MR.set_render_opts({
-    light_pos = { 1000, 2000, 1000 },
-    light_color = { 1, 1, 1 },
-    ambient_color = { 0.6, 0.6, 0.6 },
-  })
+  renderer = MR.renderer.new()
+  renderer.light_pos = { 1000, 2000, 1000 }
+  renderer.light_color = { 1, 1, 1 }
+  renderer.ambient_color = { 0.6, 0.6, 0.6 }
 end
 
 function love.draw()
@@ -45,9 +46,10 @@ function love.draw()
   local target = Cpml.vec3(0, 0, 0)
   view:look_at(view, eye, target, Cpml.vec3(0, 1, 0))
 
-  MR.set_projection(projection)
-  MR.set_view(view)
-  MR.set_view_pos(eye:unpack())
+  renderer.projection = projection
+  renderer.view = view
+  renderer.camera_pos = { eye:unpack() }
+  renderer.look_at = { target:unpack() }
 
   local ts = love.timer.getTime()
 
@@ -71,7 +73,7 @@ function love.draw()
   }
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  MR.render({ model = {
+  renderer:render({ model = {
     { model, instance_transforms },
     { box, {{ -300, 0, 0, 0, 0, 0, 1 }}},
     { sphere, {{ -300, 0, 300, 0, 0, 0, 1, 1, 1, 0 }} },
@@ -82,28 +84,10 @@ end
 
 ## Functions
 
-### MR
-
-* MR.set_render_opts(table) 
-  * ambient_color = { 0.1, 0.1, 0.1 }
-  * light_pos = { 1000, 2000, 1000 }
-  * light_color = { 1, 1, 1 }
-* MR.set_model_default_opts(table)
-  * write_depth = true,
-  * face_culling = 'back', -- 'back', 'front', 'none'
-  * diffuse_strength = 0.4,
-  * specular_strength = 0.5,
-  * specular_shininess = 16,
-
-* MR.set_projection(projection_mat4): column major matrices
-* MR.set_view(view_mat4): column major matrices
-* MR.set_view_pos(x, y, z)
-* MR.render({ model = { { model1, { { x, y, z, rx, ry, rz, scale, r, g, b, a }, ... } }, { model2, instances_transforms }, ... } })
-
-
 ### Model
 
-* MR.model.load(path): create a model from `.obj` file
+* MR.model.new(vertices, texture, opts): new a custom model form vertices
+* MR.model.load(path): load a model from `.obj` file
 * MR.model.new_plane(width, height)
 * MR.model.new_circle(radius, segments)
 * MR.model.new_box(xlen, ylen, zlen)
@@ -117,12 +101,33 @@ end
   * specular_strength = 0.5,
   * specular_shininess = 16,
 
+### Renderer
+
+* MR.renderer.new()
+* MR.renderer:render(scene):
+
+```
+  renderer:render({ model = {
+    { model1, { { x, y, z, rx, ry, rz, scale, r, g, b, a }, transfrom2, ... } } ,
+    model_conf2, ...
+  } })
+```
+
+**Attributes**
+
+* renderer.projection: column major 4x4 matrices
+* renderer.view: column major 4x4 matrices
+* renderer.camera_pos: { x, y, z }, must set before render
+* renderer.look_at: { x, y, z }, must set before render
+* renderer.render_shadow: boolean
+
+
 
 ## TODO
 
 * More support for model file
 * Better render shader
-* Support shadow
+* Better shadow
 
 
 ## References

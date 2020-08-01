@@ -27,6 +27,9 @@ local model = MR.model.load('box.obj')
 local model2 = MR.model.load('3d.obj')
 local ground = MR.model.new_plane(2000, 2000)
 
+local ts = 0
+local pause = false
+
 local renderer
 
 function love.load()
@@ -38,6 +41,8 @@ function love.load()
 end
 
 function love.update(dt)
+  if not pause then ts = ts + dt end
+
   local mv = move_speed * dt
   local dv = Cpml.vec3(0, 0, 0)
   if lkb.isDown('a') then dv.x = dv.x - mv end
@@ -119,7 +124,6 @@ function love.draw()
   renderer.view_pos = { eye:unpack() }
   renderer.camera_pos = { look_at:unpack() }
 
-  local time = love.timer.getTime()
   local tfs = {
     {
       model_pos.x, model_pos.z, model_pos.y,
@@ -128,8 +132,8 @@ function love.draw()
       1, 1, 0, model_alpha
     },
     {
-      100, math.sin(time) * 50, 100,
-      math.sin(time), math.cos(time), model_angle.z,
+      100, math.sin(ts) * 50, 100,
+      math.sin(ts), math.cos(ts), model_angle.z,
       20,
       0, 1, 1, 0.75
     }
@@ -138,16 +142,16 @@ function love.draw()
   lg.clear(0.5, 0.5, 0.5)
 
   local tfs2 = {}
-  local rts = time * 0.05
-  local cts = time * 0.1
-  local sts = time * 0.2
+  local rts = ts * 0.05
+  local cts = ts * 0.1
+  local sts = ts * 0.2
   for i = 1, 10000 do
     local n = i * 0.1
     local size = 3 + math.sin(sts + n * 0.1) * 1
     local dist = math.sqrt(i^2 / 2, 2)
     table.insert(tfs2, {
       500 + math.cos(rts + n) * i, 250 + math.sin(rts + dist) * 200, math.sin(rts + n) * i,
-      math.sin(time), math.cos(time), 0,
+      math.sin(ts), math.cos(ts), 0,
       size,
       math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1
     })
@@ -161,6 +165,12 @@ function love.draw()
   }})
 
   private.print_debug_info(projection, view)
+end
+
+function love.keyreleased(key)
+  if key == 'space' then
+    pause = not pause
+  end
 end
 
 function private.print_debug_info(projection, view)

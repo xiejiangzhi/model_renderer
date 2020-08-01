@@ -34,8 +34,8 @@ function M:init()
   self.view = nil
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
+  self.render_shadow = true
 
-  self.render_shadow = false
 
   self.shadow_resolution = { 1024, 1024 }
   local w, h = unpack(self.shadow_resolution)
@@ -58,7 +58,10 @@ function M:render(scene)
 
   if self.render_shadow then self:build_shadow_map(scene) end
 
+  -- self.shadow_depth_map:setDepthSampleMode()
   -- lg.draw(self.shadow_depth_map)
+  -- self.shadow_depth_map:setDepthSampleMode('less')
+
   self:render_scene(scene)
 end
 
@@ -73,9 +76,10 @@ function M:build_shadow_map(scene)
 	lg.setCanvas({ depthstencil = self.shadow_depth_map })
   lg.clear(0, 0, 0, 0)
 
-  local tw, th = self.shadow_depth_map:getDimensions()
-  local hw, hh = tw / 2, th / 2
-  local projection = Util.mat4_from_ortho(-hw, hw, hh, -hh, 0, 3000)
+  local tw, th = love.graphics.getDimensions()
+  local lhw, lhh = tw * 2, th * 2
+  local dist = Util.vec3_len(Util.vec3_sub(self.light_pos, self.look_at))
+  local projection = Util.mat4_from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
   local view = Util.mat4_look_at(self.light_pos, self.look_at)
 
 	shadow_shader:send("projection_mat", 'column', projection)

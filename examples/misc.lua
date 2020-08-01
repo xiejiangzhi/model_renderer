@@ -65,7 +65,7 @@ function love.draw()
 
       { model, {
         {
-          0, 70, 0,
+          0, 100, 0,
           0, math.sin(ts) * math.pi * 2, 0,
           10,
           1, 1, 1, 1
