@@ -17,6 +17,17 @@ M.mesh_format = {
   { 'VertexNormal', 'float', 3 },
 }
 
+M.default_opts = {
+  write_depth = true,
+  face_culling = 'back', -- 'back', 'front', 'none'
+  diffuse_strength = 0.4,
+  specular_strength = 0.5,
+  specular_shininess = 16,
+}
+M.default_opts.__index = M.default_opts
+
+--------------------
+
 function M.new(...)
   local obj = setmetatable({}, M)
   obj:init(...)
@@ -143,12 +154,17 @@ function M.new_sphere(rx, ry, rz, n)
   return M.new(vertices)
 end
 
---------------------
+function M.set_default_opts(opts)
+  for k, v in pairs(opts) do
+    if M.default_opts[k] ~= nil then
+      M.default_opts[k] = v
+    else
+      error("Invalid option "..k)
+    end
+  end
+end
 
-local default_opts = {
-  write_depth = true,
-  face_culling = 'back', -- 'back', 'front', 'none'
-}
+--------------------
 
 -- vertices:
 -- texture
@@ -157,18 +173,15 @@ local default_opts = {
 --  face_culling: 'back' or 'front' or 'none'
 function M:init(vertices, texture, opts)
   self.mesh = new_mesh(M.mesh_format, vertices, "triangles", 'static')
-  self.options = {}
-  for k, v in pairs(default_opts) do
-    self.options[k] = v
-  end
+  self.options = setmetatable({}, M.default_opts)
 
   if texture then self:set_texture(texture) end
-  self:set_opts(opts or default_opts)
+  if opts then self:set_opts(opts) end
 end
 
 function M:set_opts(opts)
   for k, v in pairs(opts) do
-    if default_opts[k] ~= nil then
+    if M.default_opts[k] ~= nil then
       self.options[k] = v
     else
       error("Invalid option "..k)

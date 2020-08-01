@@ -30,7 +30,6 @@ function love.load()
   MR.set_render_opts({
     light_pos = { 1000, 2000, 1000 },
     light_color = { 1, 1, 1 },
-    diffuse_strength = 0.4,
     ambient_color = { 0.6, 0.6, 0.6 },
   })
 end
@@ -48,6 +47,7 @@ function love.draw()
 
   MR.set_projection(projection)
   MR.set_view(view)
+  MR.set_view_pos(eye:unpack())
 
   local ts = love.timer.getTime()
 
@@ -71,10 +71,12 @@ function love.draw()
   }
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  MR.draw(model, instance_transforms)
-  MR.draw(box, {{ -300, 0, 0, 0, 0, 0, 1 }})
-  MR.draw(sphere, {{ -300, 0, 300, 0, 0, 0, 1, 1, 1, 0 }})
-  MR.draw(cylinder, {{ 300, 0, 300, 0, 0, 0, 1 }})
+  MR.render({ model = {
+    { model, instance_transforms },
+    { box, {{ -300, 0, 0, 0, 0, 0, 1 }}},
+    { sphere, {{ -300, 0, 300, 0, 0, 0, 1, 1, 1, 0 }} },
+    { cylinder, {{ 300, 0, 300, 0, 0, 0, 1 }} }
+  } })
 end
 ```
 
@@ -86,11 +88,17 @@ end
   * ambient_color = { 0.1, 0.1, 0.1 }
   * light_pos = { 1000, 2000, 1000 }
   * light_color = { 1, 1, 1 }
-  * diffuse_strength = 0.4
+* MR.set_model_default_opts(table)
+  * write_depth = true,
+  * face_culling = 'back', -- 'back', 'front', 'none'
+  * diffuse_strength = 0.4,
+  * specular_strength = 0.5,
+  * specular_shininess = 16,
 
 * MR.set_projection(projection_mat4): column major matrices
 * MR.set_view(view_mat4): column major matrices
-* MR.draw(model, instances_transforms)
+* MR.set_view_pos(x, y, z)
+* MR.render({ model = { { model1, { { x, y, z, rx, ry, rz, scale, r, g, b, a }, ... } }, { model2, instances_transforms }, ... } })
 
 
 ### Model
@@ -103,7 +111,11 @@ end
 * MR.model.new_sphere(radius_x, radius_y, radius_z, segments)
 * Model:set_texture(texture): image or canvas
 * Model:set_opts(opts)
-  * write_depth: boolean
+  * write_depth = true,
+  * face_culling = 'back', -- 'back', 'front', 'none'
+  * diffuse_strength = 0.4,
+  * specular_strength = 0.5,
+  * specular_shininess = 16,
 
 
 ## TODO
