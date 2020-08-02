@@ -2,7 +2,7 @@
 
 varying vec3 normal;
 varying vec3 fragPos;
-varying vec4 modelColor;
+varying vec4 fragColor;
 varying vec3 shadowPos;
 
 #ifdef VERTEX
@@ -54,7 +54,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   vec4 mpos = model_mat * vertex_position;
   vec4 worldPos = vec4(mpos.xyz / mpos.w + ModelPos, 1.0);
   fragPos = worldPos.xyz;
-  modelColor = ModelColor;
+  fragColor = ModelColor;
 
   vec4 light_pos = light_projection_mat * (light_view_mat * worldPos);
   // -1 - 1 to 0 - 1
@@ -76,7 +76,7 @@ uniform vec3 camera_pos;
 uniform DepthImage shadow_depth_map;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-  vec4 tcolor = Texel(tex, texture_coords) * modelColor;
+  vec4 tcolor = Texel(tex, texture_coords) * fragColor;
   vec3 light = vec3(0);
 
   vec3 norm = normalize(normal);

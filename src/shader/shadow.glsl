@@ -47,7 +47,10 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #endif
 
 #ifdef PIXEL
+uniform Image MainTex;
+
 void effect() {
-  /* gl_FragDepth = gl_FragCoord.z; */
+  float a = Texel(MainTex, VaryingTexCoord.xy).a;
+  gl_FragDepth = (a > 0) ? gl_FragCoord.z : 1;
 }
 #endif
