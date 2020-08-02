@@ -96,7 +96,20 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   }
 
   // shadow
-  float shadow = Texel(shadow_depth_map, shadowPos);
+  float shadow = 0;
+  if (shadowPos.x >= 0 && shadowPos.x <= 1 && shadowPos.y >= 0 && shadowPos.y <= 1) {
+    vec3 shadow_bias = vec3(0, 0, -0.005);
+    /* shadow = Texel(shadow_depth_map, shadowPos + shadow_bias); */
+
+    // PCF
+    vec2 tex_size = 1.0 / textureSize(shadow_depth_map, 0);
+    for (int x = -1; x <= 1; ++x) {
+      for (int y = -1; y <= 1; ++y) {
+        shadow += texture(shadow_depth_map, shadowPos + vec3(vec2(x, y) * tex_size, 0) + shadow_bias);
+      }
+    }
+    shadow /= 9.0;
+  }
 
   tcolor.rgb *= ambient_color + light * (1 - shadow);
   return tcolor * color;

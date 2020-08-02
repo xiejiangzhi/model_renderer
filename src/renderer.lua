@@ -88,7 +88,7 @@ function M:build_shadow_map(scene)
   render_shader:send('light_view_mat', 'column', view)
 
 	lg.setDepthMode("less", true)
-	lg.setMeshCullMode('back')
+	lg.setMeshCullMode('front')
 
   for i, desc in ipairs(scene.model) do
     lg.drawInstanced(desc[1].mesh, #desc[2])
