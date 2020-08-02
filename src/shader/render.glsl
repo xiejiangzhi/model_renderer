@@ -112,7 +112,10 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   }
 
   tcolor.rgb *= ambient_color + light * (1 - shadow);
-  return tcolor * color;
+  tcolor *= color;
+
+  gl_FragDepth = (tcolor.a > 0) ? gl_FragCoord.z : 1;
+  return tcolor;
 }
 #endif
 
