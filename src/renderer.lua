@@ -4,14 +4,16 @@ local private = {}
 
 local code_dir = (...):gsub('.[^%.]+$', '')
 local file_dir = code_dir:gsub('%.', '/')
-local Util = require (code_dir..'.util')
+local Cpml = require 'cpml'
+local Mat4 = Cpml.mat4
+local Vec3 = Cpml.vec3
 
 local lg = love.graphics
 
 local transform_mesh_format = {
   { 'ModelPos', 'float', 3 },
   { 'ModelAngle', 'float', 3 },
-  { 'ModelScale', 'float', 1 },
+  { 'ModelScale', 'float', 3 },
   { 'ModelColor', 'byte', 4 },
 }
 
@@ -35,7 +37,6 @@ function M:init()
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
-
 
   self.shadow_resolution = { 1024, 1024 }
   local w, h = unpack(self.shadow_resolution)
@@ -78,9 +79,10 @@ function M:build_shadow_map(scene)
 
   local tw, th = love.graphics.getDimensions()
   local lhw, lhh = tw * 2, th * 2
-  local dist = Util.vec3_len(Util.vec3_sub(self.light_pos, self.look_at))
-  local projection = Util.mat4_from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
-  local view = Util.mat4_look_at(self.light_pos, self.look_at)
+  local dist = (Vec3(unpack(self.light_pos)) - Vec3(unpack(self.look_at))):len()
+  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
+  local view = Mat4()
+  view = view:look_at(view, Vec3(unpack(self.light_pos)), Vec3(unpack(self.look_at)), Vec3(0, 1, 0))
 
 	shadow_shader:send("projection_mat", 'column', projection)
 	shadow_shader:send("view_mat", 'column', view)

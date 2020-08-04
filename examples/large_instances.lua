@@ -25,7 +25,7 @@ local fov = 70
 
 local model = MR.model.load('box.obj')
 local model2 = MR.model.load('3d.obj')
-local ground = MR.model.new_plane(2000, 2000)
+local ground = MR.model.new_plane(10000, 10000)
 
 local ts = 0
 local pause = false
@@ -111,30 +111,30 @@ function love.draw()
   local w, h = lg.getDimensions()
 
   local projection = Cpml.mat4.from_perspective(fov, w / h, near, far)
-  local view = Cpml.mat4()
   local eye = look_at + Cpml.vec3(0, camera_dist, 0)
     :rotate(camera_angle.x, Cpml.vec3.unit_x)
     :rotate(camera_angle.y, Cpml.vec3.unit_y)
     :rotate(camera_angle.z, Cpml.vec3.unit_z)
+  local view = Cpml.mat4()
   view:look_at(view, eye, look_at, Cpml.vec3(0, 1, 0))
   view:scale(view, Cpml.vec3(view_scale, view_scale, view_scale))
 
   renderer.projection = projection
   renderer.view = view
-  renderer.view_pos = { eye:unpack() }
   renderer.camera_pos = { look_at:unpack() }
+  renderer.look_at = { look_at:unpack() }
 
   local tfs = {
     {
       model_pos.x, model_pos.z, model_pos.y,
       model_angle.x, model_angle.y, model_angle.z,
-      model_scale,
+      model_scale, model_scale, model_scale,
       1, 1, 0, model_alpha
     },
     {
       100, math.sin(ts) * 50, 100,
       math.sin(ts), math.cos(ts), model_angle.z,
-      20,
+      20, 20, 20,
       0, 1, 1, 0.75
     }
   }
@@ -152,16 +152,17 @@ function love.draw()
     table.insert(tfs2, {
       500 + math.cos(rts + n) * i, 250 + math.sin(rts + dist) * 200, math.sin(rts + n) * i,
       math.sin(ts), math.cos(ts), 0,
-      size,
+      size, size, size,
       math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1
     })
   end
 
   renderer:render({ model = {
-    { ground, { { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 1 } } },
+    { ground, { { -5000, 0, -5000, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1 } } },
     { model, tfs },
-    { model2, { { 100, 0, -100, 0, 0, 0, 50, 0.7, 0.7, 1, 1 } } },
-    { model, tfs2 }
+    { model2, { { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 } } },
+    { model, tfs2 },
+    { MR.model.new_cylinder(10, 3000), { { look_at.x, look_at.y, look_at.z, 0, 0, 0, 1, 1, 1 } } }
   }})
 
   private.print_debug_info(projection, view)

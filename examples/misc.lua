@@ -43,8 +43,8 @@ function love.draw()
 
   renderer.projection = projection
   renderer.view = view
-  renderer.view_pos = { eye:unpack() }
-  renderer.camera_pos = { target:unpack() }
+  renderer.camera_pos = { eye:unpack() }
+  renderer.look_at = { target:unpack() }
 
   lg.clear(0.5, 0.5, 0.5)
 
@@ -59,7 +59,7 @@ function love.draw()
       { ground, { {
           -1000, 0, -1000,
           0, 0, 0,
-          1,
+          1, 1, 1,
           0, 1, 0, 1
       } } },
 
@@ -67,38 +67,39 @@ function love.draw()
         {
           0, 100, 0,
           0, math.sin(ts) * math.pi * 2, 0,
-          10,
+          10, 10, 10,
           1, 1, 1, 1
         },
         {
           math.sin(ts) * 200, -10, math.cos(ts) * 200,
           0, math.rad(45), 0,
-          10,
+          10, 10, 10,
           1, 1, 1, 0.5
         }
       } },
 
       { MR.model.new_cylinder(100, 300), { {
-          -300, -10, -100,
-          0, math.rad(45), 0,
-          1,
+          -300, 0, -200,
+          0, 0, 0,
+          1, 1, 1,
           1, 1, 1, 1
       } } },
+
       { MR.model.new_sphere(150), { {
           -300, -10, 300,
           math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi,
-          1,
+          1, 1, 1,
           1, 1, 1, 1
       } } },
       { MR.model.new_box(150), {{
         300, 200, 300,
         math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi,
-        1,
+        1, 1, 1,
         1, 1, 1, 1
       } } },
       { image_model, {
-        { 100, 100, 100,  0, 0, 0,  2,  1, 1, 1, 1 },
-        { 100, 10, 100,  0, math.sin(ts * 0.3) * math.pi * 2, 0,  2,  1, 1, 1, 1 },
+        { 100, 100, 100,  0, 0, 0,  2, 2, 2,  1, 1, 1, 1 },
+        { 100, 10, 100,  0, math.sin(ts * 0.3) * math.pi * 2, 0,  2, 2, 2,  1, 1, 1, 1 },
       } }
     }
   })

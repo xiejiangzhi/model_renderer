@@ -6,13 +6,15 @@ local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
 local cylinder = MR.model.new_cylinder(30, 100)
 
-local renderer
+local renderer, scene
 
 function love.load()
   renderer = MR.renderer.new()
   renderer.light_pos = { 1000, 2000, 1000 }
   renderer.light_color = { 1, 1, 1 }
   renderer.ambient_color = { 0.6, 0.6, 0.6 }
+
+  scene = MR.scene.new()
 end
 
 function love.draw()
@@ -33,30 +35,17 @@ function love.draw()
 
   local ts = love.timer.getTime()
 
-  -- pos.x, pos.y, pos.z
-  -- angle.x, angle.y, angle.z
-  -- scale
-  -- r, g, b, a
-  local instance_transforms = {
-    {
-      0, -10, 0,
-      0, math.sin(ts) * math.pi * 2, 0,
-      10,
-      0, 1, 0, 1
-    },
-    {
-      math.sin(ts) * 100, -10, math.cos(ts) * 100,
-      0, math.rad(45), 0,
-      10,
-      1, 0, 0, 1
-    }
-  }
+  -- model, coord, angle, scale, color
+  scene:add_model(model, { 0, -10, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 })
+  scene:add_model(model,
+    { math.sin(ts) * 100, -10, math.cos(ts) * 100 },
+    { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }
+  )
+  scene:add_model(box, { -300, 0, 0 })
+  scene:add_model(sphere, { -300, 0, 300 })
+  scene:add_model(cylinder, { 300, 0, 300 })
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  renderer:render({ model = {
-    { model, instance_transforms },
-    { box, {{ -300, 0, 0, 0, 0, 0, 1 }}},
-    { sphere, {{ -300, 0, 300, 0, 0, 0, 1, 1, 1, 0 }} },
-    { cylinder, {{ 300, 0, 300, 0, 0, 0, 1 }} }
-  } })
+  renderer:render(scene:build())
+  scene:clean()
 end
