@@ -26,7 +26,7 @@ local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
 local cylinder = MR.model.new_cylinder(30, 100)
 
-local renderer, scene
+local renderer, scene, camera
 
 function love.load()
   renderer = MR.renderer.new()
@@ -35,23 +35,16 @@ function love.load()
   renderer.ambient_color = { 0.6, 0.6, 0.6 }
 
   scene = MR.scene.new()
+  camera = MR.camera.new()
 end
 
 function love.draw()
   local w, h = love.graphics.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
 
-  local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, -500, 1000)
-  local view = Cpml.mat4()
-  -- z is face to user
-  local eye = Cpml.vec3(0, math.sin(math.rad(60)) * 200, 200)
-  local target = Cpml.vec3(0, 0, 0)
-  view:look_at(view, eye, target, Cpml.vec3(0, 1, 0))
-
-  renderer.projection = projection
-  renderer.view = view
-  renderer.camera_pos = { eye:unpack() }
-  renderer.look_at = { target:unpack() }
+  camera:orthogonal(-hw, hw, hh, -hh, -500, 2000)
+  camera:look_at(0, 0, 0, math.rad(60), 0, 0)
+  renderer:apply_camera(camera)
 
   local ts = love.timer.getTime()
 
@@ -83,6 +76,7 @@ end
 * MR.model.new_cylinder(radius, height, segments)
 * MR.model.new_sphere(radius_x, radius_y, radius_z, segments)
 * Model:set_texture(texture): image or canvas
+* Model:apply_camera(camera_instance): the camera must initialized projection and 
 * Model:set_opts(opts)
   * write_depth = true,
   * face_culling = 'back', -- 'back', 'front', 'none'
@@ -124,6 +118,16 @@ end
 
 * scene:clean(): reset scene, remove all models from scene
 * scene:build(): build scene for renderer. `renderer:render(scene:build())`
+
+
+### Camera
+
+* MR.camera.new() return camera instance
+* camera:perspective(fovy, aspect, near, far) create perspective projection for this camera
+* camera:orthogonal(left, right, top, bottom, near, far) create orthogonal projection for this camera
+* camera:move_to(x, y, z, rx, ry, rz) move camera to the position, set camera angle and update view
+* camera:look_at(x, y, z, rx, ry, rz) look at the position use the specified angle and update view
+* camera:project(point, viewport) project the point. point: Cpml.vec3 or { x = x, y = y, z = z }. viewport: { ox, oy, w, h }
 
 
 ## TODO

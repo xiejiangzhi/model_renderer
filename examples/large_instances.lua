@@ -73,7 +73,6 @@ function love.update(dt)
     model_angle = model_angle + av
   else
     camera_angle = camera_angle + av
-    camera_angle.x = math.min(math.pi, math.max(0.001, camera_angle.x))
   end
 
   local sv = 0
@@ -117,10 +116,14 @@ function love.draw()
   camera:perspective(fov, w / h, near, far)
 
   camera.sight_dist = camera_dist
-  camera:move_to(camera_pos:unpack())
-  camera:rotate(camera_angle:unpack())
 
-  renderer:use_camera(camera)
+  -- based on camera
+  camera:move_to(camera_pos.x, camera_pos.y, camera_pos.z, camera_angle:unpack())
+
+  -- based on target
+  -- camera:look_at(camera_pos.x, 0, camera_pos.z, camera_angle:unpack())
+
+  renderer:apply_camera(camera)
 
   local tfs = {
     {

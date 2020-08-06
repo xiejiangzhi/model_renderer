@@ -6,7 +6,7 @@ local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
 local cylinder = MR.model.new_cylinder(30, 100)
 
-local renderer, scene
+local renderer, scene, camera
 
 function love.load()
   renderer = MR.renderer.new()
@@ -15,23 +15,16 @@ function love.load()
   renderer.ambient_color = { 0.6, 0.6, 0.6 }
 
   scene = MR.scene.new()
+  camera = MR.camera.new()
 end
 
 function love.draw()
   local w, h = love.graphics.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
 
-  local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, -500, 1000)
-  local view = Cpml.mat4()
-  -- z is face to user
-  local eye = Cpml.vec3(0, math.sin(math.rad(60)) * 200, 200)
-  local target = Cpml.vec3(0, 0, 0)
-  view:look_at(view, eye, target, Cpml.vec3(0, 1, 0))
-
-  renderer.projection = projection
-  renderer.view = view
-  renderer.camera_pos = { eye:unpack() }
-  renderer.look_at = { target:unpack() }
+  camera:orthogonal(-hw, hw, hh, -hh, -500, 2000)
+  camera:look_at(0, 0, 0, math.rad(60), 0, 0)
+  renderer:apply_camera(camera)
 
   local ts = love.timer.getTime()
 
