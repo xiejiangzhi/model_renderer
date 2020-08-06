@@ -9,9 +9,9 @@ local lkb = love.keyboard
 local move_speed = 200
 local rotate_speed = math.pi
 
-local look_at = Cpml.vec3(0, 0, 0)
-local camera_angle = Cpml.vec3(math.rad(60), 0, 0)
-local view_scale = 0.2
+local camera_pos = Cpml.vec3(0, 1000, 0)
+local camera_angle = Cpml.vec3(math.rad(30), 0, 0)
+local view_scale = 1
 local eye_offset = Cpml.vec3(0, 1000, 0)
 
 local model_pos = Cpml.vec3(0, 0, 0)
@@ -31,6 +31,7 @@ local ts = 0
 local pause = false
 
 local renderer
+local camera = MR.camera.new()
 
 function love.load()
   renderer = MR.renderer.new()
@@ -57,7 +58,7 @@ function love.update(dt)
   elseif lkb.isDown('lshift') then
     eye_offset = eye_offset + dv
   else
-    look_at = look_at + dv
+    camera_pos = camera_pos + dv
   end
 
   local rv = rotate_speed * dt
@@ -72,6 +73,7 @@ function love.update(dt)
     model_angle = model_angle + av
   else
     camera_angle = camera_angle + av
+    camera_angle.x = math.min(math.pi, math.max(0.001, camera_angle.x))
   end
 
   local sv = 0
@@ -95,7 +97,7 @@ function love.update(dt)
   if lkb.isDown('x') then model_alpha = model_alpha + dt end
 
   if lkb.isDown('r') then
-    look_at = Cpml.vec3(0, 0, 0)
+    camera_pos = Cpml.vec3(0, 1000, 0)
     camera_angle = Cpml.vec3(math.rad(30), 0, 0)
     eye_offset = Cpml.vec3(0, 1000, 0)
     view_scale = 1
@@ -109,25 +111,16 @@ end
 
 function love.draw()
   local w, h = lg.getDimensions()
-  -- scale view by fov
-  local projection = Cpml.mat4.from_perspective(fov, w / h, near, far)
 
   -- local hw, hh = w / 2 / view_scale, h / 2 / view_scale
-  -- local projection = Cpml.mat4.from_ortho(-hw, hw, hh, - hh, near, far)
+  -- camera:orthogonal(-hw, hw, hh, - hh, near, far)
+  camera:perspective(fov, w / h, near, far)
 
-  local eye = look_at + Cpml.vec3(0, camera_dist, 0)
-    :rotate(camera_angle.x, Cpml.vec3.unit_x)
-    :rotate(camera_angle.y, Cpml.vec3.unit_y)
-    :rotate(camera_angle.z, Cpml.vec3.unit_z)
-  local eye_target = look_at
-  local view = Cpml.mat4()
-  view:look_at(view, eye, eye_target, Cpml.vec3(0, 1, 0))
+  camera.sight_dist = camera_dist
+  camera:move_to(camera_pos:unpack())
+  camera:rotate(camera_angle:unpack())
 
-  renderer.projection = projection
-  renderer.view = view
-  renderer.view_scale = view_scale
-  renderer.camera_pos = { eye:unpack() }
-  renderer.look_at = { eye_target:unpack() }
+  renderer:use_camera(camera)
 
   local tfs = {
     {
@@ -168,11 +161,11 @@ function love.draw()
     { model2, { { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 } } },
     { model, tfs2 },
     { MR.model.new_cylinder(10, 3000), {
-      { eye_target.x,  eye_target.y, eye_target.z, 0, 0, 0, 1, 1, 1 }
+      { camera.focus.x,  camera.focus.y, camera.focus.z, 0, 0, 0, 1, 1, 1 }
     } }
   }})
 
-  private.print_debug_info(projection, view)
+  private.print_debug_info()
 end
 
 function love.keyreleased(key)
@@ -181,10 +174,10 @@ function love.keyreleased(key)
   end
 end
 
-function private.print_debug_info(projection, view)
+function private.print_debug_info()
   lg.setColor(1, 1, 1)
   local str = ''
-  str = str..string.format('\nlook at: %.2f, %.2f %.2f', look_at:unpack())
+  str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos:unpack())
   str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle:unpack())
   str = str..string.format('\neye offset: %.2f, %.2f, %.2f', eye_offset:unpack())
   str = str..string.format('\nview scale: %.2f', view_scale)

@@ -47,6 +47,13 @@ function M:init()
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
 end
 
+function M:use_camera(camera)
+  self.projection = camera.projection
+  self.view = camera:build_view()
+  self.camera_pos = { camera.pos:unpack() }
+  self.look_at = { camera.focus:unpack() }
+end
+
 -- {
 --  model = {
 --    { model, transforms }
