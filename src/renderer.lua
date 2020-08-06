@@ -34,6 +34,7 @@ function M:init()
 
   self.projection = nil
   self.view = nil
+  self.view_scale = 1
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
@@ -78,7 +79,7 @@ function M:build_shadow_map(scene)
   lg.clear(0, 0, 0, 0)
 
   local tw, th = love.graphics.getDimensions()
-  local lhw, lhh = tw * 2, th * 2
+  local lhw, lhh = tw * 2 / self.view_scale, th * 2 / self.view_scale
   local dist = (Vec3(unpack(self.light_pos)) - Vec3(unpack(self.look_at))):len()
   local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
   local view = Mat4()

@@ -109,20 +109,25 @@ end
 
 function love.draw()
   local w, h = lg.getDimensions()
-
+  -- scale view by fov
   local projection = Cpml.mat4.from_perspective(fov, w / h, near, far)
+
+  -- local hw, hh = w / 2 / view_scale, h / 2 / view_scale
+  -- local projection = Cpml.mat4.from_ortho(-hw, hw, hh, - hh, near, far)
+
   local eye = look_at + Cpml.vec3(0, camera_dist, 0)
     :rotate(camera_angle.x, Cpml.vec3.unit_x)
     :rotate(camera_angle.y, Cpml.vec3.unit_y)
     :rotate(camera_angle.z, Cpml.vec3.unit_z)
+  local eye_target = look_at
   local view = Cpml.mat4()
-  view:look_at(view, eye, look_at, Cpml.vec3(0, 1, 0))
-  view:scale(view, Cpml.vec3(view_scale, view_scale, view_scale))
+  view:look_at(view, eye, eye_target, Cpml.vec3(0, 1, 0))
 
   renderer.projection = projection
   renderer.view = view
-  renderer.camera_pos = { look_at:unpack() }
-  renderer.look_at = { look_at:unpack() }
+  renderer.view_scale = view_scale
+  renderer.camera_pos = { eye:unpack() }
+  renderer.look_at = { eye_target:unpack() }
 
   local tfs = {
     {
@@ -162,7 +167,9 @@ function love.draw()
     { model, tfs },
     { model2, { { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 } } },
     { model, tfs2 },
-    { MR.model.new_cylinder(10, 3000), { { look_at.x, look_at.y, look_at.z, 0, 0, 0, 1, 1, 1 } } }
+    { MR.model.new_cylinder(10, 3000), {
+      { eye_target.x,  eye_target.y, eye_target.z, 0, 0, 0, 1, 1, 1 }
+    } }
   }})
 
   private.print_debug_info(projection, view)
