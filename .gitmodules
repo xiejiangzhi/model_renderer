@@ -1,0 +1,3 @@
+[submodule "cpml"]
+	path = cpml
+	url = https://github.com/excessive/cpml.git

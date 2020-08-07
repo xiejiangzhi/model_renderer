@@ -127,7 +127,8 @@ end
 * camera:orthogonal(left, right, top, bottom, near, far) create orthogonal projection for this camera
 * camera:move_to(x, y, z, rx, ry, rz) move camera to the position, set camera angle and update view
 * camera:look_at(x, y, z, rx, ry, rz) look at the position use the specified angle and update view
-* camera:project(point, viewport) project the point. point: Cpml.vec3 or { x = x, y = y, z = z }. viewport: { ox, oy, w, h }
+* camera:project(point, viewport) project the world point to screen. point: Cpml.vec3 or { x = x, y = y, z = z }. viewport: { ox, oy, w, h }
+* camera:unproject(screen_x, screen_y, viewport, plane) unproject the screen point to world. viewport: { ox, oy, w, h }. plane: { position = vec3, normal = vec3 }, default is { position = vec3(0, 0, 0), normal = vec3(0, 1, 0) }
 
 
 ## TODO

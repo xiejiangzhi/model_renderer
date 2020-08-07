@@ -101,10 +101,11 @@ function M:build_shadow_map(scene)
 	lg.setMeshCullMode('front')
 
   for i, desc in ipairs(scene.model) do
-    local mesh = desc[1].mesh
+    local model, tfs = unpack(desc)
+    local mesh = model.mesh
     local tex = mesh:getTexture()
-	  if tex then shadow_shader:send("MainTex", tex) end
-    lg.drawInstanced(mesh, #desc[2])
+    if tex then shadow_shader:send("MainTex", tex) end
+    lg.drawInstanced(mesh, #tfs)
   end
 
 	lg.setMeshCullMode('none')

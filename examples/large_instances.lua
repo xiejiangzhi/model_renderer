@@ -158,17 +158,34 @@ function love.draw()
     })
   end
 
+  local viewport = { 0, 0, w, h }
+  local test_x, test_y = w / 2 - 100, h / 2 - 100
+  local ix, iy = camera:project(camera.focus, viewport):unpack()
+
+  local p, dist = camera:unproject(test_x, test_y, viewport)
+
+  local str = ''
+  if p then
+    str = str..str.format('\nray plane y=0: %.2f, %.2f, %.2f, dist: %.2f', p.x, p.y, p.z, dist)
+  else
+    str = '\nno ray result'
+  end
+
   renderer:render({ model = {
     { ground, { { -5000, 0, -5000, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1 } } },
     { model, tfs },
     { model2, { { 100, 0, -100, 0, 0, 0, 50, 50, 50, 0.7, 0.7, 1, 1 } } },
     { model, tfs2 },
     { MR.model.new_cylinder(10, 3000), {
-      { camera.focus.x,  camera.focus.y, camera.focus.z, 0, 0, 0, 1, 1, 1 }
-    } }
+      { camera.focus.x,  camera.focus.y, camera.focus.z, 0, 0, 0, 1, 1, 1 },
+      p and { p.x, p.y, p.z, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1 } or nil,
+    } },
   }})
 
-  private.print_debug_info()
+  lg.circle('line', ix, iy, 10)
+  lg.circle('line', test_x, test_y, 10)
+
+  private.print_debug_info(str)
 end
 
 function love.keyreleased(key)
@@ -177,7 +194,7 @@ function love.keyreleased(key)
   end
 end
 
-function private.print_debug_info()
+function private.print_debug_info(ext_str)
   lg.setColor(1, 1, 1)
   local str = ''
   str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos:unpack())
@@ -193,6 +210,7 @@ function private.print_debug_info()
   str = str..string.format('\nfov: %.2f', fov)
 
   str = str..string.format('\nFPS: %i', love.timer.getFPS())
+  str = str..'\n'..ext_str
 
   lg.print(str, 15, 0)
 end

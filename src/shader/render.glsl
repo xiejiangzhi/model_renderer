@@ -98,7 +98,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   // shadow
   float shadow = 0;
   if (shadowPos.x >= 0 && shadowPos.x <= 1 && shadowPos.y >= 0 && shadowPos.y <= 1) {
-    vec3 shadow_bias = vec3(0, 0, -0.005);
+    vec3 shadow_bias = vec3(0, 0, -0.002);
     /* shadow = Texel(shadow_depth_map, shadowPos + shadow_bias); */
 
     // PCF

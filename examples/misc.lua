@@ -16,7 +16,6 @@ function love.load()
   r.light_pos = { 1000, 2000, 1000 }
   r.light_color = { 0, 1, 1 }
   r.ambient_color = { 0.3, 0.3, 0.3 }
-  r.render_shadow = true
 
   local tex = lg.newCanvas(80, 30)
   tex:renderTo(function()
