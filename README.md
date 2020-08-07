@@ -76,7 +76,6 @@ end
 * MR.model.new_cylinder(radius, height, segments)
 * MR.model.new_sphere(radius_x, radius_y, radius_z, segments)
 * Model:set_texture(texture): image or canvas
-* Model:apply_camera(camera_instance): the camera must initialized projection and 
 * Model:set_opts(opts)
   * write_depth = true,
   * face_culling = 'back', -- 'back', 'front', 'none'
@@ -84,10 +83,12 @@ end
   * specular_strength = 0.5,
   * specular_shininess = 16,
 
+
 ### Renderer
 
-* MR.renderer.new()
-* MR.renderer:render(scene):
+* MR.renderer.new() return a new instance
+* renderer:apply_camera(camera_instance): the camera must initialized projection and 
+* renderer:render(scene):
 
 ```
   renderer:render({ model = {
