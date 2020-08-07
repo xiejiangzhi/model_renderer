@@ -8,7 +8,6 @@ varying vec3 shadowPos;
 #ifdef VERTEX
 uniform mat4 projection_mat;
 uniform mat4 view_mat;
-uniform mat4 model_mat;
 
 uniform mat4 light_projection_mat;
 uniform mat4 light_view_mat;
