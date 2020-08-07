@@ -105,7 +105,7 @@ function M:unproject(screen_x, screen_y, viewport, plane)
     cache.inverted_proj_view:invert(cache.proj_view)
   end
 
-  local point = Cpml.vec3(screen_x, viewport[4] - screen_y, 0)
+  local point = Cpml.vec3(screen_x, screen_y, 0)
   local wp1 = private.unproject(point, cache.inverted_proj_view, viewport)
   point.z = 1
   local wp2 = private.unproject(point, cache.inverted_proj_view, viewport)
@@ -140,11 +140,11 @@ function private.project(vec3, proj_view, viewport)
 	position[1] = position[1] * viewport[3] + viewport[1]
 	position[2] = position[2] * viewport[4] + viewport[2]
 
-	return vec3(position[1], position[2], position[3])
+	return vec3(position[1], viewport[4] - position[2], position[3])
 end
 
 function private.unproject(vec3, inverted_proj_view, viewport)
-	local position = { vec3.x, vec3.y, vec3.z, 1 }
+	local position = { vec3.x, viewport[4] - vec3.y, vec3.z, 1 }
 
 	position[1] = (position[1] - viewport[1]) / viewport[3]
 	position[2] = (position[2] - viewport[2]) / viewport[4]

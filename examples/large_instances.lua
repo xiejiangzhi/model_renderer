@@ -159,10 +159,9 @@ function love.draw()
   end
 
   local viewport = { 0, 0, w, h }
-  local test_x, test_y = w / 2 - 100, h / 2 - 100
-  local ix, iy = camera:project(camera.focus, viewport):unpack()
-
-  local p, dist = camera:unproject(test_x, test_y, viewport)
+  local ox, oy = -300, -300
+  local ix, iy = camera:project(camera.focus + Cpml.vec3(ox, 0, oy), viewport):unpack()
+  local p, dist = camera:unproject(ix, iy, viewport)
 
   local str = ''
   if p then
@@ -183,7 +182,7 @@ function love.draw()
   }})
 
   lg.circle('line', ix, iy, 10)
-  lg.circle('line', test_x, test_y, 10)
+  lg.circle('line', w / 2, h / 2, 5)
 
   private.print_debug_info(str)
 end
