@@ -1,7 +1,8 @@
 Simple 3D Model Renderer
 ========================
 
-A simple 3D model renderer for Love2D 11.3. Support simple lighting.
+A simple 3D scene renderer for Love2D 11.3. Support simple lighting.
+Its goal is only to render 3d models or scenes. 
 
 ## Example
 
@@ -11,6 +12,7 @@ A simple 3D model renderer for Love2D 11.3. Support simple lighting.
 ## Installation
 
 Copy `src` to your project.
+
 Copy [CPML](https://github.com/excessive/cpml) to your project. And make sure able to `require 'cpml'`
 
 
