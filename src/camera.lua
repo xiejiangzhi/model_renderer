@@ -3,6 +3,8 @@ M.__index = M
 
 local private = {}
 
+local code_dir = (...):gsub('.[^%.]+$', '')
+local file_dir = code_dir:gsub('%.', '/')
 local Cpml = require 'cpml'
 local Vec3 = Cpml.vec3
 local Mat4 = Cpml.mat4
@@ -26,6 +28,8 @@ function M:init()
   self.view = Mat4.new()
 
   self.cache = {}
+
+  self.shader_2d = love.graphics.newShader(file_dir..'/shader/2d.glsl')
 end
 
 function M:perspective(fovy, aspect, near, far)
@@ -112,6 +116,29 @@ function M:unproject(screen_x, screen_y, viewport, plane)
   if not plane then plane = default_unproject_plane end
 
   return Cpml.intersect.ray_plane({ position = wp1, direction = wp2 - wp1 }, plane)
+end
+
+-- plane_transform: a matrix to transform the 2d plane
+function M:attach(plane_transform)
+  local cache = self.cache
+  if not cache.proj_view then
+    cache.proj_view = Mat4()
+    Mat4.mul(cache.proj_view, self.projection, self.view)
+  end
+
+  if not plane_transform then
+    plane_transform = Mat4.identity()
+    plane_transform:rotate(plane_transform, math.pi * 0.5, Vec3.unit_x)
+  end
+  local tfp = Mat4.new()
+  tfp:mul(cache.proj_view, plane_transform)
+  self.shader_2d:send('tfp', 'column', tfp)
+
+  love.graphics.setShader(self.shader_2d)
+end
+
+function M:detach()
+  love.graphics.setShader()
 end
 
 ----------------------

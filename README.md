@@ -4,6 +4,14 @@ Simple 3D Model Renderer
 A simple 3D scene renderer for Love2D 11.3. Support simple lighting.
 Its goal is only to render 3d models or scenes. 
 
+## Features
+
+* Create model from `.obj` model file
+* Create basic model: `plane`, `cycle`, `box`, `cylinder`, `sphere`.
+* `perspective` and `orthogonal` camera.
+* Project Love2D drawing to 3D world.
+* Simple render scene with light and shadow.
+
 ## Example
 
 ![Example Image](./example.png)
@@ -67,6 +75,8 @@ function love.draw()
   scene:clean()
 end
 ```
+
+See examples folder for more.
 
 ## Functions
 
@@ -139,7 +149,8 @@ It is optional, you can also manually set all camera attributes for renderer.
 * camera:look_at(x, y, z, rx, ry, rz) look at the position use the specified angle and update view
 * camera:project(point, viewport) project the world point to screen. point: Cpml.vec3 or { x = x, y = y, z = z }. viewport: { ox, oy, w, h }
 * camera:unproject(screen_x, screen_y, viewport, plane) unproject the screen point to world. viewport: { ox, oy, w, h }. plane: { position = vec3, normal = vec3 }, default is { position = vec3(0, 0, 0), normal = vec3(0, 1, 0) }
-
+* camera:attach(plane_transform) project love 2D drawing to 3D world. the `plane_transform` is a matrix to transform the 2d plane. plane_transform is optional, default just rotate `math.pi * 0.5` based on x(transform `y` of 2D to z of `3D`). The function will call `love.graphics.setShader`
+* camera:detach()
 
 ## TODO
 
