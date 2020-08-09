@@ -20,8 +20,8 @@ M.mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  diffuse_strength = 0.4,
-  specular_strength = 0.5,
+  diffuse_strength = 0.3,
+  specular_strength = 0.3,
   specular_shininess = 16,
 }
 M.default_opts.__index = M.default_opts

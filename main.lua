@@ -1,14 +1,32 @@
 local lfs = love.filesystem
 
 local kr_cb
+
+local fs = {}
+local idx
+for i, name in ipairs(love.filesystem.getDirectoryItems('examples')) do
+  if name:match('.lua$') then
+    fs[#fs + 1] = 'examples/'..name
+    if name == 'hello.lua' then
+      idx = #fs
+    end
+  end
+end
+table.sort(fs)
+if not idx then idx = 1 end
+
 kr_cb = function(key)
+  local v = tonumber(key)
   local path
-  if key == '1' then
-    path = 'examples/hello.lua'
-  elseif key == '2' then
-    path = 'examples/large_instances.lua'
-  elseif key == '3' then
-    path = 'examples/misc.lua'
+
+  if v then
+    path = fs[v]
+  elseif key == 'up' or key == 'left' then
+    idx = (idx - 2) % #fs + 1
+    path = fs[idx]
+  elseif key == 'down' or key == 'right' then
+    idx = idx % #fs + 1
+    path = fs[idx]
   end
 
   if path then
@@ -24,6 +42,7 @@ kr_cb = function(key)
     else
       love.keyreleased = kr_cb
     end
+    love.window.setTitle(path)
   end
 end
 love.keyreleased = kr_cb
@@ -31,4 +50,5 @@ love.keyreleased = kr_cb
 function love.draw()
 end
 
-lfs.load('examples/hello.lua')()
+kr_cb(tostring(idx))
+

@@ -18,7 +18,7 @@ local transform_mesh_format = {
 }
 
 local default_opts = {
-  ambient_color = { 0.1, 0.1, 0.1 },
+  ambient_color = { 0.4, 0.4, 0.4 },
   light_pos = { 1000, 2000, 1000 },
   light_color = { 1, 1, 1 },
 }
@@ -30,7 +30,7 @@ function M.new()
 end
 
 function M:init()
-  for k, v in ipairs(default_opts) do self[k] = v end
+  for k, v in pairs(default_opts) do self[k] = v end
 
   self.projection = nil
   self.view = nil
