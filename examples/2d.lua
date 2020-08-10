@@ -65,6 +65,21 @@ function love.draw()
 
   lg.draw(img, -100, 10, math.pi * 0.5, 0.2, 0.2)
 
+  -- Also support the Love translate APIs
+  lg.push()
+  lg.scale(0.25)
+  lg.translate(-100, -100)
+  lg.rotate(math.pi * 0.25)
+  lg.draw(img, -200, 10, math.pi * 0.5, 0.2, 0.2)
+
+  local tf = love.math.newTransform()
+  tf:scale(0.75, 1.5)
+  tf:translate(-200, -500)
+  tf:rotate(math.pi * 0.25)
+  lg.applyTransform(tf)
+  lg.draw(img, -200, -10, math.pi * 0.5, 0.2, 0.2)
+  lg.pop()
+
   lg.setColor(1, 0, 0, 0.5)
   lg.circle('fill', 0, 0, 20)
   lg.circle('line', 0, 0, 25)
