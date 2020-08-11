@@ -74,12 +74,13 @@ end
 -- zlen: optional, size of z axis, default equal to xlen
 function M.new_box(xlen, ylen, zlen)
   assert(xlen, "Invalid box size")
-  if not ylen then ylen = xlen end
-  if not zlen then zlen = xlen end
+  local hx = xlen / 2
+  local hy = (ylen or xlen) / 2
+  local hz = (zlen or xlen) / 2
 
   local vs = {
-    { 0, 0, 0, 0, 0 }, { xlen, 0, 0, 1, 0 }, { xlen, 0, zlen, 1, 1 }, { 0, 0, zlen, 0, 1 },
-    { 0, ylen, 0, 0, 0 }, { xlen, ylen, 0, 1, 0 }, { xlen, ylen, zlen, 1, 1 }, { 0, ylen, zlen, 0, 1 },
+    { -hx, -hy, -hz, 0, 0 }, { hx, -hy, -hz, 1, 0 }, { hx, -hy, hz, 1, 1 }, { -hx, -hy, hz, 0, 1 },
+    { -hx, hy, -hz, 0, 0 }, { hx, hy, -hz, 1, 0 }, { hx, hy, hz, 1, 1 }, { -hx, hy, hz, 0, 1 },
   }
 
   local fs = {

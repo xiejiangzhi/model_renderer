@@ -27,9 +27,10 @@ Copy [CPML](https://github.com/excessive/cpml) to your project. And make sure ab
 ## Usage
 
 ```
-local MR = require 'src'
+local MR = require 'model_renderer'
 
 -- Create model from obj file or basic shape
+local ground = MR.model.new_plane(2000, 2000)
 local model = MR.model.load('3d.obj')
 local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
@@ -60,14 +61,17 @@ function love.draw()
 
   -- Add some model to scene
   -- model, coord, angle, scale, color
-  scene:add_model(model, { 0, -10, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 })
+  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 })
+  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 })
   scene:add_model(model,
-    { math.sin(ts) * 100, -10, math.cos(ts) * 100 },
+    { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
     { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }
   )
-  scene:add_model(box, { -300, 0, 0 })
-  scene:add_model(sphere, { -300, 0, 300 })
-  scene:add_model(cylinder, { 300, 0, 300 })
+
+  local angle = { 0, ts % (math.pi * 2), 0 }
+  scene:add_model(box, { -300, 25, 0 }, angle)
+  scene:add_model(sphere, { -300, 100, 300 }, angle)
+  scene:add_model(cylinder, { 300, 0, 300 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
   -- Render and clean scene

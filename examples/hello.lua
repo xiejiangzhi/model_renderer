@@ -38,9 +38,11 @@ function love.draw()
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
     { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }
   )
-  scene:add_model(box, { -300, 0, 0 }, { 0, math.rad(45), 0 })
-  scene:add_model(sphere, { -300, 100, 300 })
-  scene:add_model(cylinder, { 300, 0, 300 })
+
+  local angle = { 0, ts % (math.pi * 2), 0 }
+  scene:add_model(box, { -300, 25, 0 }, angle)
+  scene:add_model(sphere, { -300, 100, 300 }, angle)
+  scene:add_model(cylinder, { 300, 0, 300 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
   -- Render and clean scene
