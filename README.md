@@ -42,8 +42,8 @@ function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
   renderer.light_pos = { 1000, 2000, 1000 }
-  renderer.light_color = { 1, 1, 1 }
-  renderer.ambient_color = { 0.6, 0.6, 0.6 }
+  renderer.light_color = { 1000000, 1000000, 1000000 }
+  renderer.ambient_color = { 0.3, 0.3, 0.3 }
   scene = MR.scene.new()
   camera = MR.camera.new()
 end
@@ -61,11 +61,11 @@ function love.draw()
 
   -- Add some model to scene
   -- model, coord, angle, scale, color
-  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 })
-  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 })
+  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
   scene:add_model(model,
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
-    { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }
+    { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }, { 0.5, 0.5 }
   )
 
   local angle = { 0, ts % (math.pi * 2), 0 }
@@ -100,6 +100,7 @@ See examples folder for more.
   * diffuse_strength = 0.4,
   * specular_strength = 0.5,
   * specular_shininess = 16,
+* Model:set_instances(transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render
 
 
 ### Renderer
@@ -109,11 +110,7 @@ See examples folder for more.
 * renderer:render(scene_desc):
 
 ```
-  renderer:render({ model = {
-    { model1, { { x, y, z, rx, ry, rz, sx, sy, sz, r, g, b, a }, transfrom2, ... } } ,
-    model_conf2,
-    ...
-  } })
+renderer:render({ model = { model1, model2, ... } })
 ```
 
 **Attributes**
@@ -131,15 +128,16 @@ See examples folder for more.
 It is optional, you can also manually build scene description for renderer.
 
 * MR.scene.new() return scene instance
-* scene:add_model(model, coord, angle, scale, color): add a model to scene. Coord is required, other is optional
+* scene:add_model(model, coord, angle, scale, albedo, physics): add a model to scene. Coord is required, other is optional
 
   * coord: { x, y, z } or { x = x, y = y, z = z }
   * angle: { x, y, z } or { x = x, y = y, z = z }, defualt { 0, 0, 0 }
   * scale: { x, y, z } or { x = x, y = y, z = z }, default { 1, 1, 1 }
-  * color: { r, g, b, a } or { r = r, g = g, b = b, a = a }, alpha is optional, defualt is { 1, 1, 1, 1 }
+  * albedo: { r, g, b, a } or { r = r, g = g, b = b, a = a }, now alpha is unused.
+  * physics: { roughness, metallic } or { roughness = 0.5, metallic = 0.5 }. value 0.0-1.0
 
 * scene:clean(): reset scene, remove all models from scene.
-* scene:build(): build scene for renderer. `renderer:render(scene:build())`
+* scene:build(): build scene for renderer. `renderer:render(scene:build())`. Automatically apply all transforms to models by `model:set_instances`
 
 
 ### Camera

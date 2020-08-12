@@ -18,9 +18,9 @@ local transform_mesh_format = {
 }
 
 local default_opts = {
-  ambient_color = { 0.4, 0.4, 0.4 },
+  ambient_color = { 0.3, 0.3, 0.3 },
   light_pos = { 1000, 2000, 1000 },
-  light_color = { 1, 1, 1 },
+  light_color = { 3000, 3000, 3000 },
 }
 
 function M.new()
@@ -43,7 +43,7 @@ function M:init()
   local w, h = unpack(self.shadow_resolution)
   self.shadow_depth_map = private.new_depth_map(w, h, 'less')
 
-  self.render_shader = lg.newShader(file_dir..'/shader/render.glsl')
+  self.render_shader = lg.newShader(file_dir..'/shader/pbr.glsl', file_dir..'/shader/vertex.glsl')
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
 end
 
@@ -55,22 +55,10 @@ function M:apply_camera(camera)
 end
 
 -- {
---  model = {
---    { model, transforms }
---    ...
---  }
+--  model = { m1, m2, m3 }
 -- }
 function M:render(scene)
-  for i, desc in ipairs(scene.model) do
-    private.attach_transforms(desc[1].mesh, desc[2])
-  end
-
   if self.render_shadow then self:build_shadow_map(scene) end
-
-  -- self.shadow_depth_map:setDepthSampleMode()
-  -- lg.draw(self.shadow_depth_map)
-  -- self.shadow_depth_map:setDepthSampleMode('less')
-
   self:render_scene(scene)
 end
 
@@ -100,12 +88,11 @@ function M:build_shadow_map(scene)
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
 
-  for i, desc in ipairs(scene.model) do
-    local model, tfs = unpack(desc)
+  for i, model in ipairs(scene.model) do
     local mesh = model.mesh
     local tex = mesh:getTexture()
     if tex then shadow_shader:send("MainTex", tex) end
-    lg.drawInstanced(mesh, #tfs)
+    lg.drawInstanced(mesh, model.total_instances)
   end
 
 	lg.setMeshCullMode('none')
@@ -125,32 +112,29 @@ function M:render_scene(scene)
 	render_shader:send("light_pos", self.light_pos)
 	render_shader:send("light_color", self.light_color)
 	render_shader:send("ambient_color", self.ambient_color)
-	if self.camera_pos then render_shader:send("camera_pos", self.camera_pos) end
+	render_shader:send("camera_pos", self.camera_pos)
 
 	render_shader:send("shadow_depth_map", self.shadow_depth_map)
 
-  for i, desc in ipairs(scene.model) do
-    self:render_model(desc[1], desc[2])
+  for i, model in ipairs(scene.model) do
+    self:render_model(model)
   end
 
 	lg.setShader(old_shader)
 end
 
-function M:render_model(model, model_transforms)
+function M:render_model(model)
   local model_opts = model.options
-  local render_shader = self.render_shader
+  -- local render_shader = self.render_shader
 
 	lg.setDepthMode("less", model_opts.write_depth)
 	lg.setMeshCullMode(model_opts.face_culling)
 
-	render_shader:send("diffuse_strength", model_opts.diffuse_strength)
+	-- render_shader:send("model_roughness", model_opts.roughness)
+  -- render_shader:send("model_metallic", model_opts.metallic)
+  -- render_shader:send("model_albedo", model_opts.albedo)
 
-  if self.camera_pos then
-    render_shader:send("specular_strength", model_opts.specular_strength)
-    render_shader:send("specular_shininess", model_opts.specular_shininess)
-  end
-
-  lg.drawInstanced(model.mesh, #model_transforms)
+  lg.drawInstanced(model.mesh, model.total_instances)
 
 	lg.setMeshCullMode('none')
   lg.setDepthMode()

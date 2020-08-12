@@ -17,12 +17,20 @@ M.mesh_format = {
   { 'VertexNormal', 'float', 3 },
 }
 
+M.transform_mesh_format = {
+  { 'ModelPos', 'float', 3 },
+  { 'ModelAngle', 'float', 3 },
+  { 'ModelScale', 'float', 3 },
+  { 'ModelAlbedo', 'byte', 4 },
+  { 'ModelPhysics', 'byte', 4 },
+}
+
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  diffuse_strength = 0.3,
-  specular_strength = 0.3,
-  specular_shininess = 16,
+  -- albedo = { 0.7, 0.7, 0.7 },
+  -- roughness = 0.3,
+  -- metallic = 0.3,
 }
 M.default_opts.__index = M.default_opts
 
@@ -192,6 +200,23 @@ end
 
 function M:set_texture(tex)
   self.mesh:setTexture(tex)
+end
+
+function M:set_instances(transforms)
+  local tfs_mesh = self.instances_mesh
+  if self.instances_mesh and self.total_instances >= #transforms then
+    tfs_mesh:setVertices(transforms)
+  else
+    tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, 'dynamic')
+    self.mesh:attachAttribute('ModelPos', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelAngle', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelScale', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelAlbedo', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelPhysics', tfs_mesh, 'perinstance')
+    self.instances_mesh = tfs_mesh
+  end
+
+  self.total_instances = #transforms
 end
 
 -----------------------

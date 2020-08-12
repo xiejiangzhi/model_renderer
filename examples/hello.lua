@@ -13,8 +13,8 @@ function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
   renderer.light_pos = { 1000, 2000, 1000 }
-  renderer.light_color = { 1, 1, 1 }
-  renderer.ambient_color = { 0.6, 0.6, 0.6 }
+  renderer.light_color = { 1000000, 1000000, 1000000 }
+  renderer.ambient_color = { 0.3, 0.3, 0.3 }
   scene = MR.scene.new()
   camera = MR.camera.new()
 end
@@ -32,11 +32,11 @@ function love.draw()
 
   -- Add some model to scene
   -- model, coord, angle, scale, color
-  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 })
-  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 })
+  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
   scene:add_model(model,
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
-    { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }
+    { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }, { 0.5, 0.5 }
   )
 
   local angle = { 0, ts % (math.pi * 2), 0 }

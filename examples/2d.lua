@@ -22,6 +22,11 @@ function love.load()
   renderer:apply_camera(camera)
 
   img = lg.newImage('example.png')
+  model:set_instances({
+    { 0, 0, 0, 0, 0, 0, 1, 1, 1 },
+    { hw / 2, 0, hh / 2, 0, 0, 0, 1, 1, 1 },
+    { hw, 0, hh, 0, 0, 0, 1, 1, 1 },
+  })
 end
 
 function love.update(dt)
@@ -95,11 +100,5 @@ function love.draw()
   lg.setColor(1, 1, 1)
   camera:detach()
 
-  renderer:render({ model = {
-    { model, {
-      { 0, 0, 0, 0, 0, 0, 1, 1, 1 },
-      { hw / 2, 0, hh / 2, 0, 0, 0, 1, 1, 1 },
-      { hw, 0, hh, 0, 0, 0, 1, 1, 1 },
-    } }
-  }})
+  renderer:render({ model = { model } })
 end

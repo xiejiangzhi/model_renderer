@@ -1,8 +1,10 @@
 local M = {}
 M.__index = M
 
-local ARR0 = { 0, 0, 0, 0 }
-local ARR1 = { 1, 1, 1, 1 }
+local default_angle = { 0, 0, 0 }
+local default_scale = { 1, 1, 1 }
+local default_albedo = { 0.96, 0.96, 0.97 }
+local default_physics = { roughness = 0.5, metallic = 0.7 }
 
 function M.new(...)
   local obj = setmetatable({}, M)
@@ -18,26 +20,29 @@ end
 --  coord: { x, y, z } or { x = x, y = y, z = z }, required
 --  angle: { x, y, z } or { x = x, y = y, z = z }, optional, default { 0, 0, 0 }
 --  scale: { x, y, z } or { x = x, y = y, z = z } or number, optional, default { 1, 1, 1 }
---  color: { r, g, b, a } or { r == r, g = g, b = b, a = a }, optional, default { 1, 1, 1, 1 }
-function M:add_model(model, coord, angle, scale, color)
+--  albedo: { r, g, b, a } or { r == r, g = g, b = b, a = a }
+--  physics: { roughness, metallic } or { metallic == mv, roughness = rv }, 0.0-1.0
+function M:add_model(model, coord, angle, scale, albedo, physics)
   assert(coord, "Coord cannot be nil")
 
   local tfs = self.model[model]
   if not tfs then tfs = {}; self.model[model] = tfs end
 
-  if not angle then angle = ARR0 end
+  if not angle then angle = default_angle end
   if not scale then
-    scale = ARR1
+    scale = default_scale
   elseif type(scale) == 'number' then
     scale = { scale, scale, scale }
   end
-  if not color then color = ARR1 end
+  if not albedo then albedo = default_albedo end
+  if not physics then physics = default_physics end
 
   table.insert(tfs, {
     coord[1] or coord.x, coord[2] or coord.y, coord[3] or coord.z,
     angle[1] or angle.x, angle[2] or angle.y, angle[3] or angle.z,
     scale[1] or scale.x, scale[2] or scale.y, scale[3] or scale.z,
-    color[1] or color.r, color[2] or color.g, color[3] or color.b, color[4] or color.a or 1
+    albedo[1] or albedo.r, albedo[2] or albedo.g, albedo[3] or albedo.b, albedo[4] or albedo.a,
+    physics[1] or physics.roughness, physics[2] or physics.metallic
   })
 end
 
@@ -45,7 +50,8 @@ function M:build()
   local model = {}
 
   for m, tfs in pairs(self.model) do
-    table.insert(model, { m, tfs })
+    m:set_instances(tfs)
+    table.insert(model, m)
   end
 
   return {

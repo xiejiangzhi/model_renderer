@@ -9,8 +9,8 @@ local lkb = love.keyboard
 local move_speed = 200
 local rotate_speed = math.pi
 
-local camera_pos = Cpml.vec3(0, 1000, 0)
-local camera_angle = Cpml.vec3(math.rad(30), 0, 0)
+local camera_pos = Cpml.vec3(0, 300, 600)
+local camera_angle = Cpml.vec3(math.pi * 0.5, 0, 0)
 local view_scale = 1
 local eye_offset = Cpml.vec3(0, 1000, 0)
 
@@ -23,8 +23,7 @@ local near, far = 1, 3000
 local camera_dist = math.sqrt(far^2 / 2)
 local fov = 70
 
-local model = MR.model.load('box.obj')
-local model2 = MR.model.load('3d.obj')
+local scene = MR.scene.new()
 local ground = MR.model.new_plane(10000, 10000)
 
 local ts = 0
@@ -32,15 +31,15 @@ local pause = false
 
 local renderer
 local camera = MR.camera.new()
-local scene = MR.scene.new()
 
-local cylinder = MR.model.new_cylinder(10, 3000)
+local m1 = MR.model.new_sphere(20, 20, 20, 70)
+local m2 = MR.model.new_box(20)
 
 function love.load()
   renderer = MR.renderer.new()
   local r = renderer
-  r.light_pos = { 0, 3000, 0 }
-  r.light_color = { 1000000, 1000000, 1000000 }
+  r.light_pos = { 0, 300, 10000 }
+  r.light_color = { 10000000, 10000000, 10000000 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
 end
 
@@ -114,71 +113,36 @@ end
 function love.draw()
   local w, h = lg.getDimensions()
 
-  -- local hw, hh = w / 2 / view_scale, h / 2 / view_scale
-  -- camera:orthogonal(-hw, hw, hh, - hh, near, far)
   camera:perspective(fov, w / h, near, far)
-
   camera.sight_dist = camera_dist
-
-  -- based on camera
   camera:move_to(camera_pos.x, camera_pos.y, camera_pos.z, camera_angle:unpack())
-
-  -- based on target
-  -- camera:look_at(camera_pos.x, 0, camera_pos.z, camera_angle:unpack())
-
   renderer:apply_camera(camera)
-
-  scene:add_model(model,
-    { model_pos.x, model_pos.z, model_pos.y },
-    { model_angle.x, model_angle.y, model_angle.z },
-    { model_scale, model_scale, model_scale },
-    { 1, 1, 0, model_alpha }, { 0.2, 0.7 }
-  )
 
   lg.clear(0.5, 0.5, 0.5)
 
-  local rts = ts * 0.05
-  local cts = ts * 0.1
-  local sts = ts * 0.2
-  for i = 1, 10000 do
-    local n = i * 0.1
-    local size = 3 + math.sin(sts + n * 0.1) * 1
-    local dist = math.sqrt(i^2 / 2, 2)
+  local angle = love.timer.getTime() % (math.pi * 2)
 
-    scene:add_model(model,
-      { 500 + math.cos(rts + n) * i, 250 + math.sin(rts + dist) * 200, math.sin(rts + n) * i },
-      { math.sin(ts), math.cos(ts), 0 },
-      size,
-      { math.abs(math.sin(i + cts)), math.abs(math.cos(i + cts)), math.abs(math.sin(i * 2 + cts)), 1 },
-      { math.sin(i), math.cos(i) }
-    )
+  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  for i = 0, 1, 0.1 do
+    for j = 0, 1, 0.1 do
+      scene:add_model(m1,
+        { i * 500, 50 + j * 500, 0 },
+        { 0, angle, 0 }, nil,
+        { 0.97, 0.98, 0.98, 1 },
+        { i, j }
+      )
+      scene:add_model(m2,
+        { -i * 500 - 100, 50 + j * 500, 0 },
+        { 0, angle, 0 }, nil,
+        { 0.15, 0.15, 0.15, 1 },
+        { i, j }
+      )
+    end
   end
-
-  local viewport = { 0, 0, w, h }
-  local ox, oy = -300, -300
-  local ix, iy = camera:project(camera.focus + Cpml.vec3(ox, 0, oy), viewport):unpack()
-  local p, dist = camera:unproject(ix, iy, viewport)
-
-  local str = ''
-  if p then
-    str = str..str.format('\nray plane y=0: %.2f, %.2f, %.2f, dist: %.2f', p.x, p.y, p.z, dist)
-  else
-    str = '\nno ray result'
-  end
-
-  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 1, 1, 0, 1 }, { 1, 0 })
-  scene:add_model(cylinder, { camera.focus.x,  camera.focus.y, camera.focus.z })
-  if p then
-    scene:add_model(cylinder, { p.x, p.y, p.z }, nil, nil, { 0, 1, 0, 1 }, { 0.5, 0.5 })
-  end
-
   renderer:render(scene:build())
   scene:clean()
 
-  lg.circle('line', ix, iy, 10)
-  lg.circle('line', w / 2, h / 2, 5)
-
-  private.print_debug_info(str)
+  private.print_debug_info('')
 end
 
 function love.keyreleased(key)
