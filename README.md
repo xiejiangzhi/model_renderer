@@ -11,6 +11,7 @@ Its goal is only to render 3d models or scenes.
 * `perspective` and `orthogonal` camera.
 * Project Love2D drawing to 3D world.
 * Simple render scene with light and shadow.
+* Simple PBR
 
 ## Example
 
