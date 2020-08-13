@@ -4,7 +4,7 @@ M.__index = M
 local default_angle = { 0, 0, 0 }
 local default_scale = { 1, 1, 1 }
 local default_albedo = { 0.96, 0.96, 0.97 }
-local default_physics = { roughness = 0.5, metallic = 0.7 }
+local default_physics = { roughness = 0.5, metallic = 0.3 }
 
 function M.new(...)
   local obj = setmetatable({}, M)

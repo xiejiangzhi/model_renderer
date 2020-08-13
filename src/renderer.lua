@@ -37,6 +37,7 @@ function M:init()
   self.view_scale = 1
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
+  self.shadow_look_at = nil
   self.render_shadow = true
 
   self.shadow_resolution = { 1024, 1024 }
@@ -52,6 +53,12 @@ function M:apply_camera(camera)
   self.view = camera.view
   self.camera_pos = { camera.pos:unpack() }
   self.look_at = { camera.focus:unpack() }
+
+  local w, h = love.graphics.getDimensions()
+  local viewport = { 0, 0, w, h }
+  -- local angle = Lume.angle(self.camera_pos.x, self.camera_pos.z, self.look_at.x, self.look_at.z)
+  -- local ov = Lume.vector(angle, 2048)
+  self.shadow_start_at = { camera:unproject(w / 2, h, viewport):unpack() }
 end
 
 -- {
@@ -77,8 +84,12 @@ function M:build_shadow_map(scene)
   local lhw, lhh = tw * 2 / self.view_scale, th * 2 / self.view_scale
   local dist = (Vec3(unpack(self.light_pos)) - Vec3(unpack(self.look_at))):len()
   local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
+
+  local angle = math.atan2(self.look_at[3] - self.camera_pos[3], self.look_at[1] - self.camera_pos[1])
+  local ox, oy = math.cos(angle) * lhh, math.sin(angle) * lhh
+  local shadow_look_at = Vec3(self.shadow_start_at) + Vec3(ox, 0, oy)
   local view = Mat4()
-  view = view:look_at(view, Vec3(unpack(self.light_pos)), Vec3(unpack(self.look_at)), Vec3(0, 1, 0))
+  view = view:look_at(view, Vec3(unpack(self.light_pos)), shadow_look_at, Vec3(0, 1, 0))
 
 	shadow_shader:send("projection_mat", 'column', projection)
 	shadow_shader:send("view_mat", 'column', view)

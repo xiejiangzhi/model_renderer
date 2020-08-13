@@ -28,9 +28,6 @@ M.transform_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  -- albedo = { 0.7, 0.7, 0.7 },
-  -- roughness = 0.3,
-  -- metallic = 0.3,
 }
 M.default_opts.__index = M.default_opts
 
