@@ -7,6 +7,7 @@ local lkb = love.keyboard
 local model = MR.model.new_cylinder(10, 50)
 
 local renderer = MR.renderer.new()
+love.renderer = renderer
 local camera = MR.camera.new()
 
 local x, y = 0, 0

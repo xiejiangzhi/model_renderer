@@ -24,7 +24,6 @@ local camera_dist = math.sqrt(far^2 / 2)
 local fov = 70
 
 local model = MR.model.load('box.obj')
-local model2 = MR.model.load('3d.obj')
 local ground = MR.model.new_plane(10000, 10000)
 
 local ts = 0
@@ -38,6 +37,7 @@ local cylinder = MR.model.new_cylinder(10, 3000)
 
 function love.load()
   renderer = MR.renderer.new()
+  love.renderer = renderer
   local r = renderer
   r.light_pos = { 0, 3000, 0 }
   r.light_color = { 1000000, 1000000, 1000000 }

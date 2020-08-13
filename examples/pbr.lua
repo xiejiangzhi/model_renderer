@@ -35,12 +35,19 @@ local camera = MR.camera.new()
 local m1 = MR.model.new_sphere(20, 20, 20, 70)
 local m2 = MR.model.new_box(20)
 
+
+local renderer_opts = {
+  light_pos = { 0, 1000, 10000 },
+  light_color = { 10000000, 10000000, 10000000 },
+  ambient_color = { 0.03, 0.03, 0.03 },
+}
+
 function love.load()
   renderer = MR.renderer.new()
-  local r = renderer
-  r.light_pos = { 0, 300, 10000 }
-  r.light_color = { 10000000, 10000000, 10000000 }
-  r.ambient_color = { 0.03, 0.03, 0.03 }
+  for k, v in pairs(renderer_opts) do
+    renderer[k] = v
+  end
+  love.renderer = renderer
 end
 
 function love.update(dt)
@@ -154,6 +161,7 @@ end
 function private.print_debug_info(ext_str)
   lg.setColor(1, 1, 1)
   local str = ''
+  str = str..string.format('\nrender mode: %s', renderer.render_mode)
   str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera_pos:unpack())
   str = str..string.format('\ncamera angle: %.2f, %.2f, %.2f', camera_angle:unpack())
   str = str..string.format('\neye offset: %.2f, %.2f, %.2f', eye_offset:unpack())

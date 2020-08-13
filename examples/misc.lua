@@ -10,6 +10,7 @@ local pause = false
 local image_model = MR.model.new_plane(80, 30)
 
 local renderer = MR.renderer.new()
+love.renderer = renderer
 local scene = MR.scene.new()
 local ground = MR.model.new_plane(2000, 2000)
 local cylinder = MR.model.new_cylinder(100, 300)
@@ -20,7 +21,7 @@ function love.load()
   local r = renderer
   r.light_pos = { 1000, 2000, 1000 }
   r.light_color = { 0, 1000000, 1000000 }
-  r.ambient_color = { 0.03, 0.03, 0.03 }
+  r.ambient_color = { 0.1, 0.1, 0.1 }
 
   local tex = lg.newCanvas(80, 30)
   tex:renderTo(function()

@@ -54,27 +54,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-// ----------------------------------------------------------------------------
-
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-  vec4 tex_color = Texel(tex, texture_coords);
-
-  vec3 light = vec3(0);
-  vec3 normal = normalize(modelNormal);
-  vec3 light_dir = normalize(light_pos - fragPos);
-  vec3 view_dir = normalize(camera_pos - fragPos);
-
-  float roughness = fragPhysics.x;
-  float metallic = fragPhysics.y;
-  vec3 albedo = tex_color.rgb * tex_color.a * fragAlbedo.rgb;
-
-  float distance = length(light_pos - fragPos) * 0.1;
-  float attenuation = 1.0 / (distance * distance);
-  vec3 radiance = light_color * attenuation;
-
-  vec3 F0 = vec3(0.04); 
-  F0 = mix(F0, albedo, metallic);
-
+vec3 complute_light(
+  vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance, vec3 F0, vec3 albedo, float roughness, float metallic
+) {
   // Cook-Torrance BRDF
   vec3 half_way_dir = normalize(light_dir + view_dir);
   float NDF = DistributionGGX(normal, half_way_dir, roughness);   
@@ -100,13 +82,36 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   float NdotL = max(dot(normal, light_dir), 0.0);        
 
   // add to outgoing radiance Lo
-  light += (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
-   
+  return (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+}
+
+// ----------------------------------------------------------------------------
+
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+  vec4 tex_color = Texel(tex, texture_coords);
+
+  vec3 light = vec3(0);
+  vec3 normal = normalize(modelNormal);
+  vec3 light_dir = normalize(light_pos - fragPos);
+  vec3 view_dir = normalize(camera_pos - fragPos);
+
+  float roughness = fragPhysics.x;
+  float metallic = fragPhysics.y;
+  vec3 albedo = tex_color.rgb * tex_color.a * fragAlbedo.rgb;
+
+  float distance = length(light_pos - fragPos) * 0.1;
+  float attenuation = 1.0 / (distance * distance);
+  vec3 radiance = light_color * attenuation;
+
+  vec3 F0 = vec3(0.04); 
+  F0 = mix(F0, albedo, metallic);
+
+  light += complute_light(normal, light_dir, view_dir, radiance, F0, albedo, roughness, metallic);
+
   // shadow
   float shadow = 0;
   if (shadowPos.x >= 0 && shadowPos.x <= 1 && shadowPos.y >= 0 && shadowPos.y <= 1) {
-    vec3 shadow_bias = vec3(0, 0, -0.002);
-    /* shadow = Texel(shadow_depth_map, shadowPos + shadow_bias); */
+    vec3 shadow_bias = vec3(0, 0, -0.003);
 
     // PCF
     vec2 tex_size = 1.0 / textureSize(shadow_depth_map, 0);

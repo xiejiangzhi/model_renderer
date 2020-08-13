@@ -23,13 +23,15 @@ local default_opts = {
   light_color = { 3000, 3000, 3000 },
 }
 
+local render_modes = { pbr = true, phong = true }
+
 function M.new()
   local obj = setmetatable({}, M)
   obj:init()
   return obj
 end
 
-function M:init()
+function M:init(render_mode)
   for k, v in pairs(default_opts) do self[k] = v end
 
   self.projection = nil
@@ -37,14 +39,14 @@ function M:init()
   self.view_scale = 1
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
-  self.shadow_look_at = nil
+  -- self.shadow_look_at = nil
   self.render_shadow = true
 
   self.shadow_resolution = { 1024, 1024 }
   local w, h = unpack(self.shadow_resolution)
   self.shadow_depth_map = private.new_depth_map(w, h, 'less')
 
-  self.render_shader = lg.newShader(file_dir..'/shader/pbr.glsl', file_dir..'/shader/vertex.glsl')
+  self:set_render_mode(render_mode)
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
 end
 
@@ -69,6 +71,20 @@ function M:render(scene)
   self:render_scene(scene)
 end
 
+function M:set_render_mode(mode)
+  local glsl_path
+  if mode == nil then
+    mode = 'pbr'
+    glsl_path = 'pbr.glsl'
+  elseif render_modes[mode] then
+    glsl_path = mode..'.glsl'
+  else
+    error("Invalid render mode "..mode)
+  end
+  self.render_shader = lg.newShader(file_dir..'/shader/'..glsl_path, file_dir..'/shader/vertex.glsl')
+  self.render_mode = mode
+end
+
 function M:build_shadow_map(scene)
   local old_shader = lg.getShader()
   local old_canvas = lg.getCanvas()
@@ -82,12 +98,13 @@ function M:build_shadow_map(scene)
 
   local tw, th = love.graphics.getDimensions()
   local lhw, lhh = tw * 2 / self.view_scale, th * 2 / self.view_scale
-  local dist = (Vec3(unpack(self.light_pos)) - Vec3(unpack(self.look_at))):len()
-  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -dist, dist * 1.5)
 
   local angle = math.atan2(self.look_at[3] - self.camera_pos[3], self.look_at[1] - self.camera_pos[1])
   local ox, oy = math.cos(angle) * lhh, math.sin(angle) * lhh
   local shadow_look_at = Vec3(self.shadow_start_at) + Vec3(ox, 0, oy)
+  local dist = (Vec3(unpack(self.light_pos)) - shadow_look_at):len()
+
+  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, 0, dist * 1.5)
   local view = Mat4()
   view = view:look_at(view, Vec3(unpack(self.light_pos)), shadow_look_at, Vec3(0, 1, 0))
 
@@ -162,7 +179,7 @@ function private.attach_transforms(model_mesh, model_transforms)
 end
 
 function private.new_depth_map(w, h, mode)
-  local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth24', readable = true })
+  local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth32f', readable = true })
   canvas:setDepthSampleMode(mode)
   return canvas
 end

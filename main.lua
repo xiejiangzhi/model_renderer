@@ -27,6 +27,13 @@ kr_cb = function(key)
   elseif key == 'down' or key == 'right' then
     idx = idx % #fs + 1
     path = fs[idx]
+  elseif key == 'tab' and love.renderer then
+    local r = love.renderer
+    if r.render_mode == 'pbr' then
+      r:set_render_mode('phong')
+    else
+      r:set_render_mode('pbr')
+    end
   end
 
   if path then
