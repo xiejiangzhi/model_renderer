@@ -101,7 +101,7 @@ See examples folder for more.
   * diffuse_strength = 0.4,
   * specular_strength = 0.5,
   * specular_shininess = 16,
-* Model:set_instances(transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render
+* Model:set_instances(transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #transforms) a mesh to save all instances data and attach to the model.
 
 
 ### Renderer
