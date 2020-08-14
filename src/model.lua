@@ -81,11 +81,11 @@ end
 function M.new_box(xlen, ylen, zlen)
   assert(xlen, "Invalid box size")
   local hx = xlen / 2
-  local hy = (ylen or xlen) / 2
+  local hy = ylen or xlen
   local hz = (zlen or xlen) / 2
 
   local vs = {
-    { -hx, -hy, -hz, 0, 0 }, { hx, -hy, -hz, 1, 0 }, { hx, -hy, hz, 1, 1 }, { -hx, -hy, hz, 0, 1 },
+    { -hx, 0, -hz, 0, 0 }, { hx, 0, -hz, 1, 0 }, { hx, 0, hz, 1, 1 }, { -hx, 0, hz, 0, 1 },
     { -hx, hy, -hz, 0, 0 }, { hx, hy, -hz, 1, 0 }, { hx, hy, hz, 1, 1 }, { -hx, hy, hz, 0, 1 },
   }
 
@@ -132,11 +132,11 @@ function M.new_sphere(rx, ry, rz, n)
 
   local pr = math.pi * 2 / n
   local hpr = pr * 0.5
-  local vs, fs = { {0, ry, 0 } }, {}
+  local vs, fs = { {0, ry * 2, 0 } }, {}
   local last_layer = nil
   for i = 1, n - 1 do
     local tvs = {}
-    local y = cos(i * hpr) * ry
+    local y = cos(i * hpr) * ry + ry
     for j = n, 1, - 1 do
       local s = sin(i * pr * 0.5)
       table.insert(tvs, {
@@ -151,7 +151,7 @@ function M.new_sphere(rx, ry, rz, n)
     last_layer = tvs
   end
 
-  private.link_vertices(vs, fs, {{ 0, -ry, 0 }}, #last_layer)
+  private.link_vertices(vs, fs, {{ 0, 0, 0 }}, #last_layer)
 
   -- local vs, fs = private.link_vertices(vs1, vs2)
   -- fs[#fs + 1] = tf

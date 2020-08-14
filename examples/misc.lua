@@ -67,7 +67,7 @@ function love.draw()
 
   scene:add_model(cylinder, { -300, 0, -200 })
   scene:add_model(sphere,
-    { -300, -10, 300 },
+    { -300, 100, 300 },
     { math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi },
     nil, nil, { 0.3, 0.9 }
   )
