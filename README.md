@@ -2,7 +2,7 @@ Simple 3D Model Renderer
 ========================
 
 A simple 3D scene renderer for Love2D 11.3. Support simple lighting.
-Its goal is only to render 3d models or scenes. 
+The goal of this project is to easily and quickly create and render 3D geometric scenes through code. On this basis, to support complex 3D model rendering.
 
 ## Features
 
@@ -47,6 +47,11 @@ function love.load()
   renderer.ambient_color = { 0.3, 0.3, 0.3 }
   scene = MR.scene.new()
   camera = MR.camera.new()
+
+  ground:set_opts({ instance_usage = 'static' })
+  ground:set_instances({
+    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.9, 0, 1, 1, 0 }
+  })
 end
 
 function love.draw()
@@ -61,8 +66,8 @@ function love.draw()
   local ts = love.timer.getTime()
 
   -- Add some model to scene
-  -- model, coord, angle, scale, color
-  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground) -- static model
+  -- dynamic model instances: coord, angle, scale, albedo, physics attributes { roughness, metallic }
   scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
   scene:add_model(model,
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
@@ -155,12 +160,16 @@ It is optional, you can also manually set all camera attributes for renderer.
 * camera:attach(plane_transform) project love 2D drawing to 3D world. the `plane_transform` is a matrix to transform the 2d plane. plane_transform is optional, default just rotate `math.pi * 0.5` based on x(transform `y` of 2D to z of `3D`). The function will call `love.graphics.setShader`
 * camera:detach()
 
+
 ## TODO
 
 * More support for model file(mtl, tex and more)
-* Better render shader
-* Better shadow
+* Support Normal, Albedo, Metallic, Roughness and AO texture map
+* Better light & shadow. more light sources
 * Build better mesh & normal for ball and cylinder 
+* More 3D geometry shapes
+* Deferred Shading
+* SSAO
 
 
 ## References

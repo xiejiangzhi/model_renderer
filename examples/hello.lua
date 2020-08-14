@@ -17,6 +17,11 @@ function love.load()
   renderer.ambient_color = { 0.3, 0.3, 0.3 }
   scene = MR.scene.new()
   camera = MR.camera.new()
+
+  ground:set_opts({ instance_usage = 'static' })
+  ground:set_instances({
+    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.9, 0, 1, 1, 0 }
+  })
 end
 
 function love.draw()
@@ -31,8 +36,8 @@ function love.draw()
   local ts = love.timer.getTime()
 
   -- Add some model to scene
-  -- model, coord, angle, scale, color
-  scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground) -- static model
+  -- dynamic model instances: coord, angle, scale, albedo, physics attributes { roughness, metallic }
   scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
   scene:add_model(model,
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
