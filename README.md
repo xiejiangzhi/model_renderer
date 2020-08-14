@@ -160,6 +160,7 @@ It is optional, you can also manually set all camera attributes for renderer.
 * More support for model file(mtl, tex and more)
 * Better render shader
 * Better shadow
+* Build better mesh & normal for ball and cylinder 
 
 
 ## References

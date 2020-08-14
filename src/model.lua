@@ -28,6 +28,7 @@ M.transform_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
+  instance_usage = 'dynamic'
 }
 M.default_opts.__index = M.default_opts
 
@@ -177,6 +178,7 @@ end
 -- optsions:
 --  write_depth:
 --  face_culling: 'back' or 'front' or 'none'
+--  instance_usage: see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
 function M:init(vertices, texture, opts)
   self.mesh = new_mesh(M.mesh_format, vertices, "triangles", 'static')
   self.options = setmetatable({}, M.default_opts)
@@ -204,7 +206,7 @@ function M:set_instances(transforms)
   if self.instances_mesh and self.total_instances >= #transforms then
     tfs_mesh:setVertices(transforms)
   else
-    tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, 'dynamic')
+    tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, self.options.instance_usage)
     self.mesh:attachAttribute('ModelPos', tfs_mesh, 'perinstance')
     self.mesh:attachAttribute('ModelAngle', tfs_mesh, 'perinstance')
     self.mesh:attachAttribute('ModelScale', tfs_mesh, 'perinstance')

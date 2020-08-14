@@ -60,7 +60,12 @@ function M:apply_camera(camera)
   local viewport = { 0, 0, w, h }
   -- local angle = Lume.angle(self.camera_pos.x, self.camera_pos.z, self.look_at.x, self.look_at.z)
   -- local ov = Lume.vector(angle, 2048)
-  self.shadow_start_at = { camera:unproject(w / 2, h, viewport):unpack() }
+  local p = camera:unproject(w / 2, h, viewport)
+  if p then
+    self.shadow_start_at = { p:unpack() }
+  else
+    self.shadow_start_at = { 0, 0, 0 }
+  end
 end
 
 -- {

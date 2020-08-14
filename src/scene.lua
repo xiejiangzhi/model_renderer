@@ -17,16 +17,15 @@ function M:init()
 end
 
 -- Params:
---  coord: { x, y, z } or { x = x, y = y, z = z }, required
+--  coord: { x, y, z } or { x = x, y = y, z = z }, optional. If not coord, will not try to attach instances.
 --  angle: { x, y, z } or { x = x, y = y, z = z }, optional, default { 0, 0, 0 }
 --  scale: { x, y, z } or { x = x, y = y, z = z } or number, optional, default { 1, 1, 1 }
 --  albedo: { r, g, b, a } or { r == r, g = g, b = b, a = a }
 --  physics: { roughness, metallic } or { metallic == mv, roughness = rv }, 0.0-1.0
 function M:add_model(model, coord, angle, scale, albedo, physics)
-  assert(coord, "Coord cannot be nil")
-
   local tfs = self.model[model]
   if not tfs then tfs = {}; self.model[model] = tfs end
+  if not coord then return end
 
   if not angle then angle = default_angle end
   if not scale then
@@ -38,24 +37,24 @@ function M:add_model(model, coord, angle, scale, albedo, physics)
   if not physics then physics = default_physics end
 
   table.insert(tfs, {
-    coord[1] or coord.x, coord[2] or coord.y, coord[3] or coord.z,
-    angle[1] or angle.x, angle[2] or angle.y, angle[3] or angle.z,
-    scale[1] or scale.x, scale[2] or scale.y, scale[3] or scale.z,
-    albedo[1] or albedo.r, albedo[2] or albedo.g, albedo[3] or albedo.b, albedo[4] or albedo.a,
-    physics[1] or physics.roughness, physics[2] or physics.metallic
+    coord.x or coord[1], coord.y or coord[2], coord.z or coord[3],
+    angle.x or angle[1], angle.y or angle[2], angle.z or angle[3],
+    scale.x or scale[1], scale.y or scale[2], scale.z or scale[3],
+    albedo.r or albedo[1], albedo.g or albedo[2], albedo.b or albedo[3], albedo.a or albedo[4],
+    physics.roughness or physics[1], physics.metallic or physics[2],
   })
 end
 
 function M:build()
-  local model = {}
+  local models = {}
 
   for m, tfs in pairs(self.model) do
-    m:set_instances(tfs)
-    table.insert(model, m)
+    if #tfs > 0 then m:set_instances(tfs) end
+    table.insert(models, m)
   end
 
   return {
-    model = model
+    model = models
   }
 end
 
