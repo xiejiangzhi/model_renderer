@@ -49,7 +49,7 @@ function M:move_to(x, y, z, rx, ry, rz)
   local p = self.pos
   p.x, p.y, p.z = x, y, z
   local r = self.rotation
-  r.x, r.y, r.z = x, y, z
+  r.x, r.y, r.z = rx, ry, rz
 
   self.offset = private.get_offset(self.sight_dist, rx, ry, rz)
   self.focus = p + self.offset
@@ -64,7 +64,7 @@ function M:look_at(x, y, z, rx, ry, rz)
   local f = self.focus
   f.x, f.y, f.z = x, y, z
   local r = self.rotation
-  r.x, r.y, r.z = x, y, z
+  r.x, r.y, r.z = rx, ry, rz
 
   self.offset = private.get_offset(self.sight_dist, rx, ry, rz)
   self.pos = f - self.offset

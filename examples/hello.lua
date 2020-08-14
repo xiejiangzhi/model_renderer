@@ -13,8 +13,8 @@ function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
   renderer.light_pos = { 1000, 2000, 1000 }
-  renderer.light_color = { 1000000, 1000000, 1000000 }
-  renderer.ambient_color = { 0.3, 0.3, 0.3 }
+  renderer.light_color = { 500000, 500000, 500000 }
+  renderer.ambient_color = { 0.05, 0.05, 0.05 }
   scene = MR.scene.new()
   camera = MR.camera.new()
 

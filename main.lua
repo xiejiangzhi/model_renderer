@@ -1,6 +1,5 @@
 local lfs = love.filesystem
-
-local kr_cb
+local Helper = require 'helper'
 
 local fs = {}
 local idx
@@ -15,6 +14,9 @@ end
 table.sort(fs)
 if not idx then idx = 1 end
 
+--------------------
+
+local kr_cb
 kr_cb = function(key)
   local v = tonumber(key)
   local path
@@ -27,28 +29,27 @@ kr_cb = function(key)
   elseif key == 'down' or key == 'right' then
     idx = idx % #fs + 1
     path = fs[idx]
-  elseif key == 'tab' and love.renderer then
-    local r = love.renderer
-    if r.render_mode == 'pbr' then
-      r:set_render_mode('phong')
-    else
-      r:set_render_mode('pbr')
-    end
   end
 
   if path then
+    love.update = nil
+    love.draw = nil
     love.keyreleased = nil
+    Helper.reset()
+
     lfs.load(path)()
     love.load()
-    local new_cb = love.keyreleased
-    if new_cb then
+    local new_kb_cb = love.keyreleased
+
+    if new_kb_cb then
       love.keyreleased = function(...)
         kr_cb(...)
-        new_cb(...)
+        new_kb_cb(...)
       end
     else
       love.keyreleased = kr_cb
     end
+
     love.window.setTitle(path)
   end
 end

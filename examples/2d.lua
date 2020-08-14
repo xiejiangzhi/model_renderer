@@ -1,5 +1,6 @@
 local MR = require 'src'
 local Cpml = require 'cpml'
+local Helper = require 'helper'
 
 local lg = love.graphics
 local lkb = love.keyboard
@@ -7,7 +8,6 @@ local lkb = love.keyboard
 local model = MR.model.new_cylinder(10, 50)
 
 local renderer = MR.renderer.new()
-love.renderer = renderer
 local camera = MR.camera.new()
 
 local x, y = 0, 0
@@ -16,7 +16,7 @@ local rx, ry = math.rad(30), 0
 local img
 
 function love.load()
-  local w, h = love.graphics.getDimensions()
+  local w, h = lg.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
   camera:orthogonal(-hw, hw, hh, -hh, -500, 2000)
   camera:look_at(0, 0, 0, math.rad(60), 0, 0)
@@ -31,6 +31,8 @@ function love.load()
 end
 
 function love.update(dt)
+  Helper.update(dt)
+
   local ov = 300 * dt
   local rv = math.pi * 0.5 * dt
   if lkb.isDown('a') then
@@ -54,7 +56,7 @@ function love.update(dt)
 end
 
 function love.draw()
-  local w, h = love.graphics.getDimensions()
+  local w, h = lg.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
 
   local transform_mat = Cpml.mat4.identity()
@@ -102,4 +104,6 @@ function love.draw()
   camera:detach()
 
   renderer:render({ model = { model } })
+
+  Helper.debug()
 end

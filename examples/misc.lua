@@ -1,16 +1,13 @@
 local MR = require 'src'
 local Cpml = require 'cpml'
+local Helper = require 'helper'
 
 local lg = love.graphics
 
 local model = MR.model.load('box.obj')
-local ts = 0
-local pause = false
-
 local image_model = MR.model.new_plane(80, 30)
 
 local renderer = MR.renderer.new()
-love.renderer = renderer
 local scene = MR.scene.new()
 local ground = MR.model.new_plane(2000, 2000)
 local cylinder = MR.model.new_cylinder(100, 300)
@@ -29,10 +26,12 @@ function love.load()
     lg.print('Hello World!', 0, 0)
   end)
   image_model:set_texture(tex)
+
+  Helper.bind(nil, renderer)
 end
 
 function love.update(dt)
-  if not pause then ts = ts + dt end
+  Helper.update(dt)
 end
 
 function love.draw()
@@ -53,6 +52,7 @@ function love.draw()
 
   lg.clear(0.5, 0.5, 0.5)
 
+  local ts = Helper.ts
   scene:add_model(ground, { -1000, 0, -1000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
   scene:add_model(model,
     { 0, 100, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }
@@ -85,10 +85,7 @@ function love.draw()
 
   renderer:render(scene:build())
   scene:clean()
+
+  Helper.debug()
 end
 
-function love.keyreleased(key)
-  if key == 'space' then
-    pause = not pause
-  end
-end
