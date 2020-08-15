@@ -156,14 +156,9 @@ end
 
 function M:render_model(model)
   local model_opts = model.options
-  -- local render_shader = self.render_shader
 
 	lg.setDepthMode("less", model_opts.write_depth)
 	lg.setMeshCullMode(model_opts.face_culling)
-
-	-- render_shader:send("model_roughness", model_opts.roughness)
-  -- render_shader:send("model_metallic", model_opts.metallic)
-  -- render_shader:send("model_albedo", model_opts.albedo)
 
   lg.drawInstanced(model.mesh, model.total_instances)
 

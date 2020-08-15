@@ -135,10 +135,12 @@ function M:attach(plane_transform)
   self.shader_2d:send('tfp', 'column', tfp)
 
   love.graphics.setShader(self.shader_2d)
+  love.graphics.setDepthMode("less", true)
 end
 
 function M:detach()
   love.graphics.setShader()
+  love.graphics.setDepthMode()
 end
 
 ----------------------

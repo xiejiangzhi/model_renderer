@@ -5,7 +5,8 @@ local Helper = require 'helper'
 local lg = love.graphics
 local lkb = love.keyboard
 
-local model = MR.model.new_cylinder(10, 50)
+local model = MR.model.new_cylinder(10, 100)
+local ground = MR.model.new_plane(2000, 2000)
 
 local renderer = MR.renderer.new()
 local camera = MR.camera.new()
@@ -27,6 +28,9 @@ function love.load()
     { 0, 0, 0, 0, 0, 0, 1, 1, 1 },
     { hw / 2, 0, hh / 2, 0, 0, 0, 1, 1, 1 },
     { hw, 0, hh, 0, 0, 0, 1, 1, 1 },
+  })
+  ground:set_instances({
+    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.90, 0, 1, 0.5, 0.2 }
   })
 end
 
@@ -62,8 +66,7 @@ function love.draw()
   local transform_mat = Cpml.mat4.identity()
   transform_mat:rotate(transform_mat, math.pi * 0.5, Cpml.vec3.unit_x)
   transform_mat:translate(transform_mat, Cpml.vec3(0, 10, 0))
-
-  lg.clear(0.6, 0.6, 0.6)
+  renderer:render({ model = { model, ground } })
 
   camera:attach(transform_mat)
 
@@ -102,8 +105,6 @@ function love.draw()
 
   lg.setColor(1, 1, 1)
   camera:detach()
-
-  renderer:render({ model = { model } })
 
   Helper.debug()
 end
