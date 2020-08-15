@@ -10,7 +10,7 @@ local renderer = MR.renderer.new()
 local camera = MR.camera.new()
 camera:move_to(0, 300, 600, math.pi * 0.5, 0, 0)
 
-local m1 = MR.model.new_sphere(20, 20, 20, 70)
+local m1 = MR.model.new_sphere(20)
 local m2 = MR.model.new_box(20)
 
 local renderer_opts = {

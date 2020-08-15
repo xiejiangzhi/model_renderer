@@ -166,7 +166,7 @@ It is optional, you can also manually set all camera attributes for renderer.
 * More support for model file(mtl, tex and more)
 * Support Normal, Albedo, Metallic, Roughness and AO texture map
 * Better light & shadow. more light sources
-* Build better mesh & normal for ball and cylinder 
+* Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
 * Deferred Shading
 * SSAO
