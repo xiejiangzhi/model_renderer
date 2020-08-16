@@ -31,7 +31,7 @@ M.transform_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  instance_usage = 'dynamic'
+  instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
 }
 M.default_opts.__index = M.default_opts
 
@@ -220,7 +220,7 @@ function M:set_texture(tex)
   self.mesh:setTexture(tex)
 end
 
--- transforms: { { coord = vec3, rotation = vec3, scale = vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
+-- transforms: { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
 --  coord is required, other is optionals
 function M:set_instances(transforms)
   local raw_tf = {}
@@ -242,7 +242,9 @@ function M:set_instances(transforms)
     else
       rx, ry, rz = unpack(rotation)
     end
-    if scale.x then
+    if type(scale) == 'number' then
+      sx, sy, sz = scale, scale, scale
+    elseif scale.x then
       sx, sy, sz = scale.x, scale.y, scale.z
     else
       sx, sy, sz = unpack(scale)

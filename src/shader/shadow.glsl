@@ -11,12 +11,9 @@ attribute vec3 ModelAngle;
 attribute vec3 ModelScale;
 
 mat3 rotate_mat(vec3 angle) {
-  float c1 = cos(angle.z);
-  float s1 = sin(angle.z);
-  float c2 = cos(angle.x);
-  float s2 = sin(angle.x);
-  float c3 = cos(angle.y);
-  float s3 = sin(angle.y);
+  float c1 = cos(angle.z), s1 = sin(angle.z);
+  float c2 = cos(angle.x), s2 = sin(angle.x);
+  float c3 = cos(angle.y), s3 = sin(angle.y);
 
   return mat3(
     c1 * c3 - s1 * s2 * s3, c3 * s1 + c1 * s2 * s3, -c2 * s3,

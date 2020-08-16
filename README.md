@@ -114,7 +114,7 @@ model:set_opts({
 })
 ```
 
-* Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
+* Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
 
 ```
 model:set_instances({
@@ -124,6 +124,9 @@ model:set_instances({
   { coord = { x, y, z }, rotation = { x = 1, y = 2, z = 3 }, albedo = { 0.5, 0.5, 0 } }, -- instance 4
   { coord = { x, y, z }, rotation = { 1, 2, 3 }, albedo = { r = 0.5, g = 0.5, b = 0 } }, -- instance 5, it's the same as instance 4
   { coord = { x, y, z }, albedo = { r = 0.5, g = 0.5, b = 0, a = 1 } }, -- for now, alpha is not well supported
+  { coord = { x, y, z }, scale = 2 }, -- instance 7
+  { coord = { x, y, z }, scale = { 2, 2, 2 } }, -- it's the same as instance 7
+  { coord = { x, y, z }, scale = { x = 2, y = 2, z = 2 } }, -- it's the same as instance 7
 })
 ```
 
