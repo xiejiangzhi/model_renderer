@@ -2,7 +2,9 @@ Simple 3D Model Renderer
 ========================
 
 A simple 3D scene renderer for Love2D 11.3. Support simple lighting.
+
 The goal of this project is to easily and quickly create and render 3D geometric scenes through code. On this basis, to support complex 3D model rendering.
+
 
 ## Features
 
@@ -12,6 +14,7 @@ The goal of this project is to easily and quickly create and render 3D geometric
 * Project Love2D drawing to 3D world.
 * Simple render scene with light and shadow.
 * Simple PBR
+
 
 ## Example
 
@@ -43,14 +46,14 @@ function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
   renderer.light_pos = { 1000, 2000, 1000 }
-  renderer.light_color = { 1000000, 1000000, 1000000 }
-  renderer.ambient_color = { 0.3, 0.3, 0.3 }
+  renderer.light_color = { 500000, 500000, 500000 }
+  renderer.ambient_color = { 0.05, 0.05, 0.05 }
   scene = MR.scene.new()
   camera = MR.camera.new()
 
   ground:set_opts({ instance_usage = 'static' })
   ground:set_instances({
-    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.9, 0, 1, 1, 0 }
+    { coord = { -1000, 0, -1000 }, albedo = { 0, 0.9, 0 }, physics = { roughness = 1, metallic = 0 } }
   })
 end
 
@@ -75,8 +78,8 @@ function love.draw()
   )
 
   local angle = { 0, ts % (math.pi * 2), 0 }
-  scene:add_model(box, { -300, 25, 0 }, angle)
-  scene:add_model(sphere, { -300, 100, 300 }, angle)
+  scene:add_model(box, { -300, 0, 0 }, angle)
+  scene:add_model(sphere, { -300, 0, 300 }, angle)
   scene:add_model(cylinder, { 300, 0, 300 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
@@ -106,7 +109,20 @@ See examples folder for more.
   * diffuse_strength = 0.4,
   * specular_strength = 0.5,
   * specular_shininess = 16,
-* Model:set_instances(transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #transforms) a mesh to save all instances data and attach to the model.
+* Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
+
+```
+model:set_instances({
+  { coord = { x, y, z } }, -- instance 1
+  { coord = { x = x, y = y, z = z }, physics = { roughness = 0.5, metallic = 0.2 } }, -- instance 2
+  { coord = Cpml.vec3(x, y, z), physics = { 0.5, 0.2 } }, -- instance 3, it's the same as instance 3
+  { coord = { x, y, z }, rotation = { x = 1, y = 2, z = 3 }, albedo = { 0.5, 0.5, 0 } }, -- instance 4
+  { coord = { x, y, z }, rotation = { 1, 2, 3 }, albedo = { r = 0.5, g = 0.5, b = 0 } }, -- instance 5, it's the same as instance 4
+  { coord = { x, y, z }, albedo = { r = 0.5, g = 0.5, b = 0, a = 1 } }, -- for now, alpha is not well supported
+})
+```
+
+* Model:set_raw_instances(raw_transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #transforms) a mesh to save all instances data and attach to the model.
 
 
 ### Renderer
