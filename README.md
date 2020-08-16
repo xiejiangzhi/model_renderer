@@ -95,7 +95,7 @@ See examples folder for more.
 
 ### Model
 
-* MR.model.new(vertices, texture, opts): new a custom model form vertices. vertex: { x, y, z, tex_x, tex_y, normal_x, normal_y, normal_z }
+* MR.model.new(vertices, texture, opts): new a custom model form vertices. vertex: { x, y, z, tex_x, tex_y, normal_x, normal_y, normal_z }. opts is the same as `model:set_opts`
 * MR.model.load(path): load a model from `.obj` file
 * MR.model.new_plane(width, height)
 * MR.model.new_circle(radius, segments)
@@ -103,12 +103,17 @@ See examples folder for more.
 * MR.model.new_cylinder(radius, height, segments)
 * MR.model.new_sphere(radius_x, radius_y, radius_z, segments)
 * Model:set_texture(texture): image or canvas
-* Model:set_opts(opts)
-  * write_depth = true,
-  * face_culling = 'back', -- 'back', 'front', 'none'
-  * diffuse_strength = 0.4,
-  * specular_strength = 0.5,
-  * specular_shininess = 16,
+* Model:set_opts(opts).
+
+```
+-- default value
+model:set_opts({
+  write_depth = true,
+  face_culling = 'back', -- 'back', 'front', 'none'
+  instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream.
+})
+```
+
 * Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
 
 ```
@@ -129,7 +134,7 @@ model:set_instances({
 
 * MR.renderer.new() return a new instance
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
-* renderer:render(scene_desc):
+* renderer:render(scene_desc)
 
 ```
 renderer:render({ model = { model1, model2, ... } })
