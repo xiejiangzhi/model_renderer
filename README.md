@@ -150,7 +150,7 @@ renderer:render({ model = { model1, model2, ... } })
 * renderer.view_scale: number, scale the shadow view size, default is 1
 * renderer.camera_pos: { x, y, z }, must set before render
 * renderer.look_at: { x, y, z }, must set before render
-* renderer.render_shadow: boolean
+* renderer.render_shadow: boolean, change it to enable/disable shadow.
 
 
 ### Scene

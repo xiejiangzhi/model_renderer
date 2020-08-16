@@ -23,7 +23,7 @@ local default_opts = {
   light_color = { 3000, 3000, 3000 },
 }
 
-local render_modes = { pbr = true, phong = true }
+local render_modes = { pbr = true, phong = true, pure3d = true }
 
 function M.new()
   local obj = setmetatable({}, M)
@@ -31,6 +31,7 @@ function M.new()
   return obj
 end
 
+-- render_mode: pbr is valid, others are currently only used for testing
 function M:init(render_mode)
   for k, v in pairs(default_opts) do self[k] = v end
 
@@ -39,12 +40,12 @@ function M:init(render_mode)
   self.view_scale = 1
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
-  -- self.shadow_look_at = nil
   self.render_shadow = true
 
   self.shadow_resolution = { 1024, 1024 }
   local w, h = unpack(self.shadow_resolution)
   self.shadow_depth_map = private.new_depth_map(w, h, 'less')
+  self.default_shadow_depth_map = private.new_depth_map(1, 1, 'less')
 
   self:set_render_mode(render_mode)
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
@@ -70,7 +71,7 @@ end
 --  model = { m1, m2, m3 }
 -- }
 function M:render(scene)
-  if self.render_shadow then self:build_shadow_map(scene) end
+  if self.render_shadow and self.render_mode ~= 'pure3d' then self:build_shadow_map(scene) end
   self:render_scene(scene)
 end
 
@@ -145,7 +146,13 @@ function M:render_scene(scene)
 	render_shader:send("ambient_color", self.ambient_color)
 	render_shader:send("camera_pos", self.camera_pos)
 
-	render_shader:send("shadow_depth_map", self.shadow_depth_map)
+  if render_shader:hasUniform('shadow_depth_map') then
+    if self.render_shadow then
+      render_shader:send("shadow_depth_map", self.shadow_depth_map)
+    else
+      render_shader:send("shadow_depth_map", self.default_shadow_depth_map)
+    end
+  end
 
   for i, model in ipairs(scene.model) do
     self:render_model(model)

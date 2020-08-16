@@ -88,9 +88,15 @@ function M.update(dt)
     if M.keyreleased('tab') then
       if renderer.render_mode == 'pbr' then
         renderer:set_render_mode('phong')
+      elseif renderer.render_mode == 'phong' then
+        renderer:set_render_mode('pure3d')
       else
         renderer:set_render_mode('pbr')
       end
+    end
+
+    if M.keyreleased('f1') then
+      renderer.render_shadow = not renderer.render_shadow
     end
   end
 end

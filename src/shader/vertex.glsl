@@ -47,7 +47,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   vec4 mpos = model_mat * vertex_position;
   vec4 worldPos = vec4(mpos.xyz / mpos.w + ModelPos, 1.0);
   fragPos = worldPos.xyz;
-  /* fragColor = ModelColor; */
   fragAlbedo = ModelAlbedo;
   fragPhysics = ModelPhysics;
 

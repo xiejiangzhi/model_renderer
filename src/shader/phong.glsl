@@ -45,7 +45,13 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   float metallic = fragPhysics.y;
   vec3 albedo = tex_color.rgb * tex_color.a * fragAlbedo.rgb;
 
-  light += complute_light(normal, light_dir, view_dir, normalize(light_color), albedo, roughness, metallic);
+  float distance = length(light_pos - fragPos) * 0.1;
+  float attenuation = 1.0 / (distance * distance);
+  vec3 radiance = light_color * attenuation;
+
+  light += complute_light(
+    normal, light_dir, view_dir, radiance / (radiance + vec3(1.0)), albedo, roughness, metallic
+  );
 
   // shadow
   float shadow = 0;
@@ -64,11 +70,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
   vec3 ambient = ambient_color * albedo * ao;
   vec3 tcolor = ambient + light * (1 - shadow);
-
-  // HDR tonemapping
-  tcolor = tcolor / (tcolor + vec3(1.0));
-  // gamma correct
-  tcolor = pow(tcolor, vec3(1.0/2.2)); 
 
   gl_FragDepth = (tex_color.a > 0) ? gl_FragCoord.z : 1;
   return vec4(tcolor, tex_color.a * fragAlbedo.a);
