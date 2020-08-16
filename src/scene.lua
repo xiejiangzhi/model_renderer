@@ -49,7 +49,7 @@ function M:build()
   local models = {}
 
   for m, tfs in pairs(self.model) do
-    if #tfs > 0 then m:set_instances(tfs) end
+    if #tfs > 0 then m:set_raw_instances(tfs) end
     table.insert(models, m)
   end
 

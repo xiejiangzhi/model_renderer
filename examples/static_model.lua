@@ -34,7 +34,7 @@ function love.load()
       0.3 + random() * 0.7, random(),
     })
   end
-  ground:set_instances(instances)
+  ground:set_raw_instances(instances)
 end
 
 function love.update(dt)

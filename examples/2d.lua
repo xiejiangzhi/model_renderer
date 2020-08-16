@@ -25,12 +25,12 @@ function love.load()
 
   img = lg.newImage('example.png')
   model:set_instances({
-    { 0, 0, 0, 0, 0, 0, 1, 1, 1 },
-    { hw / 2, 0, hh / 2, 0, 0, 0, 1, 1, 1 },
-    { hw, 0, hh, 0, 0, 0, 1, 1, 1 },
+    { coord = { 0, 0, 0 } },
+    { coord = { hw / 2, 0, hh / 2 } },
+    { coord = { hw, 0, hh } },
   })
   ground:set_instances({
-    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.90, 0, 1, 0.5, 0.2 }
+    { coord = { -1000, 0, -1000 }, albedo = { 0, 0.90, 0 }, physics = { 0.5, 0.2 } }
   })
 end
 

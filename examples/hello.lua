@@ -20,7 +20,7 @@ function love.load()
 
   ground:set_opts({ instance_usage = 'static' })
   ground:set_instances({
-    { -1000, 0, -1000, 0, 0, 0, 1, 1, 1, 0, 0.9, 0, 1, 1, 0 }
+    { coord = { -1000, 0, -1000 }, albedo = { 0, 0.9, 0 }, physics = { roughness = 1, metallic = 0 } }
   })
 end
 

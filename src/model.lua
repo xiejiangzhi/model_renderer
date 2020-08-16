@@ -35,6 +35,11 @@ M.default_opts = {
 }
 M.default_opts.__index = M.default_opts
 
+local default_rotation = { 0, 0, 0 }
+local default_scale = { 1, 1, 1 }
+local default_albedo = { 1, 1, 1, 1 }
+local default_physics = { 0.5, 0.2 }
+
 --------------------
 
 function M.new(...)
@@ -215,7 +220,58 @@ function M:set_texture(tex)
   self.mesh:setTexture(tex)
 end
 
+-- transforms: { { coord = vec3, rotation = vec3, scale = vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
+--  coord is required, other is optionals
 function M:set_instances(transforms)
+  local raw_tf = {}
+  for i, tf in ipairs(transforms) do
+    local x, y, z, rx, ry, rz, sx, sy, sz, ar, ag, ab, aa, pr, pm
+    local coord = tf.coord
+    local rotation = tf.rotation or default_rotation
+    local scale = tf.scale or default_scale
+    local albedo = tf.albedo or default_albedo
+    local physics = tf.physics or default_physics
+
+    if coord.x then
+      x, y, z = coord.x, coord.y, coord.z
+    else
+      x, y, z = unpack(coord)
+    end
+    if rotation.x then
+      rx, ry, rz = rotation.x, rotation.y, rotation.z
+    else
+      rx, ry, rz = unpack(rotation)
+    end
+    if scale.x then
+      sx, sy, sz = scale.x, scale.y, scale.z
+    else
+      sx, sy, sz = unpack(scale)
+    end
+    if albedo.r then
+      ar, ag, ab, aa = albedo.r, albedo.g, albedo.b, albedo.a
+    else
+      ar, ag, ab, aa = unpack(albedo)
+    end
+    if physics.roughness then
+      pr, pm = physics.roughness, physics.metallic
+    else
+      pr, pm = unpack(physics)
+    end
+
+    table.insert(raw_tf, {
+      x, y, z,
+      rx, ry, rz,
+      sx, sy, sz,
+      ar, ag, ab, aa or 1,
+      pr, pm
+    })
+  end
+
+  self:set_raw_instances(raw_tf)
+end
+
+-- transforms: { instance1_attrs, instance2_attrs, ... }
+function M:set_raw_instances(transforms)
   local tfs_mesh = self.instances_mesh
   if self.instances_mesh and self.total_instances >= #transforms then
     tfs_mesh:setVertices(transforms)
