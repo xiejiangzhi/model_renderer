@@ -8,6 +8,7 @@ local private = {}
 
 local dir = (...):gsub('.[^%.]+$', '')
 local ObjParser = require(dir..'.obj_parser')
+local Util = require(dir..'.util')
 
 local sin = math.sin
 local cos = math.cos
@@ -22,8 +23,9 @@ M.mesh_format = {
 
 M.transform_mesh_format = {
   { 'ModelPos', 'float', 3 },
-  { 'ModelAngle', 'float', 3 },
-  { 'ModelScale', 'float', 3 },
+  { 'ModelMatC1', 'float', 3 },
+  { 'ModelMatC2', 'float', 3 },
+  { 'ModelMatC3', 'float', 3 },
   { 'ModelAlbedo', 'byte', 4 },
   { 'ModelPhysics', 'byte', 4 },
 }
@@ -31,7 +33,7 @@ M.transform_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  instance_usage = 'dynamic'
+  instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
 }
 M.default_opts.__index = M.default_opts
 
@@ -220,7 +222,7 @@ function M:set_texture(tex)
   self.mesh:setTexture(tex)
 end
 
--- transforms: { { coord = vec3, rotation = vec3, scale = vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
+-- transforms: { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
 --  coord is required, other is optionals
 function M:set_instances(transforms)
   local raw_tf = {}
@@ -242,7 +244,9 @@ function M:set_instances(transforms)
     else
       rx, ry, rz = unpack(rotation)
     end
-    if scale.x then
+    if type(scale) == 'number' then
+      sx, sy, sz = scale, scale, scale
+    elseif scale.x then
       sx, sy, sz = scale.x, scale.y, scale.z
     else
       sx, sy, sz = unpack(scale)
@@ -258,10 +262,13 @@ function M:set_instances(transforms)
       pr, pm = unpack(physics)
     end
 
+    local tfm = Util.build_model_mat4(Vec3(rx, ry, rz), Vec3(sx, sy, sz))
+
     table.insert(raw_tf, {
       x, y, z,
-      rx, ry, rz,
-      sx, sy, sz,
+      tfm[1], tfm[2], tfm[3],
+      tfm[5], tfm[6], tfm[7],
+      tfm[9], tfm[10], tfm[11],
       ar, ag, ab, aa or 1,
       pr, pm
     })
@@ -278,8 +285,9 @@ function M:set_raw_instances(transforms)
   else
     tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, self.options.instance_usage)
     self.mesh:attachAttribute('ModelPos', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelAngle', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelScale', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelMatC1', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelMatC2', tfs_mesh, 'perinstance')
+    self.mesh:attachAttribute('ModelMatC3', tfs_mesh, 'perinstance')
     self.mesh:attachAttribute('ModelAlbedo', tfs_mesh, 'perinstance')
     self.mesh:attachAttribute('ModelPhysics', tfs_mesh, 'perinstance')
     self.instances_mesh = tfs_mesh

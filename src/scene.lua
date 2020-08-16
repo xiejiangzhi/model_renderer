@@ -1,6 +1,11 @@
 local M = {}
 M.__index = M
 
+local dir = (...):gsub('.[^%.]+$', '')
+local Util = require(dir..'.util')
+local Cpml = require 'cpml'
+local Vec3 = Cpml.vec3
+
 local default_angle = { 0, 0, 0 }
 local default_scale = { 1, 1, 1 }
 local default_albedo = { 0.96, 0.96, 0.97 }
@@ -36,10 +41,16 @@ function M:add_model(model, coord, angle, scale, albedo, physics)
   if not albedo then albedo = default_albedo end
   if not physics then physics = default_physics end
 
+  local tfm = Util.build_model_mat4(
+    Vec3(angle.x or angle[1], angle.y or angle[2], angle.z or angle[3]),
+    Vec3(scale.x or scale[1], scale.y or scale[2], scale.z or scale[3])
+  )
+
   table.insert(tfs, {
     coord.x or coord[1], coord.y or coord[2], coord.z or coord[3],
-    angle.x or angle[1], angle.y or angle[2], angle.z or angle[3],
-    scale.x or scale[1], scale.y or scale[2], scale.z or scale[3],
+    tfm[1], tfm[2], tfm[3],
+    tfm[5], tfm[6], tfm[7],
+    tfm[9], tfm[10], tfm[11],
     albedo.r or albedo[1], albedo.g or albedo[2], albedo.b or albedo[3], albedo.a or albedo[4],
     physics.roughness or physics[1], physics.metallic or physics[2],
   })

@@ -14,43 +14,21 @@ uniform mat4 light_view_mat;
 
 attribute vec3 VertexNormal;
 attribute vec3 ModelPos;
-attribute vec3 ModelAngle;
-attribute vec3 ModelScale;
+
+attribute vec3 ModelMatC1;
+attribute vec3 ModelMatC2;
+attribute vec3 ModelMatC3;
+
 attribute vec4 ModelAlbedo;
 attribute vec4 ModelPhysics;
 
-mat3 rotate_mat(vec3 angle) {
-  float c1 = cos(angle.z);
-  float s1 = sin(angle.z);
-  float c2 = cos(angle.x);
-  float s2 = sin(angle.x);
-  float c3 = cos(angle.y);
-  float s3 = sin(angle.y);
-
-  return mat3(
-    c1 * c3 - s1 * s2 * s3, c3 * s1 + c1 * s2 * s3, -c2 * s3,
-    -c2 * s1, c1 * c2, s2,
-    c1 * s3 + c3 * s1 * s2, s1 * s3 - c1 * c3 * s2, c2 * c3
-  );
-}
-
-mat4 transform_mat(vec3 angle, vec3 scale) {
-  mat3 m = rotate_mat(angle) * mat3(
-    scale.x, 0, 0,
-    0, scale.y, 0,
-    0, 0, scale.z
-  );
-  return mat4(m);
-}
-
 vec4 position(mat4 transform_projection, vec4 vertex_position) {
-  mat4 model_mat = transform_mat(ModelAngle, ModelScale);
-  modelNormal = mat3(transpose(inverse(model_mat))) * VertexNormal;
+  mat3 model_mat = mat3(ModelMatC1, ModelMatC2, ModelMatC3);
+  modelNormal = transpose(inverse(model_mat)) * VertexNormal;
 
-  vec4 mpos = model_mat * vertex_position;
+  vec4 mpos = mat4(model_mat) * vertex_position;
   vec4 worldPos = vec4(mpos.xyz / mpos.w + ModelPos, 1.0);
   fragPos = worldPos.xyz;
-  /* fragColor = ModelColor; */
   fragAlbedo = ModelAlbedo;
   fragPhysics = ModelPhysics;
 
