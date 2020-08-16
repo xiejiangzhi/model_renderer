@@ -192,7 +192,7 @@ It is optional, you can also manually set all camera attributes for renderer.
 * Better light & shadow. more light sources
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
-* Deferred Shading
+* Deferred Shading(Maybe)
 * SSAO
 
 
