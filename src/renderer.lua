@@ -10,13 +10,6 @@ local Vec3 = Cpml.vec3
 
 local lg = love.graphics
 
-local transform_mesh_format = {
-  { 'ModelPos', 'float', 3 },
-  { 'ModelAngle', 'float', 3 },
-  { 'ModelScale', 'float', 3 },
-  { 'ModelColor', 'byte', 4 },
-}
-
 local default_opts = {
   ambient_color = { 0.3, 0.3, 0.3 },
   light_pos = { 1000, 2000, 1000 },
@@ -174,14 +167,6 @@ function M:render_model(model)
 end
 
 ------------------
-
-function private.attach_transforms(model_mesh, model_transforms)
-  local tfs_mesh = lg.newMesh(transform_mesh_format, model_transforms, nil, 'static')
-  model_mesh:attachAttribute('ModelPos', tfs_mesh, 'perinstance')
-  model_mesh:attachAttribute('ModelAngle', tfs_mesh, 'perinstance')
-  model_mesh:attachAttribute('ModelScale', tfs_mesh, 'perinstance')
-  model_mesh:attachAttribute('ModelColor', tfs_mesh, 'perinstance')
-end
 
 function private.new_depth_map(w, h, mode)
   local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth32f', readable = true })
