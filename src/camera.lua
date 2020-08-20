@@ -24,6 +24,9 @@ function M:init()
   self.pos = Vec3(0, 800, 0)
   self.focus = Vec3(0, 0, 0)
 
+  self.near = 1
+  self.far = 1000
+
   self.projection = nil
   self.view = Mat4.new()
 
@@ -33,11 +36,17 @@ function M:init()
 end
 
 function M:perspective(fovy, aspect, near, far)
+  if not near then near = self.near end
+  if not far then far = self.far end
+  self.near, self.far = near, far
   self.projection = Mat4.from_perspective(fovy, aspect, near, far)
   self.cache = {}
 end
 
 function M:orthogonal(left, right, top, bottom, near, far)
+  if not near then near = self.near end
+  if not far then far = self.far end
+  self.near, self.far = near, far
   self.projection = Mat4.from_ortho(left, right, top, bottom, near, far)
   self.cache = {}
 end

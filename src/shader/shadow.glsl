@@ -2,8 +2,7 @@
 
 #ifdef VERTEX
 
-uniform mat4 projection_mat;
-uniform mat4 view_mat;
+uniform mat4 projection_view_mat;
 uniform mat4 model_mat;
 
 attribute vec3 ModelPos;
@@ -35,12 +34,13 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   mat4 model_mat = transform_mat(ModelAngle, ModelScale);
   vec4 pos = model_mat * vertex_position;
   pos = vec4((pos.xyz / pos.w) + ModelPos, 1);
-  return projection_mat * (view_mat * pos);
+  return projection_view_mat * pos;
 }
 #endif
 
 #ifdef PIXEL
 uniform Image MainTex;
+uniform vec3 sun_dir;
 
 void effect() {
   float a = Texel(MainTex, VaryingTexCoord.xy).a;

@@ -143,14 +143,27 @@ model:set_instances({
 renderer:render({ model = { model1, model2, ... } })
 ```
 
-**Attributes**
+**Camera Attributes**
 
 * renderer.projection: column major 4x4 matrices
 * renderer.view: column major 4x4 matrices
 * renderer.view_scale: number, scale the shadow view size, default is 1
 * renderer.camera_pos: { x, y, z }, must set before render
 * renderer.look_at: { x, y, z }, must set before render
+
+**Light & Shadow Attributes**
+
 * renderer.render_shadow: boolean, change it to enable/disable shadow.
+* renderer.light_pos: vec3
+* renderer.light_color: vec3. light radiance strength
+* renderer.sun_dir: vec3, sun direction, shadow is use this.
+* renderer.sun_color: vec3
+* renderer.ambient_color: vec3
+
+
+**Other Attributes**
+
+* renderer.skybox: a model for skybox. Testing feature.
 
 
 ### Scene

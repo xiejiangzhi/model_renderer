@@ -4,13 +4,14 @@ varying vec3 modelNormal;
 varying vec3 fragPos;
 varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
-varying vec3 shadowPos;
+varying vec3 lightProjPos;
 
-uniform mat4 projection_mat;
-uniform mat4 view_mat;
+/* uniform mat4 projection_mat; */
+/* uniform mat4 view_mat; */
+uniform mat4 projection_view_mat;
 
-uniform mat4 light_projection_mat;
-uniform mat4 light_view_mat;
+
+uniform mat4 light_proj_view_mat;
 
 attribute vec3 VertexNormal;
 attribute vec3 ModelPos;
@@ -50,10 +51,10 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   fragAlbedo = ModelAlbedo;
   fragPhysics = ModelPhysics;
 
-  vec4 light_pos = light_projection_mat * (light_view_mat * worldPos);
+  vec4 light_proj_pos = light_proj_view_mat * worldPos;
   // -1 - 1 to 0 - 1
-  shadowPos = light_pos.xyz / light_pos.w * 0.5 + 0.5;
+  lightProjPos = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
 
-  return projection_mat * (view_mat * worldPos);
+  return projection_view_mat * worldPos;
 }
 

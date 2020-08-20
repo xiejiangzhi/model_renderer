@@ -8,12 +8,19 @@ local Cpml = require 'cpml'
 local Mat4 = Cpml.mat4
 local Vec3 = Cpml.vec3
 
+-- local Model = require(code_dir..'.model')
+
 local lg = love.graphics
 
 local default_opts = {
-  ambient_color = { 0.3, 0.3, 0.3 },
+  ambient_color = { 0.03, 0.03, 0.03 },
+
   light_pos = { 1000, 2000, 1000 },
   light_color = { 3000, 3000, 3000 },
+
+  -- for shadow
+  sun_dir = { 1, 1, 1 },
+  sun_color = { 1, 1, 1 },
 }
 
 local render_modes = { pbr = true, phong = true, pure3d = true }
@@ -42,6 +49,9 @@ function M:init(render_mode)
 
   self:set_render_mode(render_mode)
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
+  self.skybox_shader = lg.newShader(file_dir..'/shader/skybox.glsl')
+
+  self.skybox = nil
 end
 
 function M:apply_camera(camera)
@@ -56,7 +66,7 @@ function M:apply_camera(camera)
   if p then
     self.shadow_start_at = { p:unpack() }
   else
-    self.shadow_start_at = { 0, 0, 0 }
+    self.shadow_start_at = { unpack(self.camera_pos) }
   end
 end
 
@@ -66,6 +76,11 @@ end
 function M:render(scene)
   if self.render_shadow and self.render_mode ~= 'pure3d' then self:build_shadow_map(scene) end
   self:render_scene(scene)
+
+  -- local c = self.shadow_depth_map
+  -- c:setDepthSampleMode()
+  -- lg.draw(c, 0, 0, 0, 0.5, 0.5)
+  -- c:setDepthSampleMode('less')
 end
 
 function M:set_render_mode(mode)
@@ -99,16 +114,18 @@ function M:build_shadow_map(scene)
   local angle = math.atan2(self.look_at[3] - self.camera_pos[3], self.look_at[1] - self.camera_pos[1])
   local ox, oy = math.cos(angle) * lhh, math.sin(angle) * lhh
   local shadow_look_at = Vec3(self.shadow_start_at) + Vec3(ox, 0, oy)
-  local dist = (Vec3(unpack(self.light_pos)) - shadow_look_at):len()
+  local dist = (Vec3(self.camera_pos) - Vec3(self.look_at)):len() * 2
+  local offset = Vec3(self.sun_dir) * dist
 
-  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, 0, dist * 1.5)
+  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -100, dist * 2.5)
   local view = Mat4()
-  view = view:look_at(view, Vec3(unpack(self.light_pos)), shadow_look_at, Vec3(0, 1, 0))
+  view = view:look_at(view, shadow_look_at + offset, shadow_look_at, Vec3(0, 1, 0))
 
-	shadow_shader:send("projection_mat", 'column', projection)
-	shadow_shader:send("view_mat", 'column', view)
-  render_shader:send('light_projection_mat', 'column', projection)
-  render_shader:send('light_view_mat', 'column', view)
+  local light_proj_view = Mat4.new()
+  light_proj_view:mul(projection, view)
+
+	shadow_shader:send("projection_view_mat", 'column', light_proj_view)
+  render_shader:send('light_proj_view_mat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
@@ -132,10 +149,14 @@ function M:render_scene(scene)
   local render_shader = self.render_shader
 
 	lg.setShader(render_shader)
-	render_shader:send("projection_mat", 'column', self.projection)
-	render_shader:send("view_mat", 'column', self.view)
+  local pv_mat = Mat4.new()
+  pv_mat:mul(self.projection, self.view)
+	render_shader:send("projection_view_mat", 'column', pv_mat)
+
 	render_shader:send("light_pos", self.light_pos)
 	render_shader:send("light_color", self.light_color)
+  render_shader:send('sun_dir', self.sun_dir)
+  render_shader:send('sun_color', self.sun_color)
 	render_shader:send("ambient_color", self.ambient_color)
 	render_shader:send("camera_pos", self.camera_pos)
 
@@ -149,6 +170,13 @@ function M:render_scene(scene)
 
   for i, model in ipairs(scene.model) do
     self:render_model(model)
+  end
+
+  if self.skybox then
+    local skybox_shader = self.skybox_shader
+    lg.setShader(skybox_shader)
+    skybox_shader:send("projection_view_mat", 'column', pv_mat)
+    self:render_model(self.skybox)
   end
 
 	lg.setShader(old_shader)

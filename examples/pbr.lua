@@ -24,6 +24,11 @@ function love.load()
     renderer[k] = v
   end
 
+  local skybox = MR.model.new_sphere(500)
+  -- skybox:set_opts({ instance_usage = 'stream', face_culling = 'front' })
+  skybox:set_instances({ { coord = { 0, -250, 0 }, albedo = { 0.5, 0.5, 0.8 } } })
+  renderer.skybox = skybox
+
   Helper.bind(camera, renderer, 'perspective')
 end
 
@@ -35,7 +40,7 @@ function love.draw()
   renderer:apply_camera(camera)
 
   lg.clear(0.5, 0.5, 0.5)
-  local angle = love.timer.getTime() % (math.pi * 2)
+  local angle = Helper.ts % (math.pi * 2)
 
   scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
   for i = 0, 1, 0.1 do

@@ -1,23 +1,31 @@
 #pragma language glsl3
 
 #define PI 3.14159265359
+#define ao 1.0
+
+const vec3 shadow_bias = vec3(0, 0, -0.004);
+
+// ------------------------------------------------
 
 varying vec3 modelNormal;
 varying vec3 fragPos;
 varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
-varying vec3 shadowPos;
+varying vec3 lightProjPos;
 
 uniform vec3 ambient_color;
+uniform vec3 sun_dir;
+uniform vec3 sun_color;
 uniform vec3 light_pos;
 uniform vec3 light_color;
 uniform vec3 camera_pos;
 
-#define ao 1.0
+uniform float light_far;
 
 uniform DepthImage shadow_depth_map;
 
 // ----------------------------------------------------------------------------
+
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
   float a = roughness*roughness;
   float a2 = a*a;
@@ -55,7 +63,8 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 }
 
 vec3 complute_light(
-  vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance, vec3 F0, vec3 albedo, float roughness, float metallic
+  vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance,
+  vec3 F0, vec3 albedo, float roughness, float metallic
 ) {
   // Cook-Torrance BRDF
   vec3 half_way_dir = normalize(light_dir + view_dir);
@@ -87,6 +96,7 @@ vec3 complute_light(
 
 // ----------------------------------------------------------------------------
 
+
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tex_color = Texel(tex, texture_coords);
 
@@ -99,25 +109,34 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   float metallic = fragPhysics.y;
   vec3 albedo = tex_color.rgb * tex_color.a * fragAlbedo.rgb;
 
-  float distance = length(light_pos - fragPos) * 0.1;
-  float attenuation = 1.0 / (distance * distance);
+  float light_dist = length(light_pos - fragPos);
+  float dist = light_dist * 0.1;
+  float attenuation = 1.0 / (dist * dist);
   vec3 radiance = light_color * attenuation;
 
   vec3 F0 = vec3(0.04); 
   F0 = mix(F0, albedo, metallic);
 
-  light += complute_light(normal, light_dir, view_dir, radiance, F0, albedo, roughness, metallic);
+  light += complute_light(
+    normal, light_dir, view_dir, radiance,
+    F0, albedo, roughness, metallic
+  );
+
+  light += complute_light(
+    normal, normalize(sun_dir), view_dir, sun_color,
+    F0, albedo, roughness, metallic
+  );
 
   // shadow
   float shadow = 0;
-  if (shadowPos.x >= 0 && shadowPos.x <= 1 && shadowPos.y >= 0 && shadowPos.y <= 1) {
-    vec3 shadow_bias = vec3(0, 0, -0.003);
+  if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
+    vec3 spos = lightProjPos + shadow_bias;
 
     // PCF
-    vec2 tex_size = 1.0 / textureSize(shadow_depth_map, 0);
+    vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
     for (int x = -1; x <= 1; ++x) {
       for (int y = -1; y <= 1; ++y) {
-        shadow += texture(shadow_depth_map, shadowPos + vec3(vec2(x, y) * tex_size, 0) + shadow_bias);
+        shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
       }
     }
     shadow /= 9.0;
