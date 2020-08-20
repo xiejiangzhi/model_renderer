@@ -86,15 +86,19 @@ end
 -- xlen: size of x axis
 -- ylen: optional, size of y axis, default equal to xlen
 -- zlen: optional, size of z axis, default equal to xlen
-function M.new_box(xlen, ylen, zlen)
+function M.new_box(xlen, ylen, zlen, y_offset)
   assert(xlen, "Invalid box size")
   local hx = xlen / 2
   local hy = ylen or xlen
   local hz = (zlen or xlen) / 2
+  if not y_offset then y_offset = 0 end
 
   local vs = {
-    { -hx, 0, -hz, 0, 0 }, { hx, 0, -hz, 1, 0 }, { hx, 0, hz, 1, 1 }, { -hx, 0, hz, 0, 1 },
-    { -hx, hy, -hz, 0, 0 }, { hx, hy, -hz, 1, 0 }, { hx, hy, hz, 1, 1 }, { -hx, hy, hz, 0, 1 },
+    { -hx, y_offset, -hz, 0, 0 }, { hx, y_offset, -hz, 1, 0 },
+    { hx, y_offset, hz, 1, 1 }, { -hx, y_offset, hz, 0, 1 },
+
+    { -hx, hy + y_offset, -hz, 0, 0 }, { hx, hy + y_offset, -hz, 1, 0 },
+    { hx, hy + y_offset, hz, 1, 1 }, { -hx, hy + y_offset, hz, 0, 1 },
   }
 
   local fs = {
@@ -105,6 +109,12 @@ function M.new_box(xlen, ylen, zlen)
 
   local vertices = private.gen_vertices(vs, fs)
   return M.new(vertices, false)
+end
+
+function M.new_skybox()
+  local m =  M.new_box(2, 2, 2, -1)
+  m:set_opts({ face_culling = 'none', instance_usage = 'static' })
+  return m
 end
 
 function M.new_cylinder(radius, height, n)

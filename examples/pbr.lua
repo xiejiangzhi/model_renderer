@@ -23,13 +23,8 @@ function love.load()
   for k, v in pairs(renderer_opts) do
     renderer[k] = v
   end
-
-  local skybox = MR.model.new_sphere(500)
-  -- skybox:set_opts({ instance_usage = 'stream', face_culling = 'front' })
-  skybox:set_instances({ { coord = { 0, -250, 0 }, albedo = { 0.5, 0.5, 0.8 } } })
-  renderer.skybox = skybox
-
   Helper.bind(camera, renderer, 'perspective')
+  renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
 end
 
 function love.update(dt)

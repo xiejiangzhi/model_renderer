@@ -163,7 +163,7 @@ renderer:render({ model = { model1, model2, ... } })
 
 **Other Attributes**
 
-* renderer.skybox: a model for skybox. Testing feature.
+* renderer.skybox: a cubeimage texture. A demo in examples/pbr.lua
 
 
 ### Scene

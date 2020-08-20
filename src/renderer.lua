@@ -8,7 +8,7 @@ local Cpml = require 'cpml'
 local Mat4 = Cpml.mat4
 local Vec3 = Cpml.vec3
 
--- local Model = require(code_dir..'.model')
+local Model = require(code_dir..'.model')
 
 local lg = love.graphics
 
@@ -24,6 +24,8 @@ local default_opts = {
 }
 
 local render_modes = { pbr = true, phong = true, pure3d = true }
+
+local skybox_model
 
 function M.new()
   local obj = setmetatable({}, M)
@@ -52,6 +54,9 @@ function M:init(render_mode)
   self.skybox_shader = lg.newShader(file_dir..'/shader/skybox.glsl')
 
   self.skybox = nil
+  if not skybox_model then
+    skybox_model = Model.new_skybox()
+  end
 end
 
 function M:apply_camera(camera)
@@ -168,15 +173,16 @@ function M:render_scene(scene)
     end
   end
 
+  -- if self.skybox then
+  --   render_shader:send("skybox", self.skybox)
+  -- end
+
   for i, model in ipairs(scene.model) do
     self:render_model(model)
   end
 
   if self.skybox then
-    local skybox_shader = self.skybox_shader
-    lg.setShader(skybox_shader)
-    skybox_shader:send("projection_view_mat", 'column', pv_mat)
-    self:render_model(self.skybox)
+    self:render_skybox(skybox_model)
   end
 
 	lg.setShader(old_shader)
@@ -191,6 +197,24 @@ function M:render_model(model)
   lg.drawInstanced(model.mesh, model.total_instances)
 
 	lg.setMeshCullMode('none')
+  lg.setDepthMode()
+end
+
+function M:render_skybox(model)
+  local skybox_shader = self.skybox_shader
+  lg.setShader(skybox_shader)
+
+  -- remove camera move transform
+  local view = self.view:clone()
+  view[13], view[14], view[15], view[16] = 0, 0, 0, 1
+  local pv_mat = Mat4.new()
+  pv_mat:mul(self.projection, view)
+
+  skybox_shader:send("projection_view_mat", 'column', pv_mat)
+  skybox_shader:send("skybox", self.skybox)
+
+	lg.setDepthMode("lequal", true)
+  lg.draw(model.mesh)
   lg.setDepthMode()
 end
 
