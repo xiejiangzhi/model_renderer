@@ -285,7 +285,7 @@ end
 -- transforms: { instance1_attrs, instance2_attrs, ... }
 function M:set_raw_instances(transforms)
   local tfs_mesh = self.instances_mesh
-  if self.instances_mesh and self.total_instances >= #transforms then
+  if tfs_mesh and self.total_instances >= #transforms then
     tfs_mesh:setVertices(transforms)
   else
     tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, self.options.instance_usage)

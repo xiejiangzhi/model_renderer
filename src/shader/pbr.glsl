@@ -33,10 +33,10 @@ uniform bool use_skybox;
 // ----------------------------------------------------------------------------
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
-  float a = roughness*roughness;
-  float a2 = a*a;
+  float a = roughness * roughness;
+  float a2 = a * a;
   float NdotH = max(dot(N, H), 0.0);
-  float NdotH2 = NdotH*NdotH;
+  float NdotH2 = NdotH * NdotH;
 
   float nom   = a2;
   float denom = (NdotH2 * (a2 - 1.0) + 1.0);
@@ -91,7 +91,7 @@ vec3 complute_light(
   // for energy conservation, the diffuse and specular light can't
   // be above 1.0 (unless the surface emits light); to preserve this
   // relationship the diffuse component (kD) should equal 1.0 - kS.
-  vec3 kD = 1.0 - kS;
+  vec3 kD = vec3(1.0) - kS;
   // multiply kD by the inverse metalness such that only non-metals 
   // have diffuse lighting, or a linear blend if partly metal (pure metals
   // have no diffuse light).
@@ -101,7 +101,8 @@ vec3 complute_light(
   float NdotL = max(dot(normal, light_dir), 0.0);        
 
   // add to outgoing radiance Lo
-  return (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+  return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
 vec3 complute_skybox_ambient_light(
@@ -129,23 +130,22 @@ vec3 complute_skybox_ambient_light(
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tex_color = Texel(tex, texture_coords);
 
-  vec3 light = vec3(0);
   vec3 normal = normalize(modelNormal);
-  vec3 light_dir = normalize(light_pos - fragPos);
   vec3 view_dir = normalize(camera_pos - fragPos);
+  vec3 light_dir = normalize(light_pos - fragPos);
 
   float roughness = fragPhysics.x;
   float metallic = fragPhysics.y;
   vec3 albedo = tex_color.rgb * tex_color.a * fragAlbedo.rgb;
 
   float light_dist = length(light_pos - fragPos);
-  float dist = light_dist * 0.1;
-  float attenuation = 1.0 / (dist * dist);
+  float attenuation = 1.0 / (1 + light_dist * light_dist);
   vec3 radiance = light_color * attenuation;
 
   vec3 F0 = vec3(0.04); 
   F0 = mix(F0, albedo, metallic);
 
+  vec3 light = vec3(0);
   light += complute_light(
     normal, light_dir, view_dir, radiance,
     F0, albedo, roughness, metallic
@@ -155,7 +155,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     F0, albedo, roughness, metallic
   );
   
-    // shadow
+  // shadow
   float shadow = 0;
   if (render_shadow) {
     if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
@@ -178,7 +178,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   } else {
     ambient = ambient_color * albedo * ao;
   }
-
 
   vec3 tcolor = ambient + light * (1 - shadow);
 

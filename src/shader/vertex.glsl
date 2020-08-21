@@ -10,7 +10,6 @@ varying vec3 lightProjPos;
 /* uniform mat4 view_mat; */
 uniform mat4 projection_view_mat;
 
-
 uniform mat4 light_proj_view_mat;
 
 attribute vec3 VertexNormal;
