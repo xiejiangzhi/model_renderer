@@ -23,6 +23,12 @@ uniform vec3 camera_pos;
 uniform float light_far;
 
 uniform DepthImage shadow_depth_map;
+uniform bool render_shadow = true;
+
+uniform CubeImage skybox;
+uniform Image brdf_lut;
+uniform float skybox_max_mipmap_lod;
+uniform bool use_skybox;
 
 // ----------------------------------------------------------------------------
 
@@ -62,6 +68,10 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+  return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}   
+
 vec3 complute_light(
   vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance,
   vec3 F0, vec3 albedo, float roughness, float metallic
@@ -81,7 +91,7 @@ vec3 complute_light(
   // for energy conservation, the diffuse and specular light can't
   // be above 1.0 (unless the surface emits light); to preserve this
   // relationship the diffuse component (kD) should equal 1.0 - kS.
-  vec3 kD = vec3(1.0) - kS;
+  vec3 kD = 1.0 - kS;
   // multiply kD by the inverse metalness such that only non-metals 
   // have diffuse lighting, or a linear blend if partly metal (pure metals
   // have no diffuse light).
@@ -94,8 +104,27 @@ vec3 complute_light(
   return (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 }
 
-// ----------------------------------------------------------------------------
+vec3 complute_skybox_ambient_light(
+  vec3 normal, vec3 view_dir, vec3 F0, vec3 albedo, float roughness, float metallic
+) {
+  vec3 F = fresnelSchlickRoughness(max(dot(normal, view_dir), 0.0), F0, roughness);
+  vec3 kS = F;
+  vec3 kD = 1.0 - kS;
+  kD *= 1.0 - metallic;	  
 
+  vec3 irradiance = textureLod(skybox, normal, skybox_max_mipmap_lod).rgb;
+  vec3 diffuse = irradiance * albedo;
+
+  vec3 cute_dir = reflect(-view_dir, normal);
+  vec3 reflect_color = textureLod(skybox, cute_dir, roughness * skybox_max_mipmap_lod).rgb;
+
+  vec2 brdf = texture(brdf_lut, vec2(max(dot(normal, view_dir), 0.0), roughness)).rg;
+  vec3 specular = reflect_color * (F * brdf.x + brdf.y);
+
+  return (kD * diffuse + specular) * ao;
+}
+
+// ----------------------------------------------------------------------------
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tex_color = Texel(tex, texture_coords);
@@ -121,28 +150,36 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     normal, light_dir, view_dir, radiance,
     F0, albedo, roughness, metallic
   );
-
   light += complute_light(
     normal, normalize(sun_dir), view_dir, sun_color,
     F0, albedo, roughness, metallic
   );
-
-  // shadow
+  
+    // shadow
   float shadow = 0;
-  if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
-    vec3 spos = lightProjPos + shadow_bias;
+  if (render_shadow) {
+    if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
+      vec3 spos = lightProjPos + shadow_bias;
 
-    // PCF
-    vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
-    for (int x = -1; x <= 1; ++x) {
-      for (int y = -1; y <= 1; ++y) {
-        shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
+      // PCF
+      vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
+      for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+          shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
+        }
       }
+      shadow /= 9.0;
     }
-    shadow /= 9.0;
   }
 
-  vec3 ambient = ambient_color * albedo * ao;
+  vec3 ambient;
+  if (use_skybox) {
+    ambient = complute_skybox_ambient_light(normal, view_dir, F0, albedo, roughness, metallic);
+  } else {
+    ambient = ambient_color * albedo * ao;
+  }
+
+
   vec3 tcolor = ambient + light * (1 - shadow);
 
   // HDR tonemapping

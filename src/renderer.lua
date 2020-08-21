@@ -27,6 +27,9 @@ local render_modes = { pbr = true, phong = true, pure3d = true }
 
 local skybox_model
 
+local brdf_lut_size = 512
+local brdf_lut
+
 function M.new()
   local obj = setmetatable({}, M)
   obj:init()
@@ -49,14 +52,16 @@ function M:init(render_mode)
   self.shadow_depth_map = private.new_depth_map(w, h, 'less')
   self.default_shadow_depth_map = private.new_depth_map(1, 1, 'less')
 
-  self:set_render_mode(render_mode)
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
   self.skybox_shader = lg.newShader(file_dir..'/shader/skybox.glsl')
 
   self.skybox = nil
   if not skybox_model then
     skybox_model = Model.new_skybox()
+    brdf_lut = private.generate_brdf_lut(brdf_lut_size)
   end
+
+  self:set_render_mode(render_mode)
 end
 
 function M:apply_camera(camera)
@@ -79,7 +84,12 @@ end
 --  model = { m1, m2, m3 }
 -- }
 function M:render(scene)
-  if self.render_shadow and self.render_mode ~= 'pure3d' then self:build_shadow_map(scene) end
+  if self.render_shadow and self.render_mode ~= 'pure3d' then
+    self:build_shadow_map(scene)
+    self.render_shader:send('render_shadow', true)
+  else
+    self.render_shader:send('render_shadow', false)
+  end
   self:render_scene(scene)
 
   -- local c = self.shadow_depth_map
@@ -99,6 +109,7 @@ function M:set_render_mode(mode)
     error("Invalid render mode "..mode)
   end
   self.render_shader = lg.newShader(file_dir..'/shader/'..glsl_path, file_dir..'/shader/vertex.glsl')
+  self.render_shader:send('brdf_lut', brdf_lut)
   self.render_mode = mode
 end
 
@@ -173,9 +184,13 @@ function M:render_scene(scene)
     end
   end
 
-  -- if self.skybox then
-  --   render_shader:send("skybox", self.skybox)
-  -- end
+  if self.skybox then
+    render_shader:send("skybox", self.skybox)
+    render_shader:send("skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
+    render_shader:send("use_skybox", true)
+  else
+    render_shader:send("use_skybox", false)
+  end
 
   for i, model in ipairs(scene.model) do
     self:render_model(model)
@@ -223,6 +238,28 @@ end
 function private.new_depth_map(w, h, mode)
   local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth32f', readable = true })
   canvas:setDepthSampleMode(mode)
+  return canvas
+end
+
+function private.generate_brdf_lut(size)
+  local shader = lg.newShader(file_dir..'/shader/brdf_lut.glsl')
+  local old_shader = lg.getShader()
+  local old_canvas = lg.getCanvas()
+  local canvas = lg.newCanvas(size, size, { type = '2d', format = 'rg16f' })
+
+  lg.setShader(shader)
+  lg.setCanvas(canvas)
+
+  local mesh = lg.newMesh({
+    { 0, 0, 0, 1 }, { size, 0, 1, 1 }, { size, size, 1, 0 }, { 0, size, 0, 0 }
+  }, 'fan', 'static')
+  lg.draw(mesh)
+
+  canvas:setWrap('clamp', 'clamp')
+
+  lg.setCanvas(old_canvas)
+  lg.setShader(old_shader)
+
   return canvas
 end
 

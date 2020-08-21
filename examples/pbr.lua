@@ -15,8 +15,9 @@ local m2 = MR.model.new_box(20)
 
 local renderer_opts = {
   light_pos = { 0, 1000, 10000 },
-  light_color = { 10000000, 10000000, 10000000 },
+  light_color = { 100000, 100000, 100000 },
   ambient_color = { 0.03, 0.03, 0.03 },
+  sun_color = { 0, 0, 0 },
 }
 
 function love.load()
@@ -42,7 +43,7 @@ function love.draw()
     for j = 0, 1, 0.1 do
       scene:add_model(m1,
         { i * 500, 50 + j * 500, 0 },
-        { 0, angle, 0 }, nil,
+        { 0, 0, 0 }, nil,
         { 0.97, 0.98, 0.98, 1 },
         { i, j }
       )
