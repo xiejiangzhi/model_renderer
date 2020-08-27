@@ -6,7 +6,8 @@ local lg = love.graphics
 local model = MR.model.load('box.obj')
 local ground = MR.model.new_box(15)
 
-local renderer = MR.renderer.new()
+local renderer = MR.deferred_renderer.new()
+-- renderer.debug = true
 local camera = MR.camera.new()
 local scene = MR.scene.new()
 camera:move_to(0, 1100, 3000, math.rad(60), 0, 0)
@@ -18,9 +19,8 @@ function love.load()
   r.light_pos = { 0, 2000, 0 }
   r.light_color = { 1000000, 1000000, 1000000 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
-  r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
-
   Helper.bind(camera, renderer, 'perspective', 1, 5200)
+  r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
 
   ground:set_opts({ instance_usage = 'static' })
   local instances = {}
