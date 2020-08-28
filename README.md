@@ -135,7 +135,16 @@ model:set_instances({
 
 ### Renderer
 
-* MR.renderer.new() return a new instance
+`MR.renderer` and `MR.deferred_renderer`
+
+* Renderer.new() return a new instance
+
+```lua
+local renderer = MR.renderer.new()
+-- or 
+local renderer = MR.deferred_renderer.new()
+```
+
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
 * renderer:render(scene_desc)
 
@@ -205,7 +214,6 @@ It is optional, you can also manually set all camera attributes for renderer.
 * Better light & shadow(CSM or other). more light sources
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
-* Deferred Shading(Maybe)
 * SSAO
 
 
