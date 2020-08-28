@@ -9,6 +9,7 @@ uniform Image PosMap;
 uniform Image NormalMap;
 uniform Image AlbedoMap;
 uniform Image MiscMap;
+uniform Image DepthMap;
 
 uniform vec3 ambient_color;
 uniform vec3 sun_dir;
@@ -23,6 +24,34 @@ uniform CubeImage skybox;
 uniform Image brdf_lut;
 uniform float skybox_max_mipmap_lod;
 uniform bool use_skybox;
+
+uniform mat4 invertedProjMat;
+uniform mat4 invertedViewMat;
+
+//-------------------------------
+// Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
+vec3 decode_normal(vec2 enc) {
+  vec2 fenc = enc * 4 - 2;
+  float f = dot(fenc, fenc);
+  float g = sqrt(1 - f / 4);
+  vec3 n;
+  n.xy = fenc * g;
+  n.z = 1 - f / 2;
+  return n;
+}
+
+// this is supposed to get the world position from the depth buffer
+vec3 get_world_pos(float depth, vec2 tex_coords) {
+  float z = depth * 2.0 - 1.0;
+
+  vec4 clipSpacePosition = vec4(tex_coords * 2.0 - 1.0, z, 1.0);
+  vec4 viewSpacePosition = invertedProjMat * clipSpacePosition;
+
+  // Perspective division
+  viewSpacePosition /= viewSpacePosition.w;
+  vec4 worldSpacePosition = invertedViewMat * viewSpacePosition;
+  return worldSpacePosition.xyz;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -122,8 +151,9 @@ vec3 complute_skybox_ambient_light(
 // ----------------------------------------------------------------------------
 
 vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
-  vec3 pos = Texel(PosMap, tex_coords).xyz + camera_pos;
-  vec3 normal = Texel(NormalMap, tex_coords).xyz;
+  float depth = Texel(DepthMap, tex_coords).r;
+  vec3 pos = get_world_pos(depth, tex_coords);
+  vec3 normal = decode_normal(Texel(NormalMap, tex_coords).xy);
   vec4 ad = Texel(AlbedoMap, tex_coords);
   vec3 albedo = ad.rgb;
   float alpha = ad.a;

@@ -63,8 +63,8 @@ function M:init()
   self.deferred_shader:send('brdf_lut', brdf_lut)
 
   local w, h = love.graphics.getDimensions()
-  self.pos_map = private.new_gbuffer(w, h, 'rgba16f')
-  self.normal_map = private.new_gbuffer(w, h, 'rgba16f')
+  -- self.pos_map = private.new_gbuffer(w, h, 'rgba16f')
+  self.normal_map = private.new_gbuffer(w, h, 'rg8')
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
   -- misc: roughness, metallic, shadow
   self.misc_map = private.new_gbuffer(w, h, 'rgba8')
@@ -118,7 +118,7 @@ function M:render(scene)
     self:final_render(self.output_canvas)
 
     lg.setBlendMode('alpha', 'premultiplied')
-    lg.draw(self.pos_map, 0, 0, 0, sx, sy)
+    -- lg.draw(self.pos_map, 0, 0, 0, sx, sy)
     lg.draw(self.normal_map, hw, 0, 0, sx, sy)
     lg.draw(self.albedo_map, hw * 2, 0, 0, sx, sy)
     lg.draw(self.misc_map, 0, hh, 0, sx, sy)
@@ -183,7 +183,8 @@ function M:render_gbuffer(scene)
 
 	lg.setShader(gbuffer_shader)
   lg.setCanvas({
-    self.pos_map, self.normal_map, self.albedo_map, self.misc_map,
+    -- self.pos_map, self.normal_map, self.albedo_map, self.misc_map,
+    self.normal_map, self.albedo_map, self.misc_map,
     depthstencil = self.depth_map
   })
   lg.clear(0, 0, 0, 0)
@@ -191,7 +192,7 @@ function M:render_gbuffer(scene)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
 	gbuffer_shader:send("projection_view_mat", 'column', pv_mat)
-  gbuffer_shader:send('CameraPos', self.camera_pos)
+  -- gbuffer_shader:send('CameraPos', self.camera_pos)
   gbuffer_shader:send('y_flip', -1)
 
   if self.render_shadow then
@@ -215,12 +216,14 @@ function M:final_render(output)
 
   local render_shader = self.deferred_shader
 
-
-  render_shader:send('PosMap', self.pos_map)
+  -- render_shader:send('PosMap', self.pos_map)
   render_shader:send('NormalMap', self.normal_map)
   render_shader:send('AlbedoMap', self.albedo_map)
   render_shader:send('MiscMap', self.misc_map)
-  -- render_shader:send('DepthMap', self.depth_map)
+
+  self.depth_map:setDepthSampleMode()
+  render_shader:send('DepthMap', self.depth_map)
+  self.depth_map:setDepthSampleMode('less')
 
 	render_shader:send("light_pos", self.light_pos)
 	render_shader:send("light_color", self.light_color)
@@ -228,6 +231,12 @@ function M:final_render(output)
   render_shader:send('sun_color', self.sun_color)
 	render_shader:send("ambient_color", self.ambient_color)
 	render_shader:send("camera_pos", self.camera_pos)
+
+  local inverted_proj = Mat4.new():invert(self.projection)
+	render_shader:send("invertedProjMat", 'column', inverted_proj)
+  local inverted_view = Mat4.new():invert(self.view)
+	render_shader:send("invertedViewMat", 'column', inverted_view)
+
 
   if self.skybox then
     render_shader:send("skybox", self.skybox)
