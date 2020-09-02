@@ -1,6 +1,7 @@
 local M = {}
 
 local Cpml = require 'Cpml'
+local MR = require 'src'
 
 local lkb = love.keyboard
 local lg = love.graphics
@@ -86,17 +87,21 @@ function M.update(dt)
 
   if renderer then
     if M.keyreleased('tab') then
-      if renderer.render_mode == 'pbr' then
-        renderer:set_render_mode('phong')
-      elseif renderer.render_mode == 'phong' then
-        renderer:set_render_mode('pure3d')
+      if renderer.deferred_shader then
+        M.convert_to_normal_renderer()
       else
-        renderer:set_render_mode('pbr')
+        M.convert_to_deferred_renderer()
       end
     end
 
     if M.keyreleased('f1') then
       renderer.render_shadow = not renderer.render_shadow
+    end
+
+    if lkb.isDown('`') then
+      renderer.debug = true
+    else
+      renderer.debug = false
     end
   end
 end
@@ -106,6 +111,9 @@ function M.debug(ext_str)
   local str = ''
   str = str..string.format('\nFPS: %i', love.timer.getFPS())
   str = str..string.format('\ntime: %.1f', M.ts)
+  if renderer then
+    str = str..string.format('\nrenderer: %s', renderer.deferred_shader and 'deferred' or 'normal')
+  end
 
   if camera then
     str = str..string.format('\ncamera pos: %.2f, %.2f %.2f', camera.pos:unpack())
@@ -132,6 +140,32 @@ function M.keyreleased(key)
   end
 
   return false
+end
+
+function M.convert_to_deferred_renderer()
+  M.clear_renderer()
+  local new = MR.deferred_renderer.new()
+  for k, v in pairs(new) do
+    renderer[k] = v
+  end
+  setmetatable(renderer, getmetatable(new))
+end
+
+function M.convert_to_normal_renderer()
+  M.clear_renderer()
+  local new = MR.renderer.new()
+  for k, v in pairs(new) do
+    renderer[k] = v
+  end
+  setmetatable(renderer, getmetatable(new))
+end
+
+function M.clear_renderer()
+  for k, v in pairs(renderer) do
+    if k:match('_shader$') or k:match('_map') or k:match('_canvas') then
+      renderer[k] = nil
+    end
+  end
 end
 
 return M

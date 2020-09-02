@@ -5,10 +5,9 @@
 
 // ------------------------------------------------
 
-uniform Image PosMap;
-uniform Image NormalMap;
+uniform Image NPMap;
 uniform Image AlbedoMap;
-uniform Image MiscMap;
+uniform Image ShadowMap;
 uniform Image DepthMap;
 
 uniform vec3 ambient_color;
@@ -153,18 +152,19 @@ vec3 complute_skybox_ambient_light(
 vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float depth = Texel(DepthMap, tex_coords).r;
   vec3 pos = get_world_pos(depth, tex_coords);
-  vec3 normal = decode_normal(Texel(NormalMap, tex_coords).xy);
+  vec4 np = Texel(NPMap, tex_coords);
+  float has_normal = step(0.01, np.x * np.x + np.y * np.y);
+  vec3 normal = decode_normal(np.xy) * has_normal;
   vec4 ad = Texel(AlbedoMap, tex_coords);
   vec3 albedo = ad.rgb;
-  float alpha = ad.a;
-  vec4 misc = Texel(MiscMap, tex_coords);
+  float alpha = 1;
+  float shadow = Texel(ShadowMap, tex_coords).r;
 
   vec3 view_dir = normalize(camera_pos - pos);
   vec3 light_dir = normalize(light_pos - pos);
 
-  float roughness = misc.x;
-  float metallic = misc.y;
-  float shadow = misc.z;
+  float roughness = np.z;
+  float metallic = np.w;
 
   float light_dist = length(light_pos - pos);
   float attenuation = 1.0 / (1 + light_dist * light_dist);

@@ -62,13 +62,14 @@ function M:init()
   self.deferred_shader = lg.newShader(file_dir..'/shader/deferred.glsl')
   self.deferred_shader:send('brdf_lut', brdf_lut)
 
-  local w, h = love.graphics.getDimensions()
-  -- self.pos_map = private.new_gbuffer(w, h, 'rgba16f')
-  self.normal_map = private.new_gbuffer(w, h, 'rg8')
+  local w, h = lg.getDimensions()
+  -- normal, roughness, metallic
+  self.np_map = private.new_gbuffer(w, h, 'rgba8')
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
-  -- misc: roughness, metallic, shadow
-  self.misc_map = private.new_gbuffer(w, h, 'rgba8')
+  self.shadow_map = private.new_gbuffer(w, h, 'r8')
   self.depth_map = private.new_depth_map(w, h, 'less')
+
+  self.output_canvas = lg.newCanvas(w, h)
 
   self.screen_mesh = lg.newMesh({
     { 0, 0, 0, 0 },
@@ -112,20 +113,22 @@ function M:render(scene)
     local hw , hh = w / 3, h / 3
     local sx, sy = hw / w, hh / h
 
-    if not self.output_canvas then
-      self.output_canvas = lg.newCanvas(w, h)
-    end
-    self:final_render(self.output_canvas)
+    self:final_render()
 
-    lg.setBlendMode('alpha', 'premultiplied')
-    -- lg.draw(self.pos_map, 0, 0, 0, sx, sy)
-    lg.draw(self.normal_map, hw, 0, 0, sx, sy)
+    lg.setBlendMode('replace')
+    local dm = self.depth_map
+    dm:setDepthSampleMode()
+    lg.draw(dm, 0, 0, 0, sx, sy)
+    dm:setDepthSampleMode('less')
+    lg.draw(self.np_map, hw, 0, 0, sx, sy)
     lg.draw(self.albedo_map, hw * 2, 0, 0, sx, sy)
-    lg.draw(self.misc_map, 0, hh, 0, sx, sy)
+    lg.draw(self.shadow_map, 0, hh, 0, sx, sy)
+    lg.setBlendMode('alpha')
+
     lg.draw(self.output_canvas, hw, hh, 0, sx * 2, sy * 2)
-    lg.setBlendMode('alpha', 'alphamultiply')
   else
     self:final_render()
+    lg.draw(self.output_canvas)
   end
 end
 
@@ -183,8 +186,7 @@ function M:render_gbuffer(scene)
 
 	lg.setShader(gbuffer_shader)
   lg.setCanvas({
-    -- self.pos_map, self.normal_map, self.albedo_map, self.misc_map,
-    self.normal_map, self.albedo_map, self.misc_map,
+    self.np_map, self.albedo_map, self.shadow_map,
     depthstencil = self.depth_map
   })
   lg.clear(0, 0, 0, 0)
@@ -192,7 +194,6 @@ function M:render_gbuffer(scene)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
 	gbuffer_shader:send("projection_view_mat", 'column', pv_mat)
-  -- gbuffer_shader:send('CameraPos', self.camera_pos)
   gbuffer_shader:send('y_flip', -1)
 
   if self.render_shadow then
@@ -201,25 +202,27 @@ function M:render_gbuffer(scene)
     gbuffer_shader:send("shadow_depth_map", self.default_shadow_depth_map)
   end
 
+  lg.setBlendMode('replace', 'premultiplied')
   for i, model in ipairs(scene.model) do
     self:render_model(model)
   end
+  lg.setBlendMode('alpha')
 
 	lg.setShader(old_shader)
 	lg.setCanvas(old_canvas)
 end
 
 -- output: canvas or nil, nil will render to screen
-function M:final_render(output)
+function M:final_render()
   local old_shader = lg.getShader()
   local old_canvas = lg.getCanvas()
+  local output = self.output_canvas
 
   local render_shader = self.deferred_shader
 
-  -- render_shader:send('PosMap', self.pos_map)
-  render_shader:send('NormalMap', self.normal_map)
+  render_shader:send('NPMap', self.np_map)
   render_shader:send('AlbedoMap', self.albedo_map)
-  render_shader:send('MiscMap', self.misc_map)
+  render_shader:send('ShadowMap', self.albedo_map)
 
   self.depth_map:setDepthSampleMode()
   render_shader:send('DepthMap', self.depth_map)
@@ -237,7 +240,6 @@ function M:final_render(output)
   local inverted_view = Mat4.new():invert(self.view)
 	render_shader:send("invertedViewMat", 'column', inverted_view)
 
-
   if self.skybox then
     render_shader:send("skybox", self.skybox)
     render_shader:send("skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
@@ -246,16 +248,19 @@ function M:final_render(output)
     render_shader:send("use_skybox", false)
   end
 
-  lg.setCanvas(output)
+  lg.setCanvas({ output, depthstencil = self.depth_map })
+	lg.setShader(render_shader)
+  lg.setBlendMode('alpha', 'premultiplied')
+	lg.setDepthMode("less", false)
+
+  lg.draw(self.screen_mesh, 0, 0, 0, output:getDimensions())
 
   if self.skybox then
     self:render_skybox(skybox_model)
   end
 
-	lg.setShader(render_shader)
-
-  lg.draw(self.screen_mesh, 0, 0, 0, lg.getDimensions())
-
+	lg.setDepthMode()
+  lg.setBlendMode('alpha')
 	lg.setShader(old_shader)
 	lg.setCanvas(old_canvas)
 end
@@ -284,6 +289,7 @@ function M:render_skybox(model)
 
   skybox_shader:send("projection_view_mat", 'column', pv_mat)
   skybox_shader:send("skybox", self.skybox)
+  skybox_shader:send('y_flip', -1)
 
 	lg.setDepthMode("lequal", true)
   lg.draw(model.mesh)

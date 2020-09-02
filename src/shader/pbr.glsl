@@ -30,6 +30,23 @@ uniform Image brdf_lut;
 uniform float skybox_max_mipmap_lod;
 uniform bool use_skybox;
 
+//-----------------------------
+
+float calc_shadow(vec3 spos) {
+  float shadow = 0;
+
+  if (spos.x >= 0 && spos.x <= 1 && spos.y >=0 && spos.y <= 1) {
+    // PCF
+    vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
+    for (int x = -1; x <= 1; ++x) {
+      for (int y = -1; y <= 1; ++y) {
+        shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
+      }
+    }
+  }
+  return shadow / 9.0;
+}
+
 // ----------------------------------------------------------------------------
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -156,21 +173,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   );
   
   // shadow
-  float shadow = 0;
-  if (render_shadow) {
-    if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
-      vec3 spos = lightProjPos + shadow_bias;
-
-      // PCF
-      vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
-      for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-          shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
-        }
-      }
-      shadow /= 9.0;
-    }
-  }
+  float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
 
   vec3 ambient;
   if (use_skybox) {

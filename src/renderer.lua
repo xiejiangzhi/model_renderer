@@ -23,8 +23,6 @@ local default_opts = {
   sun_color = { 1, 1, 1 },
 }
 
-local render_modes = { pbr = true, phong = true, pure3d = true }
-
 local skybox_model
 
 local brdf_lut_size = 512
@@ -36,8 +34,7 @@ function M.new()
   return obj
 end
 
--- render_mode: pbr is valid, others are currently only used for testing
-function M:init(render_mode)
+function M:init()
   for k, v in pairs(default_opts) do self[k] = v end
 
   self.projection = nil
@@ -61,7 +58,8 @@ function M:init(render_mode)
     brdf_lut = private.generate_brdf_lut(brdf_lut_size)
   end
 
-  self:set_render_mode(render_mode)
+  self.render_shader = lg.newShader(file_dir..'/shader/pbr.glsl', file_dir..'/shader/vertex.glsl')
+  self.render_shader:send('brdf_lut', brdf_lut)
 end
 
 function M:apply_camera(camera)
@@ -84,7 +82,7 @@ end
 --  model = { m1, m2, m3 }
 -- }
 function M:render(scene)
-  if self.render_shadow and self.render_mode ~= 'pure3d' then
+  if self.render_shadow then
     self:build_shadow_map(scene)
     self.render_shader:send('render_shadow', true)
   else
@@ -96,21 +94,6 @@ function M:render(scene)
   -- c:setDepthSampleMode()
   -- lg.draw(c, 0, 0, 0, 0.5, 0.5)
   -- c:setDepthSampleMode('less')
-end
-
-function M:set_render_mode(mode)
-  local glsl_path
-  if mode == nil then
-    mode = 'pbr'
-    glsl_path = 'pbr.glsl'
-  elseif render_modes[mode] then
-    glsl_path = mode..'.glsl'
-  else
-    error("Invalid render mode "..mode)
-  end
-  self.render_shader = lg.newShader(file_dir..'/shader/'..glsl_path, file_dir..'/shader/vertex.glsl')
-  self.render_shader:send('brdf_lut', brdf_lut)
-  self.render_mode = mode
 end
 
 function M:build_shadow_map(scene)
@@ -254,8 +237,6 @@ function private.generate_brdf_lut(size)
     { 0, 0, 0, 1 }, { size, 0, 1, 1 }, { size, size, 1, 0 }, { 0, size, 0, 0 }
   }, 'fan', 'static')
   lg.draw(mesh)
-
-  canvas:setWrap('clamp', 'clamp')
 
   lg.setCanvas(old_canvas)
   lg.setShader(old_shader)
