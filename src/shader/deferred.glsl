@@ -10,6 +10,8 @@ uniform Image AlbedoMap;
 uniform Image ShadowMap;
 uniform Image DepthMap;
 
+uniform DepthImage ShadowDepthMap;
+
 uniform vec3 ambient_color;
 uniform vec3 sun_dir;
 uniform vec3 sun_color;
@@ -26,8 +28,11 @@ uniform bool use_skybox;
 
 uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
+uniform mat4 LightProjViewMat;
+uniform bool render_shadow = true;
 
 const float y_flip = -1;
+const vec3 shadow_bias = vec3(0, 0, -0.004);
 
 //-------------------------------
 // Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
@@ -53,6 +58,21 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
   viewSpacePosition /= viewSpacePosition.w;
   vec4 worldSpacePosition = invertedViewMat * viewSpacePosition;
   return worldSpacePosition.xyz / worldSpacePosition.w;
+}
+
+float calc_shadow(vec3 spos) {
+  float shadow = 0;
+
+  if (spos.x >= 0 && spos.x <= 1 && spos.y >=0 && spos.y <= 1) {
+    // PCF
+    vec2 tex_scale = 1.0 / textureSize(ShadowDepthMap, 0);
+    for (int x = -1; x <= 1; ++x) {
+      for (int y = -1; y <= 1; ++y) {
+        shadow += Texel(ShadowDepthMap, spos + vec3(vec2(x, y) * tex_scale, 0));
+      }
+    }
+  }
+  return shadow / 9.0;
 }
 
 // ----------------------------------------------------------------------------
@@ -159,7 +179,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   vec4 ad = Texel(AlbedoMap, tex_coords);
   vec3 albedo = ad.rgb;
   float alpha = 1;
-  float shadow = Texel(ShadowMap, tex_coords).r;
+  /* float shadow = Texel(ShadowMap, tex_coords).r; */
   float valid_gbuffer = step(0.0001, ad.r + ad.g + ad.b + ad.a);
   vec3 normal = decode_normal(np.xy) * valid_gbuffer;
 
@@ -194,6 +214,10 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   } else {
     ambient = ambient_color * albedo * ao;
   }
+
+  vec4 light_proj_pos = LightProjViewMat * vec4(pos, 1);
+  light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
+  float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
 
   vec3 tcolor = ambient + light * (1 - shadow);
 

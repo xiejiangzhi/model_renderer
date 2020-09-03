@@ -66,7 +66,6 @@ function M:init()
   -- normal, roughness, metallic
   self.np_map = private.new_gbuffer(w, h, 'rgba8')
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
-  self.shadow_map = private.new_gbuffer(w, h, 'r8')
   self.depth_map = private.new_depth_map(w, h, 'less')
 
   self.output_canvas = lg.newCanvas(w, h)
@@ -100,10 +99,10 @@ end
 -- }
 function M:render(scene)
   if self.render_shadow then
-    self.gbuffer_shader:send('render_shadow', true)
+    self.deferred_shader:send('render_shadow', true)
     self:build_shadow_map(scene)
   else
-    self.gbuffer_shader:send('render_shadow', false)
+    self.deferred_shader:send('render_shadow', false)
   end
 
   self:render_gbuffer(scene)
@@ -122,7 +121,6 @@ function M:render(scene)
     lg.setBlendMode('replace')
     lg.draw(self.np_map, hw, 0, 0, sx, sy)
     lg.draw(self.albedo_map, hw * 2, 0, 0, sx, sy)
-    lg.draw(self.shadow_map, 0, hh, 0, sx, sy)
     lg.setBlendMode('alpha')
 
     lg.draw(self.output_canvas, hw, hh, 0, sx * 2, sy * 2)
@@ -160,6 +158,7 @@ function M:build_shadow_map(scene)
 
 	shadow_shader:send("projection_view_mat", 'column', light_proj_view)
   self.gbuffer_shader:send('light_proj_view_mat', 'column', light_proj_view)
+  self.deferred_shader:send('LightProjViewMat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
@@ -186,7 +185,7 @@ function M:render_gbuffer(scene)
 
 	lg.setShader(gbuffer_shader)
   lg.setCanvas({
-    self.np_map, self.albedo_map, self.shadow_map,
+    self.np_map, self.albedo_map,
     depthstencil = self.depth_map
   })
   lg.clear(0, 0, 0, 0)
@@ -195,12 +194,6 @@ function M:render_gbuffer(scene)
   pv_mat:mul(self.projection, self.view)
 	gbuffer_shader:send("projection_view_mat", 'column', pv_mat)
   gbuffer_shader:send('y_flip', -1)
-
-  if self.render_shadow then
-    gbuffer_shader:send("shadow_depth_map", self.shadow_depth_map)
-  else
-    gbuffer_shader:send("shadow_depth_map", self.default_shadow_depth_map)
-  end
 
   lg.setBlendMode('replace', 'premultiplied')
   for i, model in ipairs(scene.model) do
@@ -222,7 +215,7 @@ function M:final_render()
 
   render_shader:send('NPMap', self.np_map)
   render_shader:send('AlbedoMap', self.albedo_map)
-  render_shader:send('ShadowMap', self.shadow_map)
+  -- render_shader:send('ShadowMap', self.shadow_map)
 
   self.depth_map:setDepthSampleMode()
   render_shader:send('DepthMap', self.depth_map)
@@ -238,6 +231,12 @@ function M:final_render()
 	render_shader:send("invertedProjMat", 'column', inverted_proj)
   local inverted_view = Mat4.new():invert(self.view)
 	render_shader:send("invertedViewMat", 'column', inverted_view)
+
+  if self.render_shadow then
+    render_shader:send("ShadowDepthMap", self.shadow_depth_map)
+  else
+    render_shader:send("ShadowDepthMap", self.default_shadow_depth_map)
+  end
 
   if self.skybox then
     render_shader:send("skybox", self.skybox)

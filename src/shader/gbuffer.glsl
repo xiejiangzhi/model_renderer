@@ -19,21 +19,6 @@ vec2 encode_normal(vec3 n) {
   return n.xy / p + 0.5;
 }
 
-float calc_shadow(vec3 spos) {
-  float shadow = 0;
-
-  if (spos.x >= 0 && spos.x <= 1 && spos.y >=0 && spos.y <= 1) {
-    // PCF
-    vec2 tex_scale = 1.0 / textureSize(shadow_depth_map, 0);
-    for (int x = -1; x <= 1; ++x) {
-      for (int y = -1; y <= 1; ++y) {
-        shadow += Texel(shadow_depth_map, spos + vec3(vec2(x, y) * tex_scale, 0));
-      }
-    }
-  }
-  return shadow / 9.0;
-}
-
 void effect() {
   vec4 tex_color = Texel(MainTex, VaryingTexCoord.xy) * VaryingColor;
   if (tex_color.a == 0) { discard; }
@@ -42,9 +27,6 @@ void effect() {
 
   float alpha = tex_color.a * fragAlbedo.a;
   love_Canvases[1] = vec4(tex_color.rgb * tex_color.a * fragAlbedo.rgb, alpha);
-
-  float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
-  love_Canvases[2] = vec4(shadow, 0, 0, 1);
 
   gl_FragDepth = (alpha > 0) ? gl_FragCoord.z : 1;
 }
