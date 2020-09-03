@@ -9,6 +9,7 @@ local Mat4 = Cpml.mat4
 local Vec3 = Cpml.vec3
 
 local Model = require(code_dir..'.model')
+local Util = require(code_dir..'.util')
 
 local lg = love.graphics
 
@@ -213,24 +214,25 @@ function M:final_render()
 
   local render_shader = self.deferred_shader
 
-  render_shader:send('NPMap', self.np_map)
-  render_shader:send('AlbedoMap', self.albedo_map)
-  -- render_shader:send('ShadowMap', self.shadow_map)
-
   self.depth_map:setDepthSampleMode()
-  render_shader:send('DepthMap', self.depth_map)
-
-	render_shader:send("light_pos", self.light_pos)
-	render_shader:send("light_color", self.light_color)
-  render_shader:send('sun_dir', self.sun_dir)
-  render_shader:send('sun_color', self.sun_color)
-	render_shader:send("ambient_color", self.ambient_color)
-	render_shader:send("camera_pos", self.camera_pos)
-
   local inverted_proj = Mat4.new():invert(self.projection)
-	render_shader:send("invertedProjMat", 'column', inverted_proj)
   local inverted_view = Mat4.new():invert(self.view)
-	render_shader:send("invertedViewMat", 'column', inverted_view)
+
+  Util.send_uniforms(render_shader, {
+    { 'NPMap', self.np_map },
+    { 'AlbedoMap', self.albedo_map },
+    { 'DepthMap', self.depth_map },
+
+	  { "light_pos", self.light_pos },
+	  { "light_color", self.light_color },
+    { 'sun_dir', self.sun_dir },
+    { 'sun_color', self.sun_color },
+	  { "ambient_color", self.ambient_color },
+	  { "camera_pos", self.camera_pos },
+
+	  { "invertedProjMat", 'column', inverted_proj },
+	  { "invertedViewMat", 'column', inverted_view }
+  })
 
   if self.render_shadow then
     render_shader:send("ShadowDepthMap", self.shadow_depth_map)
@@ -239,9 +241,11 @@ function M:final_render()
   end
 
   if self.skybox then
-    render_shader:send("skybox", self.skybox)
-    render_shader:send("skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
-    render_shader:send("use_skybox", true)
+    Util.send_uniforms(render_shader, {
+      { "skybox", self.skybox },
+      { "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1 },
+      { "use_skybox", true }
+    })
   else
     render_shader:send("use_skybox", false)
   end
@@ -288,9 +292,11 @@ function M:render_skybox(model)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, view)
 
-  skybox_shader:send("projection_view_mat", 'column', pv_mat)
-  skybox_shader:send("skybox", self.skybox)
-  skybox_shader:send('y_flip', -1)
+  Util.send_uniforms(skybox_shader, {
+    { "projection_view_mat", 'column', pv_mat },
+    { "skybox", self.skybox },
+    { 'y_flip', -1 },
+  })
 
 	lg.setDepthMode("lequal", true)
   lg.draw(model.mesh)

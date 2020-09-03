@@ -97,6 +97,14 @@ See examples folder for more.
 ### Model
 
 * MR.model.new(vertices, texture, opts): new a custom model form vertices. vertex: { x, y, z, tex_x, tex_y, normal_x, normal_y, normal_z }. opts is the same as `model:set_opts`
+
+```
+MR.model.new(vertices)
+MR.model.new(vertices, opts)
+MR.model.new(vertices, texture)
+MR.model.new(vertices, texture, opts)
+```
+
 * MR.model.load(path): load a model from `.obj` file
 * MR.model.new_plane(width, height)
 * MR.model.new_circle(radius, segments)
@@ -112,8 +120,23 @@ model:set_opts({
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream.
+  mesh_format = {
+    { 'VertexPosition', 'float', 3 },
+    { 'VertexTexCoord', 'float', 2 },
+    { 'VertexNormal', 'float', 3 },
+  },
+  instance_mesh_format = {
+    { 'ModelPos', 'float', 3 },
+    { 'ModelAngle', 'float', 3 },
+    { 'ModelScale', 'float', 3 },
+    { 'ModelAlbedo', 'byte', 4 },
+    { 'ModelPhysics', 'byte', 4 },
+  }
+ }
 })
 ```
+
+> Note: `mesh_format` and `instance_mesh_format` only allow set by `MR.model.new`
 
 * Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
 

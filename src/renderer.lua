@@ -152,14 +152,15 @@ function M:render_scene(scene)
 	lg.setShader(render_shader)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
-	send_uniform(render_shader, "projection_view_mat", 'column', pv_mat)
-
-	send_uniform(render_shader, "light_pos", self.light_pos)
-	send_uniform(render_shader, "light_color", self.light_color)
-  send_uniform(render_shader, 'sun_dir', self.sun_dir)
-  send_uniform(render_shader, 'sun_color', self.sun_color)
-	send_uniform(render_shader, "ambient_color", self.ambient_color)
-	send_uniform(render_shader, "camera_pos", self.camera_pos)
+  Util.send_uniforms(render_shader, {
+	  { "projection_view_mat", 'column', pv_mat },
+	  { "light_pos", self.light_pos },
+	  { "light_color", self.light_color },
+    { 'sun_dir', self.sun_dir },
+    { 'sun_color', self.sun_color },
+	  { "ambient_color", self.ambient_color },
+	  { "camera_pos", self.camera_pos },
+  })
 
   if self.render_shadow then
     send_uniform(render_shader, "shadow_depth_map", self.shadow_depth_map)
@@ -168,9 +169,11 @@ function M:render_scene(scene)
   end
 
   if self.skybox then
-    send_uniform(render_shader, "skybox", self.skybox)
-    send_uniform(render_shader, "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
-    send_uniform(render_shader, "use_skybox", true)
+    Util.send_uniforms(render_shader, {
+      { "skybox", self.skybox },
+      { "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1 },
+      { "use_skybox", true }
+    })
   else
     send_uniform(render_shader, "use_skybox", false)
   end
@@ -208,8 +211,10 @@ function M:render_skybox(model)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, view)
 
-  skybox_shader:send("projection_view_mat", 'column', pv_mat)
-  skybox_shader:send("skybox", self.skybox)
+  Util.send_uniforms(skybox_shader, {
+    { "projection_view_mat", 'column', pv_mat },
+    { "skybox", self.skybox },
+  })
 
 	lg.setDepthMode("lequal", true)
   lg.draw(model.mesh)

@@ -21,7 +21,7 @@ M.mesh_format = {
   { 'VertexNormal', 'float', 3 },
 }
 
-M.transform_mesh_format = {
+M.instance_mesh_format = {
   { 'ModelPos', 'float', 3 },
   { 'ModelAngle', 'float', 3 },
   { 'ModelScale', 'float', 3 },
@@ -33,6 +33,8 @@ M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
+  mesh_format = M.mesh_format,
+  instance_mesh_format = M.instance_mesh_format,
 }
 M.default_opts.__index = M.default_opts
 
@@ -203,15 +205,27 @@ end
 
 --------------------
 
+-- new(vertices)
+-- new(vertices, options)
+-- new(vertices, texture)
+-- new(vertices, texture, options)
 -- vertices:
--- texture
+-- texture:
 -- optsions:
 --  write_depth:
 --  face_culling: 'back' or 'front' or 'none'
 --  instance_usage: see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
+--  mesh_format: custom the mesh format
+--  instance_mesh_format: custom the instance mesh format
 function M:init(vertices, texture, opts)
-  self.mesh = new_mesh(M.mesh_format, vertices, "triangles", 'static')
+  if not opts and type(texture) == 'table' then
+    opts, texture = texture, nil
+  end
+
+  local mesh_format = opts and opts.mesh_format or M.mesh_format
+  self.mesh = new_mesh(mesh_format, vertices, "triangles", 'static')
   self.options = setmetatable({}, M.default_opts)
+  self.shader = nil
 
   if texture then self:set_texture(texture) end
   if opts then self:set_opts(opts) end
@@ -231,11 +245,13 @@ function M:set_texture(tex)
   self.mesh:setTexture(tex)
 end
 
--- transforms: { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
+-- attrs: { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = vec3 or vec4, physics = vec2 }, ... }
 --  coord is required, other is optionals
-function M:set_instances(transforms)
+function M:set_instances(attrs)
+  if #attrs == 0 then error("Instances count cannot be 0") end
+
   local raw_tf = {}
-  for i, tf in ipairs(transforms) do
+  for i, tf in ipairs(attrs) do
     local x, y, z, rx, ry, rz, sx, sy, sz, ar, ag, ab, aa, pr, pm
     local coord = tf.coord
     local rotation = tf.rotation or default_rotation
@@ -283,22 +299,23 @@ function M:set_instances(transforms)
   self:set_raw_instances(raw_tf)
 end
 
--- transforms: { instance1_attrs, instance2_attrs, ... }
-function M:set_raw_instances(transforms)
+-- attrs: { instance1_attrs, instance2_attrs, ... }
+-- format: mesh format
+function M:set_raw_instances(attrs)
   local tfs_mesh = self.instances_mesh
-  if tfs_mesh and self.total_instances >= #transforms then
-    tfs_mesh:setVertices(transforms)
+  if tfs_mesh and self.total_instances >= #attrs then
+    tfs_mesh:setVertices(attrs)
   else
-    tfs_mesh = new_mesh(M.transform_mesh_format, transforms, nil, self.options.instance_usage)
-    self.mesh:attachAttribute('ModelPos', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelAngle', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelScale', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelAlbedo', tfs_mesh, 'perinstance')
-    self.mesh:attachAttribute('ModelPhysics', tfs_mesh, 'perinstance')
+    local format = self.options.instance_mesh_format
+    tfs_mesh = new_mesh(format, attrs, nil, self.options.instance_usage)
+    for _, f in ipairs(format) do
+      self.mesh:attachAttribute(f[1], tfs_mesh, 'perinstance')
+    end
+
     self.instances_mesh = tfs_mesh
   end
 
-  self.total_instances = #transforms
+  self.total_instances = #attrs
 end
 
 -----------------------

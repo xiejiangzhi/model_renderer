@@ -14,6 +14,29 @@ local cylinder = MR.model.new_cylinder(100, 300)
 local sphere = MR.model.new_sphere(150)
 local box = MR.model.new_box(150)
 
+local custom_mesh_format = {
+  { 'VertexPosition', 'float', 3 },
+  { 'VerteTexCoord', 'float', 2 },
+  { 'VertexNormal', 'float', 3 },
+  { 'ModelAlbedo', 'byte', 4 },
+}
+local custom_attrs_format = {
+  { 'ModelPos', 'float', 3 },
+  { 'ModelAngle', 'float', 3 },
+  { 'ModelScale', 'float', 3 },
+  { 'ModelPhysics', 'byte', 4 },
+}
+local vertices = {
+  { 0,0,0, 0,0, 0,1,0, 1,0,0,1 },
+  { 0,30,300, 0,0, 0,1,0, 0,0,1,1 },
+  { 300,0,0, 0,0, 0,1,0, 0,1,0,1 },
+}
+local custom_model = MR.model.new(vertices, nil, {
+  mesh_format = custom_mesh_format,
+  instance_mesh_format = custom_attrs_format
+})
+custom_model:set_raw_instances({{ 200, 200, -300, 0, 0, 0, 1, 1, 1, 0.2, 0.5 }})
+
 function love.load()
   local r = renderer
   r.light_pos = { 1000, 2000, 1000 }
@@ -82,6 +105,7 @@ function love.draw()
     { 0, math.sin(ts * 0.3) * math.pi * 2, 0 },
     2, { 1, 1, 1, 1 }, { 0.3, 0.9 }
   )
+  scene:add_model(custom_model)
 
   renderer:render(scene:build())
   scene:clean()

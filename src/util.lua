@@ -6,6 +6,12 @@ function M.send_uniform(shader, k, ...)
   end
 end
 
+function M.send_uniforms(shader, uniforms)
+  for i, v in ipairs(uniforms) do
+    M.send_uniform(shader, unpack(v))
+  end
+end
+
 function M.compute_face_normal(v1, v2, v3)
   local nx = (v2[2] - v1[2]) * (v3[3] - v1[3]) - (v2[3] - v1[3]) * (v3[2] - v1[2])
   local ny = (v2[3] - v1[3]) * (v3[1] - v1[1]) - (v2[1] - v1[1]) * (v3[3] - v1[3])
@@ -14,9 +20,10 @@ function M.compute_face_normal(v1, v2, v3)
 end
 
 -- Params:
---  vs: vertices
+--  vs: vertices, { { x, y, z }, { x2, y2, z2 }, { x3,y3,z3 } }
+--    or { { x,y,z, texture_x, texture_y }, { x,y,z, texture_x, texture_y }, { x,y,z, texture_x, texture_y } }
 --  fs: faces, { { vidx1, vidx2, vidx3, ... }, ... }
---        or { { { vidx1, vn = { x, y, z } }, { vidx2, vn = normal2 }, { vidx3, vn = normal3 }, ... }, ... }
+--    or { { { vidx1, vn = { x, y, z } }, { vidx2, vn = normal2 }, { vidx3, vn = normal3 }, ... }, ... }
 -- generate_vertices({{ x, y, z }, { x2, y2, z2 }, { x3, y3, z3 }, { x4, y4, z4 }}, {{ 1, 2, 3 }, { 2, 3, 4 }})
 function M.generate_vertices(vs, fs)
   if not fs then return vs end
