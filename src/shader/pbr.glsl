@@ -172,9 +172,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     F0, albedo, roughness, metallic
   );
   
-  // shadow
-  float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
-
   vec3 ambient;
   if (use_skybox) {
     ambient = complute_skybox_ambient_light(normal, view_dir, F0, albedo, roughness, metallic);
@@ -182,6 +179,8 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     ambient = ambient_color * albedo * ao;
   }
 
+  // shadow
+  float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
   vec3 tcolor = ambient + light * (1 - shadow);
 
   // HDR tonemapping

@@ -46,6 +46,6 @@ void effect() {
   float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
   love_Canvases[2] = vec4(shadow, 0, 0, 1);
 
-  /* gl_FragDepth = (alpha > 0) ? gl_FragCoord.z : 1; */
+  gl_FragDepth = (alpha > 0) ? gl_FragCoord.z : 1;
 }
 

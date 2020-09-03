@@ -115,11 +115,11 @@ function M:render(scene)
 
     self:final_render()
 
+    lg.setBlendMode('alpha')
+    self.depth_map:setDepthSampleMode()
+    lg.draw(self.depth_map, 0, hh * 2, 0, sx, sy)
+    self.depth_map:setDepthSampleMode('less')
     lg.setBlendMode('replace')
-    local dm = self.depth_map
-    dm:setDepthSampleMode()
-    lg.draw(dm, 0, 0, 0, sx, sy)
-    dm:setDepthSampleMode('less')
     lg.draw(self.np_map, hw, 0, 0, sx, sy)
     lg.draw(self.albedo_map, hw * 2, 0, 0, sx, sy)
     lg.draw(self.shadow_map, 0, hh, 0, sx, sy)
@@ -222,11 +222,10 @@ function M:final_render()
 
   render_shader:send('NPMap', self.np_map)
   render_shader:send('AlbedoMap', self.albedo_map)
-  render_shader:send('ShadowMap', self.albedo_map)
+  render_shader:send('ShadowMap', self.shadow_map)
 
   self.depth_map:setDepthSampleMode()
   render_shader:send('DepthMap', self.depth_map)
-  self.depth_map:setDepthSampleMode('less')
 
 	render_shader:send("light_pos", self.light_pos)
 	render_shader:send("light_color", self.light_color)
@@ -248,18 +247,21 @@ function M:final_render()
     render_shader:send("use_skybox", false)
   end
 
-  lg.setCanvas({ output, depthstencil = self.depth_map })
 	lg.setShader(render_shader)
   lg.setBlendMode('alpha', 'premultiplied')
-	lg.setDepthMode("less", false)
 
+  lg.setCanvas(output)
+  lg.clear(0, 0, 0, 0)
   lg.draw(self.screen_mesh, 0, 0, 0, output:getDimensions())
 
+  self.depth_map:setDepthSampleMode('less')
+  lg.setCanvas({ output, depthstencil = self.depth_map })
+	lg.setDepthMode("less", false)
   if self.skybox then
     self:render_skybox(skybox_model)
   end
-
 	lg.setDepthMode()
+
   lg.setBlendMode('alpha')
 	lg.setShader(old_shader)
 	lg.setCanvas(old_canvas)

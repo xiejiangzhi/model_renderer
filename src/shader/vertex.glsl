@@ -52,7 +52,6 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   // -1 - 1 to 0 - 1
   lightProjPos = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
 
-  /* return projection_view_mat * worldPos; */
   vec4 r = projection_view_mat * worldPos;
   r.y *= y_flip;
   return r;

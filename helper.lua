@@ -113,6 +113,10 @@ function M.debug(ext_str)
   str = str..string.format('\ntime: %.1f', M.ts)
   if renderer then
     str = str..string.format('\nrenderer: %s', renderer.deferred_shader and 'deferred' or 'normal')
+    str = str..string.format('\nlight pos(%.2f %.2f %.2f)', unpack(renderer.light_pos))
+    str = str..string.format('\nlight color(%.2f, %.2f, %.2f)',unpack(renderer.light_color))
+    str = str..string.format('\nsun dir(%.1f, %.1f, %.1f)',unpack(renderer.sun_dir))
+    str = str..string.format('\nsun color(%.2f, %.2f, %.2f)',unpack(renderer.sun_color))
   end
 
   if camera then
@@ -143,29 +147,26 @@ function M.keyreleased(key)
 end
 
 function M.convert_to_deferred_renderer()
-  M.clear_renderer()
-  local new = MR.deferred_renderer.new()
-  for k, v in pairs(new) do
-    renderer[k] = v
-  end
-  setmetatable(renderer, getmetatable(new))
+  M.replace_renderer(MR.deferred_renderer.new())
 end
 
 function M.convert_to_normal_renderer()
-  M.clear_renderer()
-  local new = MR.renderer.new()
-  for k, v in pairs(new) do
-    renderer[k] = v
-  end
-  setmetatable(renderer, getmetatable(new))
+  M.replace_renderer(MR.renderer.new())
 end
 
-function M.clear_renderer()
+function M.replace_renderer(new)
   for k, v in pairs(renderer) do
     if k:match('_shader$') or k:match('_map') or k:match('_canvas') then
       renderer[k] = nil
     end
   end
+
+  for k, v in pairs(new) do
+    if type(v) ~= 'table' or not renderer[k] then
+      renderer[k] = v
+    end
+  end
+  setmetatable(renderer, getmetatable(new))
 end
 
 return M

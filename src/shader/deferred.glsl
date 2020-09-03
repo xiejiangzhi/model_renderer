@@ -27,6 +27,8 @@ uniform bool use_skybox;
 uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
 
+const float y_flip = -1;
+
 //-------------------------------
 // Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
 vec3 decode_normal(vec2 enc) {
@@ -44,12 +46,13 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
   float z = depth * 2.0 - 1.0;
 
   vec4 clipSpacePosition = vec4(tex_coords * 2.0 - 1.0, z, 1.0);
+  clipSpacePosition.y *= -1;
   vec4 viewSpacePosition = invertedProjMat * clipSpacePosition;
 
   // Perspective division
   viewSpacePosition /= viewSpacePosition.w;
   vec4 worldSpacePosition = invertedViewMat * viewSpacePosition;
-  return worldSpacePosition.xyz;
+  return worldSpacePosition.xyz / worldSpacePosition.w;
 }
 
 // ----------------------------------------------------------------------------
@@ -153,12 +156,12 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float depth = Texel(DepthMap, tex_coords).r;
   vec3 pos = get_world_pos(depth, tex_coords);
   vec4 np = Texel(NPMap, tex_coords);
-  float has_normal = step(0.01, np.x * np.x + np.y * np.y);
-  vec3 normal = decode_normal(np.xy) * has_normal;
   vec4 ad = Texel(AlbedoMap, tex_coords);
   vec3 albedo = ad.rgb;
   float alpha = 1;
   float shadow = Texel(ShadowMap, tex_coords).r;
+  float valid_gbuffer = step(0.0001, ad.r + ad.g + ad.b + ad.a);
+  vec3 normal = decode_normal(np.xy) * valid_gbuffer;
 
   vec3 view_dir = normalize(camera_pos - pos);
   vec3 light_dir = normalize(light_pos - pos);
@@ -185,7 +188,9 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   
   vec3 ambient;
   if (use_skybox) {
-    ambient = complute_skybox_ambient_light(normal, view_dir, F0, albedo, roughness, metallic);
+    ambient = complute_skybox_ambient_light(
+      normal, view_dir, F0, albedo, roughness, metallic
+    ) * valid_gbuffer;
   } else {
     ambient = ambient_color * albedo * ao;
   }
