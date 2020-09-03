@@ -208,6 +208,40 @@ It is optional, you can also manually set all camera attributes for renderer.
 * camera:detach()
 
 
+### Util
+
+Some helper functions.
+
+* `MR.util.send_uniform(shader, name, ...)`: check has uniform before sending uniform.
+
+```
+-- equal to
+if shader:hasUniform(name) then 
+  shader:send(k, ...)
+end
+```
+
+* `MR.util.compute_face_normal(vertex1, vertex2, vertex3)`: return normal { x, y, z }
+* `MR.util.generate_vertices(vertices, faces)`: generate model vertices from vertices and face
+
+```
+-- auto compute face normal
+MR.util.generate_vertices(
+  {{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, { 0, 0, 1 }},
+  {{ 1, 2, 3 }, { 2, 3, 4 }}
+)
+
+-- use custom vertex normal
+MR.util.generate_vertices(
+  {{ x, y, z }, { x2, y2, z2 }, { x3, y3, z3 }, { x4, y4, z4 }},
+  {
+    { { 1, vn = { 0, 1 ,0 } }, { 2, vn = { 0, 1, 0 } }, { 3, vn = { 0, 1, 0 } } },
+    { 2, 3, 4 } -- auto compute face normal
+  }
+)
+```
+
+
 ## TODO
 
 * More support for model file(mtl, tex and more)
