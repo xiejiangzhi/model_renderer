@@ -1,4 +1,5 @@
 local M = {}
+local private = {}
 
 function M.send_uniform(shader, k, ...)
   if shader:hasUniform(k) then
@@ -25,8 +26,10 @@ end
 --  fs: faces, { { vidx1, vidx2, vidx3, ... }, ... }
 --    or { { { vidx1, vn = { x, y, z } }, { vidx2, vn = normal2 }, { vidx3, vn = normal3 }, ... }, ... }
 -- generate_vertices({{ x, y, z }, { x2, y2, z2 }, { x3, y3, z3 }, { x4, y4, z4 }}, {{ 1, 2, 3 }, { 2, 3, 4 }})
-function M.generate_vertices(vs, fs)
+function M.generate_vertices(vs, fs, vertex_build_cb)
   if not fs then return vs end
+  if not vertex_build_cb then vertex_build_cb = private.build_vertex end
+
   local vertices = {}
 
   for i, face in ipairs(fs) do
@@ -63,14 +66,22 @@ function M.generate_vertices(vs, fs)
         if not vn3 then vn3 = vn end
       end
 
-      table.insert(vertices, { v1[1], v1[2], v1[3], v1[4] or 0, v1[5] or 0, vn1[1], vn1[2], vn1[3] })
-      table.insert(vertices, { v2[1], v2[2], v2[3], v2[4] or 0, v2[5] or 0, vn2[1], vn2[2], vn2[3] })
-      table.insert(vertices, { v3[1], v3[2], v3[3], v3[4] or 0, v3[5] or 0, vn3[1], vn3[2], vn3[3] })
+      table.insert(vertices, vertex_build_cb(v1, vn1))
+      table.insert(vertices, vertex_build_cb(v2, vn2))
+      table.insert(vertices, vertex_build_cb(v3, vn3))
       last_vi, last_vn = vi3, vn3
     end
   end
 
   return vertices
+end
+
+-------------------------
+
+function private.build_vertex(v, vn)
+  return {
+    v[1], v[2], v[3], v[4] or 0, v[5] or 0, vn[1], vn[2], vn[3], unpack(v, 6)
+  }
 end
 
 return M

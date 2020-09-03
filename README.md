@@ -245,7 +245,7 @@ end
 ```
 
 * `MR.util.compute_face_normal(vertex1, vertex2, vertex3)`: return normal { x, y, z }
-* `MR.util.generate_vertices(vertices, faces)`: generate model vertices from vertices and face
+* `MR.util.generate_vertices(vertices, faces, build_cb)`: generate model vertices from vertices and face
 
 ```
 -- auto compute face normal
@@ -261,6 +261,15 @@ MR.util.generate_vertices(
     { { 1, vn = { 0, 1 ,0 } }, { 2, vn = { 0, 1, 0 } }, { 3, vn = { 0, 1, 0 } } },
     { 2, 3, 4 } -- auto compute face normal
   }
+)
+
+-- build custom vertex
+MR.util.generate_vertices(
+  {{ 0, 0, 0 }, { 1, 0, 0 }, { 1, 0, 1 }, { 0, 0, 1 }},
+  {{ 1, 2, 3 }, { 2, 3, 4 }},
+  function(vertex, normal)
+    return { vertex[1], vertex[2], vertex[3], normal[1], normal[2], normal[3], unpack(vertex, 4) }
+  end
 )
 ```
 

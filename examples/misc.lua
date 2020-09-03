@@ -16,7 +16,6 @@ local box = MR.model.new_box(150)
 
 local custom_mesh_format = {
   { 'VertexPosition', 'float', 3 },
-  { 'VerteTexCoord', 'float', 2 },
   { 'VertexNormal', 'float', 3 },
   { 'ModelAlbedo', 'byte', 4 },
 }
@@ -27,15 +26,15 @@ local custom_attrs_format = {
   { 'ModelPhysics', 'byte', 4 },
 }
 local vertices = {
-  { 0,0,0, 0,0, 0,1,0, 1,0,0,1 },
-  { 0,30,300, 0,0, 0,1,0, 0,0,1,1 },
-  { 300,0,0, 0,0, 0,1,0, 0,1,0,1 },
+  { 0,0,0, 0,1,0, 1,0,0,1 },
+  { 0,30,300, 0,1,0, 0,0,1,1 },
+  { 300,0,0, 0,1,0, 0,1,0,1 },
 }
 local custom_model = MR.model.new(vertices, nil, {
   mesh_format = custom_mesh_format,
   instance_mesh_format = custom_attrs_format
 })
-custom_model:set_raw_instances({{ 200, 200, -300, 0, 0, 0, 1, 1, 1, 0.2, 0.5 }})
+custom_model:set_raw_instances({{ 200, 200, -300, 0, 0, 0, 1, 1, 1, 0.2, 0.9 }})
 
 function love.load()
   local r = renderer
