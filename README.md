@@ -14,6 +14,7 @@ The goal of this project is to easily and quickly create and render 3D geometric
 * Project Love2D drawing to 3D world.
 * Simple render scene with light and shadow.
 * Simple PBR
+* Support deferred shading by `DeferredRenderer`
 
 
 ## Example
