@@ -27,7 +27,5 @@ void effect() {
 
   float alpha = tex_color.a * fragAlbedo.a;
   love_Canvases[1] = vec4(tex_color.rgb * tex_color.a * fragAlbedo.rgb, alpha);
-
-  gl_FragDepth = (alpha > 0) ? gl_FragCoord.z : 1;
 }
 

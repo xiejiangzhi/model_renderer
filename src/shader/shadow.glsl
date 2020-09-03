@@ -44,6 +44,6 @@ uniform vec3 sun_dir;
 
 void effect() {
   float a = Texel(MainTex, VaryingTexCoord.xy).a;
-  gl_FragDepth = (a > 0) ? gl_FragCoord.z : 1;
+  if (a == 0) { discard; }
 }
 #endif

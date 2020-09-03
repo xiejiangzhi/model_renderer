@@ -6,7 +6,7 @@ varying vec3 modelNormal;
 varying vec3 fragPos;
 varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
-varying vec3 shadowPos;
+varying vec3 lightProjPos;
 
 uniform vec3 ambient_color;
 uniform vec3 light_pos;
@@ -35,6 +35,7 @@ vec3 complute_light(
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tex_color = Texel(tex, texture_coords);
+  if (tex_color.a == 0) { discard; }
 
   vec3 light = vec3(0);
   vec3 normal = normalize(modelNormal);
@@ -55,14 +56,14 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
   // shadow
   float shadow = 0;
-  if (shadowPos.x >= 0 && shadowPos.x <= 1 && shadowPos.y >= 0 && shadowPos.y <= 1) {
+  if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
     vec3 shadow_bias = vec3(0, 0, -0.003);
 
     // PCF
     vec2 tex_size = 1.0 / textureSize(shadow_depth_map, 0);
     for (int x = -1; x <= 1; ++x) {
       for (int y = -1; y <= 1; ++y) {
-        shadow += texture(shadow_depth_map, shadowPos + vec3(vec2(x, y) * tex_size, 0) + shadow_bias);
+        shadow += texture(shadow_depth_map, lightProjPos + vec3(vec2(x, y) * tex_size, 0) + shadow_bias);
       }
     }
     shadow /= 9.0;
@@ -71,7 +72,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec3 ambient = ambient_color * albedo * ao;
   vec3 tcolor = ambient + light * (1 - shadow);
 
-  gl_FragDepth = (tex_color.a > 0) ? gl_FragCoord.z : 1;
   return vec4(tcolor, tex_color.a * fragAlbedo.a);
 }
 

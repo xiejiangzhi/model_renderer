@@ -9,6 +9,8 @@ local Mat4 = Cpml.mat4
 local Vec3 = Cpml.vec3
 
 local Model = require(code_dir..'.model')
+local Util = require(code_dir..'.util')
+local send_uniform = Util.send_uniform
 
 local lg = love.graphics
 
@@ -59,7 +61,7 @@ function M:init()
   end
 
   self.render_shader = lg.newShader(file_dir..'/shader/pbr.glsl', file_dir..'/shader/vertex.glsl')
-  self.render_shader:send('brdf_lut', brdf_lut)
+  send_uniform(self.render_shader, 'brdf_lut', brdf_lut)
 end
 
 function M:apply_camera(camera)
@@ -84,9 +86,9 @@ end
 function M:render(scene)
   if self.render_shadow then
     self:build_shadow_map(scene)
-    self.render_shader:send('render_shadow', true)
+    send_uniform(self.render_shader, 'render_shadow', true)
   else
-    self.render_shader:send('render_shadow', false)
+    send_uniform(self.render_shader, 'render_shadow', false)
   end
   self:render_scene(scene)
 
@@ -124,7 +126,7 @@ function M:build_shadow_map(scene)
   light_proj_view:mul(projection, view)
 
 	shadow_shader:send("projection_view_mat", 'column', light_proj_view)
-  render_shader:send('light_proj_view_mat', 'column', light_proj_view)
+  send_uniform(render_shader, 'light_proj_view_mat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
@@ -150,29 +152,27 @@ function M:render_scene(scene)
 	lg.setShader(render_shader)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
-	render_shader:send("projection_view_mat", 'column', pv_mat)
+	send_uniform(render_shader, "projection_view_mat", 'column', pv_mat)
 
-	render_shader:send("light_pos", self.light_pos)
-	render_shader:send("light_color", self.light_color)
-  render_shader:send('sun_dir', self.sun_dir)
-  render_shader:send('sun_color', self.sun_color)
-	render_shader:send("ambient_color", self.ambient_color)
-	render_shader:send("camera_pos", self.camera_pos)
+	send_uniform(render_shader, "light_pos", self.light_pos)
+	send_uniform(render_shader, "light_color", self.light_color)
+  send_uniform(render_shader, 'sun_dir', self.sun_dir)
+  send_uniform(render_shader, 'sun_color', self.sun_color)
+	send_uniform(render_shader, "ambient_color", self.ambient_color)
+	send_uniform(render_shader, "camera_pos", self.camera_pos)
 
-  if render_shader:hasUniform('shadow_depth_map') then
-    if self.render_shadow then
-      render_shader:send("shadow_depth_map", self.shadow_depth_map)
-    else
-      render_shader:send("shadow_depth_map", self.default_shadow_depth_map)
-    end
+  if self.render_shadow then
+    send_uniform(render_shader, "shadow_depth_map", self.shadow_depth_map)
+  else
+    send_uniform(render_shader, "shadow_depth_map", self.default_shadow_depth_map)
   end
 
   if self.skybox then
-    render_shader:send("skybox", self.skybox)
-    render_shader:send("skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
-    render_shader:send("use_skybox", true)
+    send_uniform(render_shader, "skybox", self.skybox)
+    send_uniform(render_shader, "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1)
+    send_uniform(render_shader, "use_skybox", true)
   else
-    render_shader:send("use_skybox", false)
+    send_uniform(render_shader, "use_skybox", false)
   end
 
   for i, model in ipairs(scene.model) do
@@ -243,6 +243,5 @@ function private.generate_brdf_lut(size)
 
   return canvas
 end
-
 
 return M

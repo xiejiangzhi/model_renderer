@@ -146,6 +146,7 @@ vec3 complute_skybox_ambient_light(
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 tex_color = Texel(tex, texture_coords);
+  if (tex_color.a == 0) { discard; }
 
   vec3 normal = normalize(modelNormal);
   vec3 view_dir = normalize(camera_pos - fragPos);
@@ -188,7 +189,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   // gamma correct
   tcolor = pow(tcolor, vec3(1.0/2.2)); 
 
-  gl_FragDepth = (tex_color.a > 0) ? gl_FragCoord.z : 1;
   return vec4(tcolor, tex_color.a * fragAlbedo.a);
 }
 

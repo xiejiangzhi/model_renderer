@@ -103,6 +103,16 @@ function M.update(dt)
     else
       renderer.debug = false
     end
+
+    if not renderer.deferred_shader and M.keyreleased('f2') then
+      if renderer.render_mode == 'pure3d' then
+        M.convert_to_normal_renderer()
+      elseif renderer.render_mode == 'phong' then
+        M.convert_to_pure3d_renderer()
+      else
+        M.convert_to_phong_renderer()
+      end
+    end
   end
 end
 
@@ -112,7 +122,11 @@ function M.debug(ext_str)
   str = str..string.format('\nFPS: %i', love.timer.getFPS())
   str = str..string.format('\ntime: %.1f', M.ts)
   if renderer then
-    str = str..string.format('\nrenderer: %s', renderer.deferred_shader and 'deferred' or 'normal')
+    if renderer.deferred_shader then
+      str = str..string.format('\nrenderer: %s', 'deferred')
+    else
+      str = str..string.format('\nrenderer: %s - %s', 'normal', renderer.render_mode or 'none')
+    end
     str = str..string.format('\nlight pos(%.2f %.2f %.2f)', unpack(renderer.light_pos))
     str = str..string.format('\nlight color(%.2f, %.2f, %.2f)',unpack(renderer.light_color))
     str = str..string.format('\nsun dir(%.1f, %.1f, %.1f)',unpack(renderer.sun_dir))
@@ -154,12 +168,27 @@ function M.convert_to_normal_renderer()
   M.replace_renderer(MR.renderer.new())
 end
 
+function M.convert_to_pure3d_renderer()
+  local new = MR.renderer.new()
+  new.render_shader = lg.newShader('src/shader/pure3d.glsl')
+  new.render_mode = 'pure3d'
+  M.replace_renderer(new)
+end
+
+function M.convert_to_phong_renderer()
+  local new = MR.renderer.new()
+  new.render_shader = lg.newShader('src/shader/phong.glsl', 'src/shader/vertex.glsl')
+  new.render_mode = 'phong'
+  M.replace_renderer(new)
+end
+
 function M.replace_renderer(new)
   for k, v in pairs(renderer) do
     if k:match('_shader$') or k:match('_map') or k:match('_canvas') then
       renderer[k] = nil
     end
   end
+  renderer.render_mode = nil
 
   for k, v in pairs(new) do
     if type(v) ~= 'table' or not renderer[k] then
