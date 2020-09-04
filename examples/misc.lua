@@ -1,5 +1,5 @@
 local MR = require 'src'
-local Cpml = require 'cpml'
+-- local Cpml = require 'cpml'
 local Helper = require 'helper'
 
 local lg = love.graphics
@@ -99,6 +99,9 @@ local custom_model = MR.model.new(vertices, nil, {
 })
 custom_model:set_instances({{ 0, 0, 0 }})
 
+local camera = MR.camera.new()
+camera:look_at(0, 0, 0, math.rad(60), 0, 0)
+
 function love.load()
   local r = renderer
   r.light_pos = { 1000, 2000, 1000 }
@@ -112,7 +115,11 @@ function love.load()
   end)
   image_model:set_texture(tex)
 
-  Helper.bind(nil, renderer)
+  local w, h = lg.getDimensions()
+  local hw, hh = w * 0.5, h * 0.5
+  camera:orthogonal(-hw, hw, hh, -hh, 1, 1500)
+
+  Helper.bind(camera, renderer, 'orthogonal')
 end
 
 function love.update(dt)
@@ -120,20 +127,7 @@ function love.update(dt)
 end
 
 function love.draw()
-  local w, h = lg.getDimensions()
-  local hw, hh = w * 0.5, h * 0.5
-
-  local projection = Cpml.mat4.from_ortho(-hw, hw, hh, -hh, 1, 1500)
-  local view = Cpml.mat4()
-  -- z is face to user
-  local eye = Cpml.vec3(0, math.sin(math.rad(60)) * 700, 500)
-  local target = Cpml.vec3(0, 0, 0)
-  view:look_at(view, eye, target, Cpml.vec3(0, 1, 0))
-
-  renderer.projection = projection
-  renderer.view = view
-  renderer.camera_pos = { eye:unpack() }
-  renderer.look_at = { target:unpack() }
+  renderer:apply_camera(camera)
 
   lg.clear(0.5, 0.5, 0.5)
 
@@ -157,7 +151,7 @@ function love.draw()
   )
 
   scene:add_model(box,
-    { 300, 200, 300 },
+    { 400, 200, 400 },
     { math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi }, nil, nil, { 0.3, 0.9 }
   )
   scene:add_model(image_model, { 100, 100, 100 }, nil, 2)

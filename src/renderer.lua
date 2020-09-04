@@ -60,7 +60,7 @@ function M:init()
     brdf_lut = private.generate_brdf_lut(brdf_lut_size)
   end
 
-  self.render_shader = lg.newShader(file_dir..'/shader/pbr.glsl', file_dir..'/shader/vertex.glsl')
+  self.render_shader = Util.new_shader(file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl')
   send_uniform(self.render_shader, 'brdf_lut', brdf_lut)
 end
 
@@ -163,9 +163,9 @@ function M:render_scene(scene)
   })
 
   if self.render_shadow then
-    send_uniform(render_shader, "shadow_depth_map", self.shadow_depth_map)
+    send_uniform(render_shader, "ShadowDepthMap", self.shadow_depth_map)
   else
-    send_uniform(render_shader, "shadow_depth_map", self.default_shadow_depth_map)
+    send_uniform(render_shader, "ShadowDepthMap", self.default_shadow_depth_map)
   end
 
   if self.skybox then

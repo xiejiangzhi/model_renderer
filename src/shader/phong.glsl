@@ -1,6 +1,7 @@
 #pragma language glsl3
 
 #define PI 3.14159265359
+#define ao 1.0
 
 varying vec3 modelNormal;
 varying vec3 fragPos;
@@ -13,9 +14,7 @@ uniform vec3 light_pos;
 uniform vec3 light_color;
 uniform vec3 camera_pos;
 
-#define ao 1.0
-
-uniform DepthImage shadow_depth_map;
+vec3 shadow_bias = vec3(0, 0, -0.003);
 
 vec3 complute_light(
   vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance,
@@ -30,6 +29,8 @@ vec3 complute_light(
 
   return diffuse + specular;
 }
+
+#include_glsl calc_shadow.glsl
 
 // ----------------------------------------------------------------------------
 
@@ -55,19 +56,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   );
 
   // shadow
-  float shadow = 0;
-  if (lightProjPos.x >= 0 && lightProjPos.x <= 1 && lightProjPos.y >= 0 && lightProjPos.y <= 1) {
-    vec3 shadow_bias = vec3(0, 0, -0.003);
-
-    // PCF
-    vec2 tex_size = 1.0 / textureSize(shadow_depth_map, 0);
-    for (int x = -1; x <= 1; ++x) {
-      for (int y = -1; y <= 1; ++y) {
-        shadow += texture(shadow_depth_map, lightProjPos + vec3(vec2(x, y) * tex_size, 0) + shadow_bias);
-      }
-    }
-    shadow /= 9.0;
-  }
+  float shadow = calc_shadow(lightProjPos + shadow_bias);
 
   vec3 ambient = ambient_color * albedo * ao;
   vec3 tcolor = ambient + light * (1 - shadow);

@@ -1,10 +1,43 @@
 local M = {}
 local private = {}
 
+local code_dir = (...):gsub('.[^%.]+$', '')
+
+local file_dir = code_dir:gsub('%.', '/')
+local shader_dir = file_dir..'/shader'
+
+local lfs = love.filesystem
+
 function M.send_uniform(shader, k, ...)
   if shader:hasUniform(k) then
     shader:send(k, ...)
   end
+end
+
+-- new_shader('pixel.glsl', 'vertex.glsl')
+function M.new_shader(pixel, vertex)
+  local list = { pixel, vertex }
+  local code = {}
+  local fid = 0
+  for i, filename in ipairs(list) do
+    local str = ''
+    local line_no = 0
+    for line in lfs.lines(filename) do
+      line_no = line_no + 1
+      local include_name = line:match('^#include_glsl%s+([a-zA-Z0-9_%.-]+)%s*$')
+      if include_name then
+        fid = fid + 1
+        str = str..'#line 1 '..fid..'\n'
+        str = str..private.read_glsl(include_name, filename)..'\n'
+        str = str..'#line '..(line_no + 1)..' 0\n'
+      else
+        str = str..line..'\n'
+      end
+    end
+    code[i] = str
+  end
+
+  return love.graphics.newShader(unpack(code))
 end
 
 function M.send_uniforms(shader, uniforms)
@@ -82,6 +115,16 @@ function private.build_vertex(v, vn)
   return {
     v[1], v[2], v[3], v[4] or 0, v[5] or 0, vn[1], vn[2], vn[3], unpack(v, 6)
   }
+end
+
+function private.read_glsl(name, filename)
+  local dir = filename:gsub('/[^/]+$', '')
+  local path = dir..'/'..name
+  if not lfs.getInfo(path) then
+    path = shader_dir..'/'..name
+  end
+  if not lfs.getInfo(path) then error("Not found "..name) end
+  return lfs.read(path)
 end
 
 return M

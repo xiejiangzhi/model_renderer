@@ -59,8 +59,8 @@ function M:init()
     brdf_lut = private.generate_brdf_lut(brdf_lut_size)
   end
 
-  self.gbuffer_shader = lg.newShader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
-  self.deferred_shader = lg.newShader(file_dir..'/shader/deferred.glsl')
+  self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
+  self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
   self.deferred_shader:send('brdf_lut', brdf_lut)
 
   local w, h = lg.getDimensions()

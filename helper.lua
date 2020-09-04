@@ -145,6 +145,10 @@ function M.debug(ext_str)
 
   if ext_str then str = str..'\n'..ext_str end
 
+  str = str.."\n\nTab switch renderer"
+  str = str.."\nF1 toggle shadow"
+  str = str.."\nF2 swithc light mode"
+
   lg.print(str, 15, 0)
 end
 
@@ -170,14 +174,14 @@ end
 
 function M.convert_to_pure3d_renderer()
   local new = MR.renderer.new()
-  new.render_shader = lg.newShader('src/shader/pure3d.glsl')
+  new.render_shader = MR.util.new_shader('src/shader/pure3d.glsl')
   new.render_mode = 'pure3d'
   M.replace_renderer(new)
 end
 
 function M.convert_to_phong_renderer()
   local new = MR.renderer.new()
-  new.render_shader = lg.newShader('src/shader/phong.glsl', 'src/shader/vertex.glsl')
+  new.render_shader = MR.util.new_shader('src/shader/phong.glsl', 'src/shader/vertex.glsl')
   new.render_mode = 'phong'
   M.replace_renderer(new)
 end
