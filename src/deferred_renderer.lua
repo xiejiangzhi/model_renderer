@@ -80,10 +80,11 @@ function M:init()
 
   self.ssao_samples = {}
   local rfn = love.math.random
-  for i = 1, 16 do
+  local total = 16
+  for i = 1, total do
     local v = Vec3(rfn() * 2 - 1, rfn() * 2 - 1, rfn())
     v = v:normalize() * rfn()
-    local f = i / 32
+    local f = i / total
     local scale = 0.1 + f * f * (1.0 - 0.1)
     v = v * scale
     table.insert(self.ssao_samples, { v:unpack() })
