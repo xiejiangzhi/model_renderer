@@ -131,14 +131,15 @@ model:set_opts({
     { 'ModelScale', 'float', 3 },
     { 'ModelAlbedo', 'byte', 4 },
     { 'ModelPhysics', 'byte', 4 },
-  }
+  },
+  instance_attrs_parser = function(attrs) end, -- to parse attrs for model:set_instances
  }
 })
 ```
 
 > Note: `mesh_format` and `instance_mesh_format` only allow set by `MR.model.new`
 
-* Model:set_instances(transforms): { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build a raw transforms and call `model:set_raw_instances(raw_transforms)`.
+* Model:set_instances(attrs): { { coord = vec3, rotation = vec3, scale = number or vec3, albedo = rgb or rgba, physics = vec2 or { roughness = v, metallic = v } }, ... }. Set instances for render. build attributes and call `model:set_raw_instances(raw_transforms)` to attach.
 
 ```
 model:set_instances({
@@ -154,7 +155,7 @@ model:set_instances({
 })
 ```
 
-* Model:set_raw_instances(raw_transforms): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #transforms) a mesh to save all instances data and attach to the model.
+* Model:set_raw_instances(raw_attrs): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #raw_attrs) a mesh to save all instances data and attach to the model.
 
 
 ### Renderer
