@@ -21,7 +21,7 @@ uniform float light_far;
 
 uniform bool use_skybox;
 
-uniform mat4 ProjViewMat;
+uniform mat4 projViewMat;
 uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
 uniform mat4 lightProjViewMat;
@@ -56,11 +56,9 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
   return worldSpacePosition.xyz / worldSpacePosition.w;
 }
 
-float rand(vec2 n) {
-	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
-}
 
 #include_glsl calc_shadow.glsl
+#include_glsl ssao.glsl
 
 // ----------------------------------------------------------------------------
 
@@ -107,7 +105,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   if (use_skybox) {
     ambient = complute_skybox_ambient_light(
       normal, view_dir, F0, albedo, roughness, metallic
-    ) * valid_gbuffer;
+    ) * valid_gbuffer * ao;
   } else {
     ambient = ambient_color * albedo * ao;
   }
@@ -116,7 +114,8 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
   float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
 
-  vec3 tcolor = ambient + light * (1 - shadow);
+  float ssao = calc_ssao(tex_coords, pos, normal, DepthMap);
+  vec3 tcolor = ambient * ssao + light * (1 - shadow);
 
   // HDR tonemapping
   tcolor = tcolor / (tcolor + vec3(1.0));

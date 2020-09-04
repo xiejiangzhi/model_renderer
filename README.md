@@ -15,6 +15,7 @@ The goal of this project is to easily and quickly create and render 3D geometric
 * Simple render scene with light and shadow.
 * Simple PBR
 * Support deferred shading by `DeferredRenderer`
+* Support SSAO by `DeferredRenderer`
 
 
 ## Example
@@ -282,7 +283,6 @@ MR.util.generate_vertices(
 * Better light & shadow(CSM or other). more light sources
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
-* SSAO
 
 
 ## References

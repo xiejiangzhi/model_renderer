@@ -77,6 +77,17 @@ function M:init()
     { 1, 1, 1, 1 },
     { 0, 1, 0, 1 },
   }, 'fan')
+
+  self.ssao_samples = {}
+  local rfn = love.math.random
+  for i = 1, 16 do
+    local v = Vec3(rfn() * 2 - 1, rfn() * 2 - 1, rfn())
+    v = v:normalize() * rfn()
+    local f = i / 32
+    local scale = 0.1 + f * f * (1.0 - 0.1)
+    v = v * scale
+    table.insert(self.ssao_samples, { v:unpack() })
+  end
 end
 
 function M:apply_camera(camera)
@@ -105,6 +116,10 @@ function M:render(scene)
   else
     self.deferred_shader:send('render_shadow', false)
   end
+
+  local pv_mat = Mat4.new()
+  pv_mat:mul(self.projection, self.view)
+  self.proj_view_mat = pv_mat
 
   self:render_gbuffer(scene)
 
@@ -191,9 +206,7 @@ function M:render_gbuffer(scene)
   })
   lg.clear(0, 0, 0, 0)
 
-  local pv_mat = Mat4.new()
-  pv_mat:mul(self.projection, self.view)
-	gbuffer_shader:send("projViewMat", 'column', pv_mat)
+	gbuffer_shader:send("projViewMat", 'column', self.proj_view_mat)
   gbuffer_shader:send('y_flip', -1)
 
   lg.setBlendMode('replace', 'premultiplied')
@@ -231,7 +244,11 @@ function M:final_render()
 	  { "camera_pos", self.camera_pos },
 
 	  { "invertedProjMat", 'column', inverted_proj },
-	  { "invertedViewMat", 'column', inverted_view }
+	  { "invertedViewMat", 'column', inverted_view },
+	  { "projViewMat", 'column', self.proj_view_mat },
+
+	  { "SSAOSamples", unpack(self.ssao_samples) },
+	  { "TotalSSAOSamples", #self.ssao_samples }
   })
 
   if self.render_shadow then
