@@ -125,8 +125,8 @@ function M:build_shadow_map(scene)
   local light_proj_view = Mat4.new()
   light_proj_view:mul(projection, view)
 
-	shadow_shader:send("projection_view_mat", 'column', light_proj_view)
-  send_uniform(render_shader, 'light_proj_view_mat', 'column', light_proj_view)
+	shadow_shader:send("projViewMat", 'column', light_proj_view)
+  send_uniform(render_shader, 'lightProjViewMat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
@@ -153,7 +153,7 @@ function M:render_scene(scene)
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
   Util.send_uniforms(render_shader, {
-	  { "projection_view_mat", 'column', pv_mat },
+	  { "projViewMat", 'column', pv_mat },
 	  { "light_pos", self.light_pos },
 	  { "light_color", self.light_color },
     { 'sun_dir', self.sun_dir },
@@ -212,7 +212,7 @@ function M:render_skybox(model)
   pv_mat:mul(self.projection, view)
 
   Util.send_uniforms(skybox_shader, {
-    { "projection_view_mat", 'column', pv_mat },
+    { "projViewMat", 'column', pv_mat },
     { "skybox", self.skybox },
   })
 

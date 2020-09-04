@@ -157,9 +157,9 @@ function M:build_shadow_map(scene)
   local light_proj_view = Mat4.new()
   light_proj_view:mul(projection, view)
 
-	shadow_shader:send("projection_view_mat", 'column', light_proj_view)
-  self.gbuffer_shader:send('light_proj_view_mat', 'column', light_proj_view)
-  self.deferred_shader:send('LightProjViewMat', 'column', light_proj_view)
+	shadow_shader:send("projViewMat", 'column', light_proj_view)
+  self.gbuffer_shader:send('lightProjViewMat', 'column', light_proj_view)
+  self.deferred_shader:send('lightProjViewMat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)
 	lg.setMeshCullMode('front')
@@ -193,7 +193,7 @@ function M:render_gbuffer(scene)
 
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
-	gbuffer_shader:send("projection_view_mat", 'column', pv_mat)
+	gbuffer_shader:send("projViewMat", 'column', pv_mat)
   gbuffer_shader:send('y_flip', -1)
 
   lg.setBlendMode('replace', 'premultiplied')
@@ -293,7 +293,7 @@ function M:render_skybox(model)
   pv_mat:mul(self.projection, view)
 
   Util.send_uniforms(skybox_shader, {
-    { "projection_view_mat", 'column', pv_mat },
+    { "projViewMat", 'column', pv_mat },
     { "skybox", self.skybox },
     { 'y_flip', -1 },
   })

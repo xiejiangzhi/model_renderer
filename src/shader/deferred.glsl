@@ -21,9 +21,10 @@ uniform float light_far;
 
 uniform bool use_skybox;
 
+uniform mat4 ProjViewMat;
 uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
-uniform mat4 LightProjViewMat;
+uniform mat4 lightProjViewMat;
 uniform bool render_shadow = true;
 
 const float y_flip = -1;
@@ -53,6 +54,10 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
   viewSpacePosition /= viewSpacePosition.w;
   vec4 worldSpacePosition = invertedViewMat * viewSpacePosition;
   return worldSpacePosition.xyz / worldSpacePosition.w;
+}
+
+float rand(vec2 n) {
+	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
 }
 
 #include_glsl calc_shadow.glsl
@@ -107,7 +112,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
     ambient = ambient_color * albedo * ao;
   }
 
-  vec4 light_proj_pos = LightProjViewMat * vec4(pos, 1);
+  vec4 light_proj_pos = lightProjViewMat * vec4(pos, 1);
   light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
   float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
 

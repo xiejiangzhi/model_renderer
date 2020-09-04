@@ -6,7 +6,7 @@ varying vec4 fragAlbedo;
 // ----------------------------------------------------------------------------
 
 #ifdef VERTEX
-uniform mat4 projection_view_mat;
+uniform mat4 projViewMat;
 
 attribute vec3 ModelPos;
 attribute vec3 ModelAngle;
@@ -23,7 +23,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   vec4 worldPos = vec4(mpos.xyz / mpos.w + ModelPos, 1.0);
   fragAlbedo = ModelAlbedo;
 
-  return projection_view_mat * worldPos;
+  return projViewMat * worldPos;
 }
 #endif
 

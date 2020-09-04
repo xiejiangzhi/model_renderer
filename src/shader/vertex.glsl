@@ -6,8 +6,8 @@ varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
 varying vec3 lightProjPos;
 
-uniform mat4 projection_view_mat;
-uniform mat4 light_proj_view_mat;
+uniform mat4 projViewMat;
+uniform mat4 lightProjViewMat;
 uniform float y_flip = 1;
 
 attribute vec3 VertexNormal;
@@ -29,11 +29,11 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
   fragAlbedo = ModelAlbedo;
   fragPhysics = ModelPhysics;
 
-  vec4 light_proj_pos = light_proj_view_mat * worldPos;
+  vec4 light_proj_pos = lightProjViewMat * worldPos;
   // -1 - 1 to 0 - 1
   lightProjPos = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
 
-  vec4 r = projection_view_mat * worldPos;
+  vec4 r = projViewMat * worldPos;
   r.y *= y_flip;
   return r;
 }
