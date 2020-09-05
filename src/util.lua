@@ -7,6 +7,9 @@ local file_dir = code_dir:gsub('%.', '/')
 local shader_dir = file_dir..'/shader'
 
 local lfs = love.filesystem
+local lg = love.graphics
+
+local random = love.math.random
 
 function M.send_uniform(shader, k, ...)
   if shader:hasUniform(k) then
@@ -107,6 +110,16 @@ function M.generate_vertices(vs, fs, vertex_build_cb)
   end
 
   return vertices
+end
+
+function M.generate_ssao_data()
+  local ssao_sample_data = love.image.newImageData(16, 16)
+  ssao_sample_data:mapPixel(function()
+    return random(), random(), random(), random()
+  end)
+  local ssao_samples = lg.newImage(ssao_sample_data)
+  ssao_samples:setWrap('repeat', 'repeat')
+  return ssao_samples
 end
 
 -------------------------

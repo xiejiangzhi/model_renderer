@@ -15,7 +15,10 @@ uniform vec3 sun_dir;
 uniform vec3 sun_color;
 uniform vec3 light_pos;
 uniform vec3 light_color;
-uniform vec3 camera_pos;
+
+uniform vec3 cameraPos;
+uniform float cameraNear;
+uniform float cameraFar;
 
 uniform float light_far;
 
@@ -76,9 +79,10 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float alpha = 1;
   /* float shadow = Texel(ShadowMap, tex_coords).r; */
   float valid_gbuffer = step(0.0001, ad.r + ad.g + ad.b + ad.a);
+  if (valid_gbuffer == 0) { discard; }
   vec3 normal = decode_normal(np.xy) * valid_gbuffer;
 
-  vec3 view_dir = normalize(camera_pos - pos);
+  vec3 view_dir = normalize(cameraPos - pos);
   vec3 light_dir = normalize(light_pos - pos);
 
   float roughness = np.z;
@@ -114,7 +118,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
   float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
 
-  float ssao = calc_ssao(tex_coords, pos, normal, DepthMap);
+  float ssao = (SSAOSampleCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
   vec3 tcolor = ambient * ssao + light * (1 - shadow);
 
   // HDR tonemapping

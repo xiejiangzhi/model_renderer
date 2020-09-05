@@ -42,6 +42,8 @@ function M:init()
   self.view = nil
   self.view_scale = 1
   self.camera_pos = nil
+  self.camera_near = nil
+  self.camera_far = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
 
@@ -61,7 +63,6 @@ function M:init()
 
   self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
   self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
-  self.deferred_shader:send('brdf_lut', brdf_lut)
 
   local w, h = lg.getDimensions()
   -- normal, roughness, metallic
@@ -78,17 +79,21 @@ function M:init()
     { 0, 1, 0, 1 },
   }, 'fan')
 
-  self.ssao_samples = {}
-  local rfn = love.math.random
-  local total = 16
-  for i = 1, total do
-    local v = Vec3(rfn() * 2 - 1, rfn() * 2 - 1, rfn())
-    v = v:normalize() * rfn()
-    local f = i / total
-    local scale = 0.1 + f * f * (1.0 - 0.1)
-    v = v * scale
-    table.insert(self.ssao_samples, { v:unpack() })
-  end
+  local ssao_noise = Util.generate_ssao_data()
+
+  Util.send_uniforms(self.skybox_shader, {
+    { 'y_flip', -1 }
+  })
+  Util.send_uniforms(self.gbuffer_shader, {
+    { 'y_flip', -1 }
+  })
+  Util.send_uniforms(self.deferred_shader, {
+    { 'brdf_lut', brdf_lut },
+    { 'SSAONoise', ssao_noise },
+	  { "SSAOPow", 1 },
+	  { "SSAORadius", 16 },
+	  { "SSAOSampleCount", 4 },
+  })
 end
 
 function M:apply_camera(camera)
@@ -96,6 +101,8 @@ function M:apply_camera(camera)
   self.view = camera.view
   self.camera_pos = { camera.pos:unpack() }
   self.look_at = { camera.focus:unpack() }
+  self.camera_near = camera.near
+  self.camera_far = camera.far
 
   local w, h = love.graphics.getDimensions()
   local viewport = { 0, 0, w, h }
@@ -208,7 +215,6 @@ function M:render_gbuffer(scene)
   lg.clear(0, 0, 0, 0)
 
 	gbuffer_shader:send("projViewMat", 'column', self.proj_view_mat)
-  gbuffer_shader:send('y_flip', -1)
 
   lg.setBlendMode('replace', 'premultiplied')
   for i, model in ipairs(scene.model) do
@@ -242,14 +248,15 @@ function M:final_render()
     { 'sun_dir', self.sun_dir },
     { 'sun_color', self.sun_color },
 	  { "ambient_color", self.ambient_color },
-	  { "camera_pos", self.camera_pos },
+
+	  { "cameraPos", self.camera_pos },
+	  { "cameraNear", self.camera_near },
+	  { "cameraFar", self.camera_far },
 
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
 	  { "projViewMat", 'column', self.proj_view_mat },
 
-	  { "SSAOSamples", unpack(self.ssao_samples) },
-	  { "TotalSSAOSamples", #self.ssao_samples }
   })
 
   if self.render_shadow then
@@ -313,7 +320,6 @@ function M:render_skybox(model)
   Util.send_uniforms(skybox_shader, {
     { "projViewMat", 'column', pv_mat },
     { "skybox", self.skybox },
-    { 'y_flip', -1 },
   })
 
 	lg.setDepthMode("lequal", true)

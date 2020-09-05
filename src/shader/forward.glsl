@@ -18,7 +18,7 @@ uniform vec3 sun_dir;
 uniform vec3 sun_color;
 uniform vec3 light_pos;
 uniform vec3 light_color;
-uniform vec3 camera_pos;
+uniform vec3 cameraPos;
 
 uniform float light_far;
 
@@ -39,7 +39,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   if (tex_color.a == 0) { discard; }
 
   vec3 normal = normalize(modelNormal);
-  vec3 view_dir = normalize(camera_pos - fragPos);
+  vec3 view_dir = normalize(cameraPos - fragPos);
   vec3 light_dir = normalize(light_pos - fragPos);
 
   float roughness = fragPhysics.x;

@@ -12,7 +12,7 @@ varying vec3 lightProjPos;
 uniform vec3 ambient_color;
 uniform vec3 light_pos;
 uniform vec3 light_color;
-uniform vec3 camera_pos;
+uniform vec3 cameraPos;
 
 vec3 shadow_bias = vec3(0, 0, -0.003);
 
@@ -41,7 +41,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec3 light = vec3(0);
   vec3 normal = normalize(modelNormal);
   vec3 light_dir = normalize(light_pos - fragPos);
-  vec3 view_dir = normalize(camera_pos - fragPos);
+  vec3 view_dir = normalize(cameraPos - fragPos);
 
   float roughness = fragPhysics.x;
   float metallic = fragPhysics.y;

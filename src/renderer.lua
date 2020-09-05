@@ -69,6 +69,8 @@ function M:apply_camera(camera)
   self.view = camera.view
   self.camera_pos = { camera.pos:unpack() }
   self.look_at = { camera.focus:unpack() }
+  self.camera_near = camera.near
+  self.camera_far = camera.far
 
   local w, h = love.graphics.getDimensions()
   local viewport = { 0, 0, w, h }
@@ -159,7 +161,7 @@ function M:render_scene(scene)
     { 'sun_dir', self.sun_dir },
     { 'sun_color', self.sun_color },
 	  { "ambient_color", self.ambient_color },
-	  { "camera_pos", self.camera_pos },
+	  { "cameraPos", self.camera_pos },
   })
 
   if self.render_shadow then
