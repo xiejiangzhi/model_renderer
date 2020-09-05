@@ -113,7 +113,8 @@ function M.generate_vertices(vs, fs, vertex_build_cb)
 end
 
 function M.generate_ssao_data()
-  local ssao_sample_data = love.image.newImageData(16, 16)
+  local size = 8
+  local ssao_sample_data = love.image.newImageData(size ,size)
   ssao_sample_data:mapPixel(function()
     return random(), random(), random(), random()
   end)

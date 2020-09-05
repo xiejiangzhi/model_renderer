@@ -91,7 +91,7 @@ function M:init()
     { 'brdf_lut', brdf_lut },
     { 'SSAONoise', ssao_noise },
 	  { "SSAOPow", 1 },
-	  { "SSAORadius", 16 },
+	  { "SSAORadius", 20 },
 	  { "SSAOSampleCount", 4 },
   })
 end

@@ -126,6 +126,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   // gamma correct
   tcolor = pow(tcolor, vec3(1.0/2.2)); 
 
+  /* return vec4(vec3(ssao), 1); */
   return vec4(tcolor, alpha);
 }
 
