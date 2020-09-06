@@ -116,7 +116,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
 
   vec4 light_proj_pos = lightProjViewMat * vec4(pos, 1);
   light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
-  float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
+  float shadow = render_shadow ? calc_shadow(light_proj_pos.xyz + shadow_bias) : 0;
 
   float ssao = (SSAOSampleCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
   vec3 tcolor = ambient * ao * ssao + light * (1 - shadow);

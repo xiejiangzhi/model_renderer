@@ -8,6 +8,6 @@ function love.conf(t)
   -- t.window.msaa = 0
   t.window.highdpi = true
 
-  t.console = false
+  t.console = true
 end
 
