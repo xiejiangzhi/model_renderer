@@ -13,6 +13,8 @@ vec3 get_ssao_random_vec(vec2 uv) {
 vec3 get_ssao_sample_offset(float i, vec2 uv) {
   vec4 sp = Texel(SSAONoise, uv * vec2(3.333, 1.777) + vec2(i * 0.3453, i * 0.7897));
   vec3 sample_offset = vec3(sp.xy * 2 - 1, sp.z);
+  // normalize is better but slow, reduce 5 FPS.
+  /* vec3 sample_offset = normalize(vec3(sp.xy * 2 - 1, sp.z)); */
   float scale = mix(0.1, 1, pow(sp[int(mod(i, 4))], 2));
   return sample_offset * scale;
 }

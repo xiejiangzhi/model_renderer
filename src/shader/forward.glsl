@@ -2,8 +2,9 @@
 
 #define PI 3.14159265359
 #define ao 1.0
+#define gamma 2.2
 
-const vec3 shadow_bias = vec3(0, 0, -0.004);
+const vec3 shadow_bias = vec3(0, 0, -0.001);
 
 // ------------------------------------------------
 
@@ -77,7 +78,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   // HDR tonemapping
   tcolor = tcolor / (tcolor + vec3(1.0));
   // gamma correct
-  tcolor = pow(tcolor, vec3(1.0/2.2)); 
+  tcolor = pow(tcolor, vec3(1.0 / gamma)); 
 
   return vec4(tcolor, tex_color.a * fragAlbedo.a);
 }

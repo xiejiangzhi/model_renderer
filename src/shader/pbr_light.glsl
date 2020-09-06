@@ -6,18 +6,19 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
   float NdotH = max(dot(N, H), 0.0);
   float NdotH2 = NdotH * NdotH;
 
-  float nom   = a2;
+  float nom = a2;
   float denom = (NdotH2 * (a2 - 1.0) + 1.0);
   denom = PI * denom * denom;
 
-  return nom / max(denom, 0.001); // prevent divide by zero for roughness=0.0 and NdotH=1.0
+  /* return nom / max(denom, 0.001); // prevent divide by zero for roughness=0.0 and NdotH=1.0 */
+  return nom / denom;
 }
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
   float r = (roughness + 1.0);
   float k = (r*r) / 8.0;
 
-  float nom   = NdotV;
+  float nom = NdotV;
   float denom = NdotV * (1.0 - k) + k;
 
   return nom / denom;
@@ -35,10 +36,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
-
-vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
-  return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
-}   
 
 vec3 complute_light(
   vec3 normal, vec3 light_dir, vec3 view_dir, vec3 radiance,

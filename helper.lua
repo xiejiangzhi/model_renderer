@@ -145,9 +145,18 @@ function M.debug(ext_str)
 
   if ext_str then str = str..'\n'..ext_str end
 
-  str = str.."\n\nTab switch renderer"
+  str = str.."\n"
+  local stats = lg.getStats()
+  str = str..string.format("\ndraw calls: %i", stats.drawcalls)
+  str = str..string.format("\ncanvas switches: %i", stats.canvasswitches)
+  str = str..string.format("\ntexture memory: %iM", stats.texturememory / 1024 / 1024)
+
+  str = str.."\n"
+  str = str.."\nTab switch renderer"
   str = str.."\nF1 toggle shadow"
-  str = str.."\nF2 swithc light mode"
+  str = str.."\nF2 switch light mode"
+  str = str.."\n1-9, left or right to switch examples"
+  str = str.."\nSpace to Pause/Resume time"
 
   lg.print(str, 15, 0)
 end

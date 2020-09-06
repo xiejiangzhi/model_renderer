@@ -123,6 +123,29 @@ function M.generate_ssao_data()
   return ssao_samples
 end
 
+function M.generate_brdf_lut(size)
+  local shader = lg.newShader(file_dir..'/shader/brdf_lut.glsl')
+  local old_shader = lg.getShader()
+  local old_canvas = lg.getCanvas()
+  local canvas = lg.newCanvas(size, size, { type = '2d', format = 'rg16f' })
+
+  lg.setShader(shader)
+  lg.setCanvas(canvas)
+
+  -- must flip Y when render to canvas
+  local mesh = lg.newMesh({
+    { 0, 0, 0, 1 }, { size, 0, 1, 1 }, { size, size, 1, 0 }, { 0, size, 0, 0 }
+  }, 'fan', 'static')
+  lg.draw(mesh)
+
+  canvas:setWrap('clamp', 'clamp')
+
+  lg.setCanvas(old_canvas)
+  lg.setShader(old_shader)
+
+  return canvas
+end
+
 -------------------------
 
 function private.build_vertex(v, vn)

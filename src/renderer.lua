@@ -57,11 +57,11 @@ function M:init()
   self.skybox = nil
   if not skybox_model then
     skybox_model = Model.new_skybox()
-    brdf_lut = private.generate_brdf_lut(brdf_lut_size)
+    brdf_lut = Util.generate_brdf_lut(brdf_lut_size)
   end
 
   self.render_shader = Util.new_shader(file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl')
-  send_uniform(self.render_shader, 'brdf_lut', brdf_lut)
+  send_uniform(self.render_shader, 'brdfLUT', brdf_lut)
 end
 
 function M:apply_camera(camera)
@@ -99,6 +99,8 @@ function M:render(scene)
   -- lg.draw(c, 0, 0, 0, 0.5, 0.5)
   -- c:setDepthSampleMode('less')
 end
+
+----------------------------------
 
 function M:build_shadow_map(scene)
   local old_shader = lg.getShader()
@@ -228,26 +230,6 @@ end
 function private.new_depth_map(w, h, mode)
   local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth32f', readable = true })
   canvas:setDepthSampleMode(mode)
-  return canvas
-end
-
-function private.generate_brdf_lut(size)
-  local shader = lg.newShader(file_dir..'/shader/brdf_lut.glsl')
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
-  local canvas = lg.newCanvas(size, size, { type = '2d', format = 'rg16f' })
-
-  lg.setShader(shader)
-  lg.setCanvas(canvas)
-
-  local mesh = lg.newMesh({
-    { 0, 0, 0, 1 }, { size, 0, 1, 1 }, { size, size, 1, 0 }, { 0, size, 0, 0 }
-  }, 'fan', 'static')
-  lg.draw(mesh)
-
-  lg.setCanvas(old_canvas)
-  lg.setShader(old_shader)
-
   return canvas
 end
 

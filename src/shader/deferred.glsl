@@ -31,7 +31,7 @@ uniform mat4 lightProjViewMat;
 uniform bool render_shadow = true;
 
 const float y_flip = -1;
-const vec3 shadow_bias = vec3(0, 0, -0.004);
+const vec3 shadow_bias = vec3(0, 0, -0.001);
 
 //-------------------------------
 // Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
@@ -109,9 +109,9 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   if (use_skybox) {
     ambient = complute_skybox_ambient_light(
       normal, view_dir, F0, albedo, roughness, metallic
-    ) * valid_gbuffer * ao;
+    ) * valid_gbuffer;
   } else {
-    ambient = ambient_color * albedo * ao;
+    ambient = ambient_color * albedo;
   }
 
   vec4 light_proj_pos = lightProjViewMat * vec4(pos, 1);
@@ -119,12 +119,12 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float shadow = calc_shadow(light_proj_pos.xyz + shadow_bias);
 
   float ssao = (SSAOSampleCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
-  vec3 tcolor = ambient * ssao + light * (1 - shadow);
+  vec3 tcolor = ambient * ao * ssao + light * (1 - shadow);
 
   // HDR tonemapping
   tcolor = tcolor / (tcolor + vec3(1.0));
   // gamma correct
-  tcolor = pow(tcolor, vec3(1.0/2.2)); 
+  tcolor = pow(tcolor, vec3(1.0/2.2));
 
   /* return vec4(vec3(ssao), 1); */
   return vec4(tcolor, alpha);

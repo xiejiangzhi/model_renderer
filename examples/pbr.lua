@@ -16,9 +16,9 @@ local m2 = MR.model.new_box(20)
 
 local renderer_opts = {
   light_pos = { 250, 270, 700 },
-  light_color = { 100000, 100000, 100000 },
-  sun_dir = { -0.15, 1, -0.35 },
-  -- sun_color = { 0.5, 0.5, 0.5 }
+  light_color = { 10000, 10000, 10000 },
+  -- sun_dir = { -0.15, 1, -0.35 },
+  sun_color = { 0.0, 0.0, 0.0 }
 }
 
 local plane_transform = Cpml.mat4.identity()
@@ -56,7 +56,7 @@ function love.draw()
       scene:add_model(m1,
         { i * 500, 50 + j * 500, 0 },
         { 0, 0, 0 }, nil,
-        { 0.91, 0.92, 0.92, 1 },
+        { 0.97, 0.98, 0.98, 1 },
         { i, j }
       )
       scene:add_model(m2,
