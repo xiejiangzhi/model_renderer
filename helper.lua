@@ -98,6 +98,10 @@ function M.update(dt)
       renderer.render_shadow = not renderer.render_shadow
     end
 
+    if M.keyreleased('f3') then
+      renderer.fxaa = not renderer.fxaa
+    end
+
     if lkb.isDown('`') then
       renderer.debug = true
     else

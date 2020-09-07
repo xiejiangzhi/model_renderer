@@ -46,6 +46,7 @@ function M:init()
   self.camera_far = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
+  self.fxaa = false
 
   self.shadow_resolution = { 1024, 1024 }
   local sr = self.shadow_resolution
@@ -91,9 +92,8 @@ function M:init()
   Util.send_uniforms(self.deferred_shader, {
     { 'brdfLUT', brdf_lut },
     { 'SSAONoise', ssao_noise },
-	  { "SSAOPow", 1 },
-	  { "SSAORadius", 20 },
-	  { "SSAOSampleCount", 4 },
+	  { "SSAORadius", 24 },
+	  { "SSAOSampleCount", 8 },
   })
 end
 
@@ -298,7 +298,11 @@ function M:render_to_screen(x, y, rotate, sx, sy)
   lg.setShader(self.post_shader)
   local tex_w, tex_h = self.output_canvas:getDimensions()
   local tw, th = tex_w * (sx or 1), tex_h * (sy or 1)
-  self.post_shader:send('Resolution', { tw, th })
+
+  Util.send_uniforms(self.post_shader, {
+    { 'Resolution', { tw, th } },
+    { 'use_fxaa', self.fxaa }
+  })
   lg.draw(self.output_canvas, x, y, rotate, sx, sy)
   lg.setShader()
 end
