@@ -1,46 +1,43 @@
-// https://www.shadertoy.com/view/MdyyRt
+// Refs:
+//  https://www.shadertoy.com/view/MdyyRt
+//  https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
 
-#define Strength 10.
+const float fxaa_span_max = 8;
+const float fxaa_reducemul = 1 / 8;
+const float fxaa_reducemin = 1 / 128;
+const vec3 fxaa_luma = vec3(0.299, 0.587, 0.114);
 
-float getLumi(vec3 col){
-  return dot(col,vec3(0.299, 0.587, 0.114));
+float fxaa_sample_luma(Image tex, vec2 uv) {
+  return dot(texture(tex, uv).rgb, fxaa_luma);
 }
 
-vec4 FXAA(Image Tex, vec2 uv) {
-  vec3 e = vec3(1. / resolution, 0.);
+vec4 FXAA(Image tex, vec2 uv, vec2 resolution) {
+  vec3 pixel_size = vec3(1. / resolution, 0.);
 
-  float reducemul = 0.125;// 1. / 8.;
-  float reducemin = 0.0078125;// 1. / 128.;
+  float l_m = fxaa_sample_luma(tex, uv);
+  float l_lb = fxaa_sample_luma(tex, uv - pixel_size.xy);
+  float l_rt = fxaa_sample_luma(tex, uv + pixel_size.xy);
+  float l_lt = fxaa_sample_luma(tex, uv + pixel_size.xy * vec2(-1, 1));
+  float l_rb = fxaa_sample_luma(tex, uv + pixel_size.xy * vec2(1, -1));
 
-  vec4 Or = texture(Tex, uv); //P
-  vec4 LD = texture(Tex, uv - e.xy); //左下
-  vec4 RD = texture(Tex, uv + vec2( e.x,-e.y)); //右下
-  vec4 LT = texture(Tex, uv + vec2(-e.x, e.y)); //左上
-  vec4 RT = texture(Tex, uv + e.xy); // 右上
+  float min_luma = min(l_m, min(min(l_lb, l_rb), min(l_lt, l_rt)));
+  float max_luma = max(l_m, max(max(l_lb, l_rb), max(l_lt, l_rt)));
 
-  float Or_Lum = getLumi(Or.rgb);
-  float LD_Lum = getLumi(LD.rgb);
-  float RD_Lum = getLumi(RD.rgb);
-  float LT_Lum = getLumi(LT.rgb);
-  float RT_Lum = getLumi(RT.rgb);
+  vec2 dir = vec2((l_lt + l_rt) - (l_lb + l_rb), (l_lb + l_lt) - (l_rb + l_rt));
+  float dir_reduce = max((l_lb + l_rb + l_lt + l_rt) * fxaa_reducemul * 0.25, fxaa_reducemin);
+  float rcp_dir_min = 1. / (min(abs(dir.x), abs(dir.y)) + dir_reduce);
+  dir = min(
+    vec2(fxaa_span_max),
+    max(-vec2(fxaa_span_max), dir * rcp_dir_min)
+  ) * pixel_size.xy;
 
-  float min_Lum = min(Or_Lum,min(min(LD_Lum,RD_Lum),min(LT_Lum,RT_Lum)));
-  float max_Lum = max(Or_Lum,max(max(LD_Lum,RD_Lum),max(LT_Lum,RT_Lum)));
+  vec4 result_a = 0.5 * (texture(tex, uv - 0.166667 * dir) + texture(tex,uv + 0.166667 * dir));
+  vec4 result_b = result_a * 0.5 + 0.25 * (texture(tex, uv - 0.5 * dir) + texture(tex, uv + 0.5 * dir));
+  float luma_b = dot(result_b.rgb, fxaa_luma);
 
-  //x direction,-y direction
-  vec2 dir = vec2((LT_Lum+RT_Lum)-(LD_Lum+RD_Lum),(LD_Lum+LT_Lum)-(RD_Lum+RT_Lum));
-  float dir_reduce = max((LD_Lum+RD_Lum+LT_Lum+RT_Lum)*reducemul*0.25,reducemin);
-  float dir_min = 1./(min(abs(dir.x),abs(dir.y))+dir_reduce);
-  dir = min(vec2(Strength),max(-vec2(Strength),dir*dir_min)) * e.xy;
-
-  //------
-  vec4 resultA = 0.5*(texture(Tex,uv-0.166667*dir)+texture(Tex,uv+0.166667*dir));
-  vec4 resultB = resultA*0.5+0.25*(texture(Tex,uv-0.5*dir)+texture(Tex,uv+0.5*dir));
-  float B_Lum = getLumi(resultB.rgb);
-
-  if(B_Lum < min_Lum || B_Lum > max_Lum) {
-    return resultA;
+  if(luma_b < min_luma || luma_b > max_luma) {
+    return result_a;
   } else {
-    return resultB;
+    return result_b;
   }
 }

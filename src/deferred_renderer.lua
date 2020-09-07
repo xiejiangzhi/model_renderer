@@ -298,7 +298,7 @@ function M:render_to_screen(x, y, rotate, sx, sy)
   lg.setShader(self.post_shader)
   local tex_w, tex_h = self.output_canvas:getDimensions()
   local tw, th = tex_w * (sx or 1), tex_h * (sy or 1)
-  self.post_shader:send('resolution', { tw, th })
+  self.post_shader:send('Resolution', { tw, th })
   lg.draw(self.output_canvas, x, y, rotate, sx, sy)
   lg.setShader()
 end
