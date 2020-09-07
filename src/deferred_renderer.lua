@@ -63,6 +63,7 @@ function M:init()
 
   self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
   self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
+  self.post_shader = Util.new_shader(file_dir..'/shader/post.glsl')
 
   local w, h = lg.getDimensions()
   -- normal, roughness, metallic
@@ -136,7 +137,7 @@ function M:render(scene)
     local hw , hh = w / 3, h / 3
     local sx, sy = hw / w, hh / h
 
-    self:final_render()
+    self:deferred_render()
 
     lg.setBlendMode('alpha')
     self.depth_map:setDepthSampleMode()
@@ -147,10 +148,10 @@ function M:render(scene)
     lg.draw(self.albedo_map, hw * 2, 0, 0, sx, sy)
     lg.setBlendMode('alpha')
 
-    lg.draw(self.output_canvas, hw, hh, 0, sx * 2, sy * 2)
+    self:render_to_screen(hw, hh, 0, sx * 2, sy * 2)
   else
-    self:final_render()
-    lg.draw(self.output_canvas)
+    self:deferred_render()
+    self:render_to_screen()
   end
 end
 
@@ -225,8 +226,7 @@ function M:render_gbuffer(scene)
 	lg.setCanvas(old_canvas)
 end
 
--- output: canvas or nil, nil will render to screen
-function M:final_render()
+function M:deferred_render()
   local old_shader = lg.getShader()
   local old_canvas = lg.getCanvas()
   local output = self.output_canvas
@@ -292,6 +292,15 @@ function M:final_render()
   lg.setBlendMode('alpha')
 	lg.setShader(old_shader)
 	lg.setCanvas(old_canvas)
+end
+
+function M:render_to_screen(x, y, rotate, sx, sy)
+  lg.setShader(self.post_shader)
+  local tex_w, tex_h = self.output_canvas:getDimensions()
+  local tw, th = tex_w * (sx or 1), tex_h * (sy or 1)
+  self.post_shader:send('resolution', { tw, th })
+  lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+  lg.setShader()
 end
 
 function M:render_model(model)

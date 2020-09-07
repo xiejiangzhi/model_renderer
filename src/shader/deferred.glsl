@@ -62,9 +62,6 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
 
 #include_glsl calc_shadow.glsl
 #include_glsl ssao.glsl
-
-// ----------------------------------------------------------------------------
-
 #include_glsl pbr_light.glsl
 #include_glsl skybox_light.glsl
 

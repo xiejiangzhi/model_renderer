@@ -161,7 +161,7 @@ model:set_instances({
 
 ### Renderer
 
-`MR.renderer`(support MSAA) and `MR.deferred_renderer`(don't support MSAA)
+`MR.renderer`(Support Love2D MSAA) and `MR.deferred_renderer`(FXAA)
 
 * Renderer.new() return a new instance
 
@@ -284,7 +284,6 @@ MR.util.generate_vertices(
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
 * Support Blend transparent object
-* FXAA
 
 
 ## References
