@@ -5,8 +5,8 @@ function love.conf(t)
   t.window.height = 900
   -- t.window.fullscreen = true
   t.window.vsync = false
-  -- t.window.msaa = 0
-  t.window.highdpi = true
+  t.window.msaa = 0
+  t.window.highdpi = false
 
   t.console = true
 end

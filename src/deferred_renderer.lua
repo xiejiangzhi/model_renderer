@@ -181,7 +181,6 @@ function M:build_shadow_map(scene)
   light_proj_view:mul(projection, view)
 
 	shadow_shader:send("projViewMat", 'column', light_proj_view)
-  -- self.gbuffer_shader:send('lightProjViewMat', 'column', light_proj_view)
   self.deferred_shader:send('lightProjViewMat', 'column', light_proj_view)
 
 	lg.setDepthMode("less", true)

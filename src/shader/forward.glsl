@@ -4,7 +4,6 @@
 #define ao 1.0
 #define gamma 2.2
 
-const vec3 shadow_bias = vec3(0, 0, -0.001);
 
 // ------------------------------------------------
 
@@ -24,6 +23,7 @@ uniform vec3 cameraPos;
 uniform float light_far;
 
 uniform bool render_shadow = true;
+uniform float shadow_bias = -0.002;
 
 uniform bool use_skybox;
 
@@ -72,7 +72,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   }
 
   // shadow
-  float shadow = render_shadow ? calc_shadow(lightProjPos + shadow_bias) : 0;
+  float shadow = render_shadow ? calc_shadow(lightProjPos + vec3(0, 0, shadow_bias)) : 0;
   vec3 tcolor = ambient + light * (1 - shadow);
 
   // HDR tonemapping

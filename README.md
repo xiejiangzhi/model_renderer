@@ -161,7 +161,7 @@ model:set_instances({
 
 ### Renderer
 
-`MR.renderer` and `MR.deferred_renderer`
+`MR.renderer`(support MSAA) and `MR.deferred_renderer`(don't support MSAA)
 
 * Renderer.new() return a new instance
 
@@ -283,6 +283,8 @@ MR.util.generate_vertices(
 * Better light & shadow(CSM or other). more light sources
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
+* Support Blend transparent object
+* FXAA
 
 
 ## References
