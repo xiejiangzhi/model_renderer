@@ -131,6 +131,8 @@ function M.debug(ext_str)
     else
       str = str..string.format('\nrenderer: %s - %s', 'normal', renderer.render_mode or 'none')
     end
+    str = str..string.format('\nfxaa: %s', tostring(renderer.fxaa or false))
+    str = str..string.format('\nsharpen: %.2f', renderer.sharpen or 0)
     str = str..string.format('\nlight pos(%.2f %.2f %.2f)', unpack(renderer.light_pos))
     str = str..string.format('\nlight color(%.2f, %.2f, %.2f)',unpack(renderer.light_color))
     str = str..string.format('\nsun dir(%.1f, %.1f, %.1f)',unpack(renderer.sun_dir))

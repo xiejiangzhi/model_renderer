@@ -1,46 +1,53 @@
-#define SSAONoiseSize 8
+// Refs:
+//  https://www.gamedev.net/tutorials/_/technical/graphics-programming-and-theory/a-simple-and-practical-approach-to-ssao-r2753/
 
-uniform Image SSAONoise;
-uniform float SSAORadius = 20;
-uniform int SSAOSampleCount = 10;
+uniform float SSAORadius = 64;
+uniform float SSAOIntensity = 1.5;
+const int SSAOSampleCount = 4;
 
-vec3 get_ssao_random_vec(vec2 uv) {
-  vec4 v = Texel(SSAONoise, uv);
-  float j = int(mod(uv.x + uv.y, 2));
-  return vec3((v.xy * j + v.zw * (1 - j)) * 2 - 1, 0);
+const float SSAO_BIAS = 0.05;
+const float SSAO_SCALE = 1;
+
+const vec2 sample_ov[4] = vec2[4](
+  vec2(1, 0),
+  vec2(-1, 0),
+  vec2(0, 1),
+  vec2(0, -1)
+);
+
+vec2 hash22(vec2 p) {
+	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
+  p3 += dot(p3, p3.yzx+33.33);
+  return fract((p3.xx+p3.yz)*p3.zy);
 }
 
-vec3 get_ssao_sample_offset(float i, vec2 uv) {
-  vec4 sp = Texel(SSAONoise, uv * vec2(3.333, 1.777) + vec2(i * 0.3453, i * 0.7897));
-  vec3 sample_offset = vec3(sp.xy * 2 - 1, sp.z);
-  // normalize is better but slow, reduce 5 FPS.
-  /* vec3 sample_offset = normalize(vec3(sp.xy * 2 - 1, sp.z)); */
-  float scale = mix(0.1, 1, pow(sp[int(mod(i, 4))], 2));
-  return sample_offset * scale;
+vec2 get_ssao_random_vec(vec2 uv) {
+  return normalize(hash22(uv) * 2 - 1);
+}
+
+float doAmbientOcclusion(vec2 uv, vec3 p, vec3 normal, Image depth_map) {
+  float depth = Texel(depth_map, uv).r;
+  vec3 diff = get_world_pos(depth, uv) - p;
+  vec3 v = normalize(diff);
+  float d = length(diff) * SSAO_SCALE;
+  return max(0, dot(normal, v) - SSAO_BIAS) * (1 / (1 + d)) * SSAOIntensity;
 }
 
 float calc_ssao(vec2 uv, vec3 frag_pos, vec3 normal, Image depth_map) {
-  vec2 noise_uv = uv * 1233.3457 / SSAONoiseSize;
-  vec3 random_vec = get_ssao_random_vec(noise_uv + uv);
-  vec3 tangent = normalize(random_vec - normal * dot(random_vec, normal));
-  vec3 bitangent = cross(normal, tangent);
-  mat3 TBN = mat3(tangent, bitangent, normal);
+  vec2 random_vec = get_ssao_random_vec(uv);
+  float radius = SSAORadius / abs(cameraFar - cameraNear);
 
-  float depth_radius = SSAORadius / abs(cameraFar - cameraNear);
+  float ao = 0;
+  for (int i = 0; i < SSAOSampleCount; i++) {
+    vec2 coord1 = reflect(sample_ov[i], random_vec) * radius;
+    vec2 coord2 = vec2(coord1.x * 0.707 - coord1.y * 0.707, coord1.x * 0.707 + coord1.y * 0.707);
 
-  float occlusion = 0.0;
-  for (int i = 0; i < SSAOSampleCount; ++i) {
-    vec3 sample_offset = get_ssao_sample_offset(i, noise_uv);
-    vec3 sample_pos = frag_pos + TBN * sample_offset * SSAORadius;
-    vec4 sample_uv = projViewMat * vec4(sample_pos, 1);
-    sample_uv.xyz /= sample_uv.w;
-    sample_uv.y *= y_flip;
-    sample_uv = sample_uv * 0.5 + 0.5;
-
-    float sdepth = Texel(DepthMap, sample_uv.xy).r;
-    float range_check = smoothstep(0.0, 1.0, depth_radius / abs(sample_uv.z - sdepth));
-    occlusion += step(sdepth, sample_uv.z) * range_check;
+    ao += doAmbientOcclusion(uv + coord1 * 0.25, frag_pos, normal, depth_map);
+    ao += doAmbientOcclusion(uv + coord2 * 0.50, frag_pos, normal, depth_map);
+    ao += doAmbientOcclusion(uv + coord1 * 0.75, frag_pos, normal, depth_map);
+    ao += doAmbientOcclusion(uv + coord2 * 1.00, frag_pos, normal, depth_map);
   }
-
-  return 1 - occlusion / SSAOSampleCount;
+  ao /= SSAOSampleCount;
+  return 1 - ao;
 }
+

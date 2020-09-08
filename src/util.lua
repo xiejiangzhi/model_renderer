@@ -18,13 +18,15 @@ function M.send_uniform(shader, k, ...)
 end
 
 -- new_shader('pixel.glsl', 'vertex.glsl')
-function M.new_shader(pixel, vertex)
+function M.new_shader(pixel, vertex, macros)
   local list = { pixel, vertex }
   local code = {}
   local fid = 0
+  local macros_code, total_lines = private.build_macros(macros)
+
   for i, filename in ipairs(list) do
-    local str = ''
-    local line_no = 0
+    local str = macros_code
+    local line_no = total_lines
     for line in lfs.lines(filename) do
       line_no = line_no + 1
       local include_name = line:match('^#include_glsl%s+([a-zA-Z0-9_%.-]+)%s*$')
@@ -162,6 +164,15 @@ function private.read_glsl(name, filename)
   end
   if not lfs.getInfo(path) then error("Not found "..name) end
   return lfs.read(path)
+end
+
+function private.build_macros(macros)
+  local code, total_lines = '', 0
+  if not macros then return code, total_lines end
+  for k, v in ipairs(macros) do
+    code = code..string.format('#define %s %s', k, v)
+  end
+  return code, total_lines
 end
 
 return M

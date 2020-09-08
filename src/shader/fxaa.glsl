@@ -1,45 +1,483 @@
-// Refs:
-//  https://www.shadertoy.com/view/MdyyRt
-//  https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
+// https://www.shadertoy.com/view/ttXGzn
 
-const float fxaa_span_max = 8;
-const float fxaa_reducemul = 1 / 8;
-const float fxaa_reducemin = 1 / 128;
-const vec3 fxaa_luma = vec3(0.2126, 0.7152, 0.0722);
+/*****************************************
+ * FXAA 3.11 Implementation - effendiian
+ * -------------------------------------
+ * FXAA implementation based off of the 
+ * work by Timothy Lottes in the Nvidia white paper:
+ * https://developer.download.nvidia.com/assets/gamedev/files/sdk/11/FXAA_WhitePaper.pdf
+ *
+ * Also used these resources:
+ * - https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
+ * - https://blog.codinghorror.com/fast-approximate-anti-aliasing-fxaa/
+ *****************************************/
 
-float fxaa_sample_luma(Image tex, vec2 uv) {
-  return dot(texture(tex, uv).rgb, fxaa_luma);
+
+/*
+/	FXAA setting, defined via preprocessor variables
+*/
+#ifndef FXAA_PRESET
+  #define FXAA_PRESET 3
+#endif
+
+#ifndef FXAA_LUMINANCE
+  #define FXAA_LUMINANCE 0
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 0)
+    #define FXAA_EDGE_THRESHOLD      (1.0/4.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/12.0)
+    #define FXAA_SEARCH_STEPS        2
+    #define FXAA_SEARCH_ACCELERATION 4
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       1
+    #define FXAA_SUBPIX_CAP          (2.0/3.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 1)
+    #define FXAA_EDGE_THRESHOLD      (1.0/8.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/16.0)
+    #define FXAA_SEARCH_STEPS        4
+    #define FXAA_SEARCH_ACCELERATION 3
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       0
+    #define FXAA_SUBPIX_CAP          (3.0/4.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 2)
+    #define FXAA_EDGE_THRESHOLD      (1.0/8.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/24.0)
+    #define FXAA_SEARCH_STEPS        8
+    #define FXAA_SEARCH_ACCELERATION 2
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       0
+    #define FXAA_SUBPIX_CAP          (3.0/4.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 3)
+    #define FXAA_EDGE_THRESHOLD      (1.0/8.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/24.0)
+    #define FXAA_SEARCH_STEPS        16
+    #define FXAA_SEARCH_ACCELERATION 1
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       0
+    #define FXAA_SUBPIX_CAP          (3.0/4.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 4)
+    #define FXAA_EDGE_THRESHOLD      (1.0/8.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/24.0)
+    #define FXAA_SEARCH_STEPS        24
+    #define FXAA_SEARCH_ACCELERATION 1
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       0
+    #define FXAA_SUBPIX_CAP          (3.0/4.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#if (FXAA_PRESET == 5)
+    #define FXAA_EDGE_THRESHOLD      (1.0/8.0)
+    #define FXAA_EDGE_THRESHOLD_MIN  (1.0/24.0)
+    #define FXAA_SEARCH_STEPS        32
+    #define FXAA_SEARCH_ACCELERATION 1
+    #define FXAA_SEARCH_THRESHOLD    (1.0/4.0)
+    #define FXAA_SUBPIX              1
+    #define FXAA_SUBPIX_FASTER       0
+    #define FXAA_SUBPIX_CAP          (3.0/4.0)
+    #define FXAA_SUBPIX_TRIM         (1.0/4.0)
+#endif
+/*--------------------------------------------------------------------------*/
+#define FXAA_SUBPIX_TRIM_SCALE (1.0/(1.0 - FXAA_SUBPIX_TRIM))
+
+// --------------------------------------
+// Helper functions.
+// --------------------------------------
+
+// ---------------------
+// Conversion functions.
+
+// ToVec2
+vec2 ToVec2( float value ) { return vec2(value, value); }
+
+// ToVec3
+vec3 ToVec3( float value ) { return vec3(value, value, value); }
+vec3 ToVec3( vec2 vector, float z ) { return vec3(vector.x, vector.y, z); }
+vec3 ToVec3( vec2 vector ) { return ToVec3(vector, 0.0); }
+
+// ToVec4
+vec4 ToVec4( vec2 vector, float z, float w ) { return vec4(vector.x, vector.y, z, w); }
+vec4 ToVec4( vec2 vector, float z ) { return ToVec4(vector, z, 0.0); }
+vec4 ToVec4( vec2 vector ) { return ToVec4(vector, 0.0); }
+vec4 ToVec4( vec3 vector, float w ) { return vec4(vector.x, vector.y, vector.z, w); }
+vec4 ToVec4( vec3 vector ) { return ToVec4(vector, 0.0); }
+vec4 ToVec4( float value, float w ) { return vec4(value, value, value, w); }
+vec4 ToVec4( float value ) { return ToVec4(value, 0.0); }
+
+// ---------------------
+// Texture sampler functions.
+
+// Return sampled image from a point + offset texel space.
+vec4 TextureOffset( sampler2D tex, 
+                    vec2 uv, 
+                    vec2 offset ) {
+	
+    // Return color from the specified location.
+    return texture(tex, uv + offset); 
+        
 }
 
-vec4 applyFXAA(Image tex, vec2 uv, vec2 resolution) {
-  vec3 pixel_size = vec3(1. / resolution, 0.);
+// ---------------------
+// Grayscale functions.
 
-  vec4 m = Texel(tex, uv);
-  float l_m = dot(m.rgb, fxaa_luma);
-  float l_lb = fxaa_sample_luma(tex, uv - pixel_size.xy);
-  float l_rt = fxaa_sample_luma(tex, uv + pixel_size.xy);
-  float l_lt = fxaa_sample_luma(tex, uv + pixel_size.xy * vec2(-1, 1));
-  float l_rb = fxaa_sample_luma(tex, uv + pixel_size.xy * vec2(1, -1));
-
-  float min_luma = min(l_m, min(min(l_lb, l_rb), min(l_lt, l_rt)));
-  float max_luma = max(l_m, max(max(l_lb, l_rb), max(l_lt, l_rt)));
-
-  vec2 dir = vec2((l_lt + l_rt) - (l_lb + l_rb), (l_lb + l_lt) - (l_rb + l_rt));
-  float dir_reduce = max((l_lb + l_rb + l_lt + l_rt) * fxaa_reducemul * 0.25, fxaa_reducemin);
-  float rcp_dir_min = 1. / (min(abs(dir.x), abs(dir.y)) + dir_reduce);
-  dir = min(
-    vec2(fxaa_span_max),
-    max(-vec2(fxaa_span_max), dir * rcp_dir_min)
-  ) * pixel_size.xy;
-
-  vec2 dir2 = dir * 0.5;
-  vec3 rgb_a = 0.5 * (texture(tex, uv - 0.23333333 * dir).rgb + texture(tex,uv + 0.16666666 * dir).rgb);
-  vec3 rgb_b = rgb_a * 0.5 + 0.25 * (texture(tex, uv - dir2).rgb + texture(tex, uv + dir2).rgb);
-  float luma_b = dot(rgb_b.rgb, fxaa_luma);
-
-  if(luma_b < min_luma || luma_b > max_luma) {
-    return vec4(rgb_a, m.a);
-  } else {
-    return vec4(rgb_b, m.a);
-  }
+// Return grayscaled image based off of the selected color channel.
+vec3 Grayscale( vec3 color, int index ) {
+    int selectedChannel = clamp(index, 0, 2); // [0]r, [1]g, [2]b.
+	return ToVec3(color[selectedChannel]);
 }
+
+// Return grayscaled image based off of the selected color channel.
+vec4 Grayscale( vec4 color, int index ) {
+    int selectedChannel = clamp(index, 0, 3); // [0]r, [1]g, [2]b, [3]a.
+	return ToVec4(color[selectedChannel]);
+}
+
+// Default to green color channel when no index is supplied.
+vec3 Grayscale( vec3 color ) { return Grayscale(color, 1); }
+vec4 Grayscale( vec4 color ) { return Grayscale(color, 1); }
+
+// ---------------------
+// Luminance functions.
+
+// Map RGB to Luminance linearly.
+float LinearRGBLuminance( vec3 color ) {
+    
+    // Weights for relative luma from here: https://en.wikipedia.org/wiki/Luma_(video)
+    vec3 weight = vec3(0.2126729, 0.7151522, 0.0721750);
+    
+    // Get the dot product:
+    // - color.r * weight.r + color.g * weight.g + color.b * weight*b.
+	return dot(color, weight);
+}
+
+// Luminance based off of the original specification.
+float FXAALuminance( vec3 color ) {
+    
+    #if (FXAA_LUMINANCE == 0)
+    
+    return LinearRGBLuminance( color );
+    
+    #else
+    
+	return color.g * (0.587/0.299) + color.r;
+    
+    #endif
+}
+
+// ---------------------
+// Vertical/Horizontal Edge Test functions.
+
+float FXAAVerticalEdge( float lumaO,
+                       float lumaN, 
+                       float lumaE, 
+                       float lumaS, 
+                       float lumaW,
+                       float lumaNW,
+                       float lumaNE,
+                       float lumaSW,
+                       float lumaSE ) {
+    
+    // Slices to calculate.
+    float top = (0.25 * lumaNW) + (-0.5 * lumaN) + (0.25 * lumaNE);
+    float middle = (0.50 * lumaW ) + (-1.0 * lumaO) + (0.50 * lumaE );
+    float bottom = (0.25 * lumaSW) + (-0.5 * lumaS) + (0.25 * lumaSE);
+    
+    // Return value.
+    return abs(top) + abs(middle) + abs(bottom);
+}
+
+float FXAAHorizontalEdge( float lumaO,
+                       float lumaN, 
+                       float lumaE, 
+                       float lumaS, 
+                       float lumaW,
+                       float lumaNW,
+                       float lumaNE,
+                       float lumaSW,
+                       float lumaSE ) {
+    
+    // Slices to calculate.
+    float top = (0.25 * lumaNW) + (-0.5 * lumaW) + (0.25 * lumaSW);
+    float middle = (0.50 * lumaN ) + (-1.0 * lumaO) + (0.50 * lumaS );
+    float bottom = (0.25 * lumaNE) + (-0.5 * lumaE) + (0.25 * lumaSE);
+    
+    // Return value.
+    return abs(top) + abs(middle) + abs(bottom);
+}
+
+// ------------------------
+// FXAA specific functions.
+// ------------------------
+
+// Entry point for the FXAA process.
+vec3 applyFXAA(sampler2D textureSource, 
+               vec2 uv, 
+               vec2 textureResolution) {
+    
+    // Calculate distance between pixels in texture space.
+    vec2 texel = vec2(1.0, 1.0) / textureResolution;
+    
+    // Caculate the luminance.
+    // float luma = FXAALuminance(rgbO.xyz);
+    // float luma = LinearRGBLuminance(clamp(rgbO.xyz, 0.0, 1.0));
+    
+    //-------------------------
+    // 1. LOCAL CONTRAST CHECK
+    
+    // Sample textures from cardinal directions.
+    vec3 rgbN = TextureOffset(textureSource, uv, vec2(0, -texel.y)).rgb; // NORTH
+    vec3 rgbW = TextureOffset(textureSource, uv, vec2(-texel.x, 0)).rgb; // WEST
+    vec3 rgbO = TextureOffset(textureSource, uv, vec2(0, 0)).rgb; // ORIGIN
+    vec3 rgbE = TextureOffset(textureSource, uv, vec2(texel.x, 0)).rgb; // EAST
+    vec3 rgbS = TextureOffset(textureSource, uv, vec2(0, texel.y)).rgb; // SOUTH
+    
+    // Calculate the luminance for each sampled value.
+    float lumaN = FXAALuminance(rgbN);
+    float lumaW = FXAALuminance(rgbW);
+    float lumaO = FXAALuminance(rgbO);
+    float lumaE = FXAALuminance(rgbE);
+    float lumaS = FXAALuminance(rgbS);
+    
+    // Calculate the minimum luma range.
+    float minLuma = min( lumaO, min( min( lumaN, lumaW ), min( lumaS, lumaE ) ) );
+    float maxLuma = max( lumaO, max( max( lumaN, lumaW ), max( lumaS, lumaE ) ) );
+    float localContrast = maxLuma - minLuma;    
+    
+    // Check for early exit.
+    if(localContrast < max( FXAA_EDGE_THRESHOLD_MIN, maxLuma * FXAA_EDGE_THRESHOLD )) {
+    	return rgbO;
+    }
+        
+    //-------------------------
+    // 2. SUB-PIXEL ALIASING TEST
+    
+    // Calculate the pixel contrast ratio.
+    // - Sub-pixel aliasing is detected by taking the ratio of the 
+    // pixel contrast over the local contrast. This ratio nears 1.0
+    // in the presence of single pixel dots and otherwise falls off
+    // towards 0.0 as more pixels contribute to an edge. This ratio
+    // is transformed into the amount of lowpass filter to blend in
+    // at the end of the algorithm.
+    
+    #if FXAA_SUBPIX > 0
+    
+    // Calculate sum of local samples for the lowpass.
+    vec3 rgbL = (rgbN + rgbW + rgbO + rgbE + rgbS);
+    
+        #if FXAA_SUBPIX_FASTER
+
+        // Average the lowpass now since this skips the addition of the diagonal neighbors (NW, NE, SW, SE).
+        rgbL *= (1.0/5.0);
+
+        #endif    
+
+    // Calculate the lowpass luma.
+    // - Lowpass luma is calculated as the average between the luma of neigboring pixels.
+	float lumaL = (lumaN + lumaW + lumaS + lumaE) * 0.25;
+
+    // Calculate the pixel contrast.
+    // - Pixel contrast is the abs() difference between origin pixel luma and lowpass luma of neighbors.
+    float pixelContrast = abs(lumaL - lumaO);
+    
+    // Remember: 
+    // - pixel contrast is the origin - lowpass(neighbors).
+    // - local contrast is the min(origin + neighbors) - max(origin + neighbors) < threshold.
+   
+    // Calculate the ratio between the pixelContrast and localContrast.
+    float contrastRatio = pixelContrast / localContrast;
+    float lowpassBlend = 0.0; // Default is zero. Will be changed depending on subpixel level.
+    
+    	#if FXAA_SUBPIX == 1
+    
+    	// Normal subpixel aliasing. Set based on FXAA algorithm for subpixel aliasing.
+    	lowpassBlend = max( 0.0, contrastRatio - FXAA_SUBPIX_TRIM ) * FXAA_SUBPIX_TRIM_SCALE;
+    	lowpassBlend = min( FXAA_SUBPIX_CAP, lowpassBlend );
+    
+    	#elif FXAA_SUBPIX == 2
+    
+    	// Full force subpixel aliasing. Set blend to ratio.
+    	lowpassBlend = contrastRatio;
+    
+    	#endif
+    
+	#endif
+    
+    //-------------------------
+    // 3. VERTICAL & HORIZONTAL EDGE TEST
+    
+    // Sample the additional diagonal neighbors.
+    vec3 rgbNW = TextureOffset(textureSource, uv, vec2(-texel.x, -texel.y)).rgb; // NORTH-WEST
+    vec3 rgbNE = TextureOffset(textureSource, uv, vec2(texel.x, -texel.y)).rgb; // NORTH-EAST
+    vec3 rgbSW = TextureOffset(textureSource, uv, vec2(-texel.x, texel.y)).rgb; // SOUTH-WEST
+    vec3 rgbSE = TextureOffset(textureSource, uv, vec2(texel.x, texel.y)).rgb; // SOUTH-EAST
+    
+    // Average additional neighbors when sub-pix aliasing is on and it isn't in 'fast' mode.
+    #if FXAA_SUBPIX > 0
+    	#if FXAA_SUBPIX_FASTER == 0
+    		// Add missing neighbors and average them.
+    		rgbL += (rgbNW + rgbNE + rgbSW + rgbSE);  
+    		rgbL *= (1.0/9.0);
+    	#endif
+    #endif
+    
+    // Calculate luma for additional neighbors.
+    float lumaNW = FXAALuminance(rgbNW);
+    float lumaNE = FXAALuminance(rgbNE);
+    float lumaSW = FXAALuminance(rgbSW);
+    float lumaSE = FXAALuminance(rgbSE);
+    
+    // Calculate the vertical and horizontal edges. (Uses algorithm from FXAA white paper).
+    float edgeVert = FXAAVerticalEdge(lumaO, lumaN, lumaE, lumaS, lumaW, lumaNW, lumaNE, lumaSW, lumaSE);
+    float edgeHori = FXAAHorizontalEdge(lumaO, lumaN, lumaE, lumaS, lumaW, lumaNW, lumaNE, lumaSW, lumaSE);
+    
+    // Check if edge is horizontal.
+    bool isHorizontal = edgeHori >= edgeVert;
+    
+    //-------------------------
+    // 4. FIND HIGHEST CONTRAST PAIR 90deg TO EDGE
+    
+    // Contain the appropriate sign for the top left.
+    float edgeSign = isHorizontal ? -texel.y : -texel.x; // Note, if isHorizontal == true, -texel.y is applied (not -texel.x).
+    
+    // Calculate the gradients. The luma used changes based on the horizontal edge status.
+    float gradientNeg = isHorizontal ? abs(lumaN - lumaO) : abs(lumaW - lumaO);
+    float gradientPos = isHorizontal ? abs(lumaS - lumaO) : abs(lumaE - lumaO); 
+    
+    // Calculate the luma based on its direction.
+    // It is an average of the origin and the luma in the respective direction.
+    float lumaNeg = isHorizontal ? ((lumaN + lumaO) * 0.5) : ((lumaW + lumaO) * 0.5);    
+    float lumaPos = isHorizontal ? ((lumaS + lumaO) * 0.5) : ((lumaE + lumaO) * 0.5);
+    
+    // Select the highest gradient pair.
+    bool isNegative = (gradientNeg >= gradientPos);
+    float gradientHighest = isNegative ? gradientNeg : gradientPos; // Assign higher pair.
+    float lumaHighest = isNegative ? lumaNeg : lumaPos;
+    
+    // If gradient pair in the negative direction is higher, flip the edge sign.
+    if(isNegative) { edgeSign *= -1.0; }
+    
+    //-------------------------
+    // 5. END-OF-EDGE SEARCH
+    
+    // Select starting point.
+    vec2 pointN = vec2(0.0, 0.0);
+    pointN.x = uv.x + (isHorizontal ? 0.0 : edgeSign * 0.5);
+    pointN.y = uv.y + (isHorizontal ? edgeSign * 0.5 : 0.0);
+    
+    // Assign search limiting values.
+    gradientHighest *= FXAA_SEARCH_THRESHOLD;
+    
+    // Prepare variables for search.
+    vec2 pointP = pointN; // Start at the same point.
+    vec2 pointOffset = isHorizontal ? vec2(texel.x, 0.0) : vec2(0.0, texel.y);
+    float lumaNegEnd = lumaNeg;
+    float lumaPosEnd = lumaPos;
+    bool searchNeg = false;
+    bool searchPos = false;
+    
+    // Apply values based on FXAA flags.
+    if(FXAA_SEARCH_ACCELERATION == 1) {
+        
+    	pointN += pointOffset * vec2(-1.0);
+    	pointP += pointOffset * vec2(1.0);
+        // pointOffset *= vec2(1.0);
+        
+    } else if(FXAA_SEARCH_ACCELERATION == 2) {    
+        
+    	pointN += pointOffset * vec2(-1.5);
+    	pointP += pointOffset * vec2(1.5);
+        pointOffset *= vec2(2.0);
+        
+    } else if(FXAA_SEARCH_ACCELERATION == 3) {  
+        
+    	pointN += pointOffset * vec2(-2.0);
+    	pointP += pointOffset * vec2(2.0);
+        pointOffset *= vec2(3.0);
+        
+    } else if(FXAA_SEARCH_ACCELERATION == 4) { 
+        
+    	pointN += pointOffset * vec2(-2.5);
+    	pointP += pointOffset * vec2(2.5);
+        pointOffset *= vec2(4.0);
+        
+    }
+    
+    // Perform the end-of-edge search.
+    for(int i = 0; i < FXAA_SEARCH_STEPS; i++) 
+    {
+        if(FXAA_SEARCH_ACCELERATION == 1) {            
+            if(!searchNeg) { lumaNegEnd = FXAALuminance(texture(textureSource, pointN).rgb); }
+            if(!searchPos) { lumaPosEnd = FXAALuminance(texture(textureSource, pointP).rgb); } 
+        } 
+        else
+        {
+            if(!searchNeg) { lumaNegEnd = FXAALuminance(textureGrad(textureSource, pointN, pointOffset, pointOffset).rgb); }
+            if(!searchPos) { lumaPosEnd = FXAALuminance(textureGrad(textureSource, pointP, pointOffset, pointOffset).rgb); } 
+        }
+        
+        // Search for significant change in luma compared to current highest pair.
+        searchNeg = searchNeg || (abs(lumaNegEnd - lumaNeg) >= gradientNeg);
+        searchPos = searchPos || (abs(lumaPosEnd - lumaPos) >= gradientPos);
+        
+        // Determine if search is over early.
+        if(searchNeg && searchPos) { break; }
+        
+        // If still searching, increment offset.
+        if(!searchNeg) { pointN -= pointOffset; }
+        if(!searchPos) { pointP += pointOffset; }
+    }
+    
+    //-------------------------
+    // 6. SUB-PIXEL SHIFT
+    
+    // Determine if sub-pixel center falls on positive or negative side.
+    float distanceNeg = isHorizontal ? uv.x - pointN.x : uv.y - pointN.y;
+    float distancePos = isHorizontal ? pointP.x - uv.x : pointP.y - uv.y;
+   	bool isCloserToNegative = distanceNeg < distancePos;
+    
+    // Assign respective luma.
+    float lumaEnd = isCloserToNegative ? lumaNegEnd : lumaPosEnd;
+    
+    // Check if pixel is in area that receives no filtering.
+    if( ((lumaO - lumaNeg) < 0.0) == ((lumaEnd - lumaNeg) < 0.0) ) {
+    	edgeSign = 0.0;
+    }
+    
+    // Compute sub-pixel offset and filter span.
+    float filterSpanLength = (distancePos + distanceNeg);
+    float filterDistance = isCloserToNegative ? distanceNeg : distancePos;
+    float subpixelOffset = ( 0.5 + ( filterDistance * (-1.0 / filterSpanLength) ) ) * edgeSign;
+    
+    // Resample using the subpixel offset.
+    vec3 rgbOffset = textureLod(textureSource, vec2( uv.x + (isHorizontal ? 0.0 : subpixelOffset), uv.y + (isHorizontal ? subpixelOffset : 0.0)), 0.0).rgb;
+    
+    // Return the FXAA effect.
+    #if FXAA_SUBPIX == 0
+    
+    return vec3(rgbOffset);
+    
+    #else
+    
+    return mix(rgbOffset, rgbL, lowpassBlend);
+    
+    #endif
+}
+

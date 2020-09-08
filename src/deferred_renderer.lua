@@ -46,7 +46,7 @@ function M:init()
   self.camera_far = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
-  self.fxaa = false
+  self.fxaa = true
 
   self.shadow_resolution = { 1024, 1024 }
   local sr = self.shadow_resolution
@@ -64,7 +64,7 @@ function M:init()
 
   self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
   self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
-  self.post_shader = Util.new_shader(file_dir..'/shader/post.glsl')
+  self.fxaa_shader = Util.new_shader(file_dir..'/shader/fxaa_filter.glsl')
 
   local w, h = lg.getDimensions()
   -- normal, roughness, metallic
@@ -72,6 +72,7 @@ function M:init()
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
   self.depth_map = private.new_depth_map(w, h, 'less')
 
+  self.screen_tmp_map = self.albedo_map
   self.output_canvas = lg.newCanvas(w, h)
 
   self.screen_mesh = lg.newMesh({
@@ -92,8 +93,9 @@ function M:init()
   Util.send_uniforms(self.deferred_shader, {
     { 'brdfLUT', brdf_lut },
     { 'SSAONoise', ssao_noise },
-	  { "SSAORadius", 24 },
-	  { "SSAOSampleCount", 8 },
+	  { "SSAORadius", 64 },
+    { "SSAOIntensity", 1.5 },
+	  -- { "SSAOSampleCount", 8 },
   })
 end
 
@@ -295,16 +297,15 @@ function M:deferred_render()
 end
 
 function M:render_to_screen(x, y, rotate, sx, sy)
-  lg.setShader(self.post_shader)
   local tex_w, tex_h = self.output_canvas:getDimensions()
-  local tw, th = tex_w * (sx or 1), tex_h * (sy or 1)
 
-  Util.send_uniforms(self.post_shader, {
-    { 'Resolution', { tw, th } },
-    { 'use_fxaa', self.fxaa }
-  })
-  lg.draw(self.output_canvas, x, y, rotate, sx, sy)
-  lg.setShader()
+  if self.fxaa then
+    private.attach_shader(self.fxaa_shader, { { 'Resolution', { tex_w, tex_h } } })
+    lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+    lg.setShader()
+  else
+    lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+  end
 end
 
 function M:render_model(model)
@@ -351,6 +352,11 @@ function private.new_gbuffer(w, h, format)
   local canvas = lg.newCanvas(w, h, { type = '2d', format = format })
   canvas:setFilter('nearest', 'nearest')
   return canvas
+end
+
+function private.attach_shader(shader, uniforms)
+  lg.setShader(shader)
+  Util.send_uniforms(shader, uniforms)
 end
 
 return M
