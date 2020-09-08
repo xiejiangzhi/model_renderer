@@ -93,9 +93,10 @@ function M:init()
   Util.send_uniforms(self.deferred_shader, {
     { 'brdfLUT', brdf_lut },
     { 'SSAONoise', ssao_noise },
-	  { "SSAORadius", 64 },
-    { "SSAOIntensity", 1.5 },
-	  -- { "SSAOSampleCount", 8 },
+	  { "SSAORadius", 128 },
+    { "SSAOIntensity", 5 },
+	  { "SSAOSampleCount", 16 },
+	  { "SSAOPOW", 0.75 },
   })
 end
 

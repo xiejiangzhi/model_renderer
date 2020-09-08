@@ -20,6 +20,7 @@ function love.load()
   -- r.light_color = { 1000000, 1000000, 1000000 }
   r.light_color = { 0, 0, 0 }
   r.sun_dir = { -0.15, 1, -0.35 }
+  r.sun_color = { 0.4, 0.4, 0.4 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
   Helper.bind(camera, renderer, 'perspective', 1, 5200)
   r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
@@ -34,7 +35,7 @@ function love.load()
       x, 10 + random() * 100, z,
       0, 0, 0,
       1, 0.5 + random() * 4, 1,
-      0.4 + random() * 0.6, 0.4 + random() * 0.6, 0.4 + random() * 0.6, 1,
+      0.85, 0.85, 1, 1,
       0.3 + random() * 0.7, random(),
     })
   end
