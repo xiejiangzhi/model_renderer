@@ -6,6 +6,7 @@ uniform float SSAOIntensity = 1;
 uniform int SSAOSampleCount = 16;
 uniform float SSAOPOW = 0.75;
 
+
 const float SSAO_BIAS = 0.05;
 const float SSAO_SCALE = 1;
 

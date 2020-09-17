@@ -82,8 +82,6 @@ function M:init()
     { 0, 1, 0, 1 },
   }, 'fan')
 
-  local ssao_noise = Util.generate_ssao_data()
-
   Util.send_uniforms(self.skybox_shader, {
     { 'y_flip', -1 }
   })
@@ -92,7 +90,6 @@ function M:init()
   })
   Util.send_uniforms(self.deferred_shader, {
     { 'brdfLUT', brdf_lut },
-    { 'SSAONoise', ssao_noise },
 	  { "SSAORadius", 128 },
     { "SSAOIntensity", 5 },
 	  { "SSAOSampleCount", 16 },
