@@ -67,6 +67,9 @@ function M.update(dt)
     if lkb.isDown('t') then fov = fov + dt * 20 end
     if lkb.isDown('g') then fov = fov - dt * 20 end
 
+    local yangle = camera.rotation.y + av.y
+    local c, s = math.cos(-yangle), math.sin(-yangle)
+    dv.x, dv.z = c * dv.x - s * dv.z, s * dv.x + c * dv.z
     local p = camera.pos + dv
     camera:move_to(p.x, p.y, p.z, (camera.rotation + av):unpack())
 

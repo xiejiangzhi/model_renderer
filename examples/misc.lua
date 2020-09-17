@@ -154,6 +154,8 @@ function love.draw()
     { 400, 200, 400 },
     { math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi }, nil, nil, { 0.3, 0.9 }
   )
+
+  scene:add_model(box, { 300, 0, -300 })
   scene:add_model(image_model, { 100, 100, 100 }, nil, 2)
   scene:add_model(image_model,
     { 100, 10, 100 },
