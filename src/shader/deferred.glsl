@@ -114,7 +114,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
   float shadow = render_shadow ? calc_shadow(light_proj_pos.xyz + vec3(0, 0, shadow_bias)) : 0;
 
-  float ssao = (SSAOSampleCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
+  float ssao = (SSAOSamplesCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
   vec3 tcolor = ambient * ssao + light * (1 - shadow);
 
   // HDR tonemapping

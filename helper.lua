@@ -102,6 +102,41 @@ function M.update(dt)
       renderer.fxaa = not renderer.fxaa
     end
 
+    local ssao = renderer.ssao
+    if renderer.ssao then
+      local changed = false
+      if lkb.isDown('f4') then
+        changed = true
+        if lkb.isDown('lshift') then
+          ssao.radius = math.max(1, ssao.radius - 20 * dt)
+        else
+          ssao.radius = ssao.radius + 20 * dt
+        end
+      end
+
+      if lkb.isDown('f5') then
+        changed = true
+        if lkb.isDown('lshift') then
+          ssao.intensity = math.max(0.1, ssao.intensity - 10 * dt)
+        else
+          ssao.intensity = ssao.intensity + 10 * dt
+        end
+      end
+
+      if lkb.isDown('f6') then
+        changed = true
+        if lkb.isDown('lshift') then
+          ssao.pow = math.max(0.1, ssao.pow - 0.5 * dt)
+        else
+          ssao.pow = ssao.pow + 0.5 * dt
+        end
+      end
+
+      if changed then
+        renderer:set_ssao(ssao)
+      end
+    end
+
     if lkb.isDown('`') then
       renderer.debug = true
     else
@@ -132,6 +167,14 @@ function M.debug(ext_str)
       str = str..string.format('\nrenderer: %s - %s', 'normal', renderer.render_mode or 'none')
     end
     str = str..string.format('\nfxaa: %s', tostring(renderer.fxaa or false))
+    str = str..string.format('\nshadow: %s', tostring(renderer.render_shadow or false))
+    local ssao = renderer.ssao
+    if ssao then
+      str = str..string.format(
+        '\nssao: radius: %i, intensity: %.1f, samples: %i, pow: %.2f',
+        ssao.radius, ssao.intensity, ssao.samples_count, ssao.pow
+      )
+    end
     str = str..string.format('\nsharpen: %.2f', renderer.sharpen or 0)
     str = str..string.format('\nlight pos(%.2f %.2f %.2f)', unpack(renderer.light_pos))
     str = str..string.format('\nlight color(%.2f, %.2f, %.2f)',unpack(renderer.light_color))
@@ -208,6 +251,7 @@ function M.replace_renderer(new)
     end
   end
   renderer.render_mode = nil
+  renderer.ssao = nil
 
   for k, v in pairs(new) do
     if type(v) ~= 'table' or not renderer[k] then

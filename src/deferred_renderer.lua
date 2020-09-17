@@ -29,6 +29,13 @@ local skybox_model
 local brdf_lut_size = 512
 local brdf_lut
 
+local SSAOConf = {
+  radius = { uniform = 'SSAORadius' },
+  intensity = { uniform = 'SSAOIntensity' },
+  samples_count = { uniform = 'SSAOSamplesCount' },
+  pow = { uniform = 'SSAOPow' },
+}
+
 function M.new()
   local obj = setmetatable({}, M)
   obj:init()
@@ -47,6 +54,12 @@ function M:init()
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
   self.fxaa = true
+  self.ssao = {
+    radius = 64,
+    intensity = 10,
+    samples_count = 16,
+    pow = 0.5
+  }
 
   self.shadow_resolution = { 1024, 1024 }
   local sr = self.shadow_resolution
@@ -89,12 +102,20 @@ function M:init()
     { 'y_flip', -1 }
   })
   Util.send_uniforms(self.deferred_shader, {
-    { 'brdfLUT', brdf_lut },
-	  { "SSAORadius", 128 },
-    { "SSAOIntensity", 5 },
-	  { "SSAOSampleCount", 16 },
-	  { "SSAOPOW", 0.75 },
+    { 'brdfLUT', brdf_lut }
   })
+  self:set_ssao(self.ssao)
+end
+
+function M:set_ssao(opts)
+  for k, v in pairs(opts) do
+    local desc = SSAOConf[k]
+    if desc then
+      Util.send_uniform(self.deferred_shader, desc.uniform, v)
+    else
+      print("Invalid SSAO conf '"..k.."'")
+    end
+  end
 end
 
 function M:apply_camera(camera)
