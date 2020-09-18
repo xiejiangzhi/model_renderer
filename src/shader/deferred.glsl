@@ -28,7 +28,7 @@ uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
 uniform mat4 lightProjViewMat;
 uniform bool render_shadow = true;
-uniform float shadow_bias = -0.002;
+uniform float shadow_bias = -0.003;
 
 const float y_flip = -1;
 

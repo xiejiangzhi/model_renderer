@@ -1,5 +1,7 @@
 local M = {}
 local private = {}
+local Cpml = require 'cpml'
+local Vec3 = Cpml.vec3
 
 local code_dir = (...):gsub('.[^%.]+$', '')
 
@@ -10,6 +12,8 @@ local lfs = love.filesystem
 local lg = love.graphics
 
 local random = love.math.random
+local min = math.min
+local max = math.max
 
 function M.send_uniform(shader, k, ...)
   if shader:hasUniform(k) then
@@ -145,6 +149,35 @@ function M.generate_brdf_lut(size)
   lg.setCanvas(old_canvas)
   lg.setShader(old_shader)
 
+  return canvas
+end
+
+function M.vertices_bbox(vertices)
+  local min_v, max_v = Vec3(0), Vec3(0)
+
+  for i, v in ipairs(vertices) do
+    min_v.x = min(min_v.x, v.x)
+    min_v.y = min(min_v.y, v.y)
+    min_v.z = min(min_v.z, v.z)
+    max_v.x = max(max_v.x, v.x)
+    max_v.y = max(max_v.y, v.y)
+    max_v.z = max(max_v.z, v.z)
+  end
+
+  return min_v, max_v
+end
+
+function M.vertices_center(vertices)
+  local center = Vec3(0, 0, 0)
+  for _, v in ipairs(vertices) do
+    center = center + v
+  end
+  return center / #vertices
+end
+
+function M.new_depth_map(w, h, mode, format)
+  local canvas = lg.newCanvas(w, h, { type = '2d', format = format or 'depth32f', readable = true })
+  canvas:setDepthSampleMode(mode)
   return canvas
 end
 

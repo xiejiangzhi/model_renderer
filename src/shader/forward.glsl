@@ -23,7 +23,7 @@ uniform vec3 cameraPos;
 uniform float light_far;
 
 uniform bool render_shadow = true;
-uniform float shadow_bias = -0.002;
+uniform float shadow_bias = -0.003;
 
 uniform bool use_skybox;
 

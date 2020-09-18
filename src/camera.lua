@@ -87,13 +87,8 @@ function M:project(point, viewport)
   if not self.view then error("Must set view mat4") end
   if not viewport then viewport = { -1, -1, 2, 2 } end
 
-  local cache = self.cache
-  if not cache.proj_view then
-    cache.proj_view = Mat4()
-    Mat4.mul(cache.proj_view, self.projection, self.view)
-  end
-
-  return private.project(point, cache.proj_view, viewport)
+  local proj_view  = self:fetch_cache('proj_view')
+  return private.project(point, proj_view, viewport)
 end
 
 local default_unproject_plane = {
@@ -107,21 +102,11 @@ function M:unproject(screen_x, screen_y, viewport, plane)
   if not self.projection then error("Must set projection mat4") end
   if not self.view then error("Must set view mat4") end
 
-  local cache = self.cache
-  if not cache.proj_view then
-    cache.proj_view = Mat4()
-    Mat4.mul(cache.proj_view, self.projection, self.view)
-  end
-
-  if not cache.inverted_proj_view then
-    cache.inverted_proj_view = Mat4()
-    cache.inverted_proj_view:invert(cache.proj_view)
-  end
-
+  local inverted_proj_view = self:fetch_cache('inverted_proj_view')
   local point = Cpml.vec3(screen_x, screen_y, 0)
-  local wp1 = private.unproject(point, cache.inverted_proj_view, viewport)
+  local wp1 = private.unproject(point, inverted_proj_view, viewport)
   point.z = 1
-  local wp2 = private.unproject(point, cache.inverted_proj_view, viewport)
+  local wp2 = private.unproject(point, inverted_proj_view, viewport)
   if not plane then plane = default_unproject_plane end
 
   return Cpml.intersect.ray_plane({ position = wp1, direction = wp2 - wp1 }, plane)
@@ -129,18 +114,14 @@ end
 
 -- plane_transform: a matrix to transform the 2d plane
 function M:attach(plane_transform)
-  local cache = self.cache
-  if not cache.proj_view then
-    cache.proj_view = Mat4()
-    Mat4.mul(cache.proj_view, self.projection, self.view)
-  end
+  local proj_view = self:fetch_cache('proj_view')
 
   if not plane_transform then
     plane_transform = Mat4.identity()
     plane_transform:rotate(plane_transform, math.pi * 0.5, Vec3.unit_x)
   end
   local tfp = Mat4.new()
-  tfp:mul(cache.proj_view, plane_transform)
+  tfp:mul(proj_view, plane_transform)
   self.shader_2d:send('tfp', 'column', tfp)
 
   love.graphics.setShader(self.shader_2d)
@@ -150,6 +131,59 @@ end
 function M:detach()
   love.graphics.setShader()
   love.graphics.setDepthMode()
+end
+
+-- Params:
+--  near, far: 0 - 1
+-- Return:
+--  {
+--    left_top_near, left_top_far, right_top_near, right_top_far
+--    left_bottom_near, left_bottom_far, right_bottom_near, right_bottom_far
+--  }
+function M:get_space_vertices(near, far)
+  local vertices = {}
+  local viewport = { 0, 0, 1, 1 }
+  local inverted_proj_view = self:fetch_cache('inverted_proj_view')
+
+  for y = 0, 1 do
+    for x = 0, 1 do
+      table.insert(vertices, private.unproject(
+        Vec3(x, y, near or 0), inverted_proj_view, viewport
+      ))
+      table.insert(vertices, private.unproject(
+        Vec3(x, y, far or 1), inverted_proj_view, viewport
+      ))
+    end
+  end
+
+  return vertices
+end
+
+local CacheCodes = {
+  proj_view = {
+    proj_view = true
+  },
+  inverted_proj_view = {
+    proj_view = true,
+    inverted_proj_view = true
+  }
+}
+function M:fetch_cache(name)
+  local desc = CacheCodes[name]
+  if not desc then error("Invalid cache name '"..tostring(name).."'") end
+  local cache = self.cache
+
+  if not cache.proj_view and desc.proj_view then
+    cache.proj_view = Mat4()
+    Mat4.mul(cache.proj_view, self.projection, self.view)
+  end
+
+  if not cache.inverted_proj_view and desc.inverted_proj_view then
+    cache.inverted_proj_view = Mat4()
+    cache.inverted_proj_view:invert(cache.proj_view)
+  end
+
+  return cache[name]
 end
 
 ----------------------

@@ -193,6 +193,19 @@ function M.debug(ext_str)
     if camera_mode == 'perspective' then
       str = str..string.format('\nfov: %.1f', fov)
     end
+
+    local space_vertices = camera:get_space_vertices(0, 0.5)
+    local min_v, max_v
+    if renderer then
+      min_v, max_v = renderer.shadow_builder:calc_sight_bbox(space_vertices)
+    else
+      min_v, max_v = MR.util.vertices_bbox(space_vertices)
+    end
+    str = str..string.format(
+      '\ncamera space bbox: [%.1f,%.1f,%.1f] - [%.1f,%.1f,%.1f]',
+      min_v.x, min_v.y, min_v.z, max_v:unpack()
+    )
+    str = str..string.format('\ncamera space size, %.1f', (min_v - max_v):len())
   end
 
   if ext_str then str = str..'\n'..ext_str end
@@ -255,6 +268,7 @@ function M.replace_renderer(new)
   end
   renderer.render_mode = nil
   renderer.ssao = nil
+  renderer.shadow_builder = nil
 
   for k, v in pairs(new) do
     if type(v) ~= 'table' or not renderer[k] then

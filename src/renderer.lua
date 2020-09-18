@@ -1,15 +1,14 @@
 local M = {}
 M.__index = M
-local private = {}
 
 local code_dir = (...):gsub('.[^%.]+$', '')
 local file_dir = code_dir:gsub('%.', '/')
 local Cpml = require 'cpml'
 local Mat4 = Cpml.mat4
-local Vec3 = Cpml.vec3
 
 local Model = require(code_dir..'.model')
 local Util = require(code_dir..'.util')
+local ShadowBuilder = require(code_dir..'.shadow_builder')
 local send_uniform = Util.send_uniform
 
 local lg = love.graphics
@@ -30,9 +29,9 @@ local skybox_model
 local brdf_lut_size = 512
 local brdf_lut
 
-function M.new()
+function M.new(...)
   local obj = setmetatable({}, M)
-  obj:init()
+  obj:init(...)
   return obj
 end
 
@@ -46,10 +45,8 @@ function M:init()
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
 
-  self.shadow_resolution = { 1024, 1024 }
-  local w, h = unpack(self.shadow_resolution)
-  self.shadow_depth_map = private.new_depth_map(w, h, 'less')
-  self.default_shadow_depth_map = private.new_depth_map(1, 1, 'less')
+  self.shadow_builder = ShadowBuilder.new(2048, 2048)
+  self.default_shadow_depth_map = Util.new_depth_map(1, 1, 'less')
 
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
   self.skybox_shader = lg.newShader(file_dir..'/shader/skybox.glsl')
@@ -71,15 +68,7 @@ function M:apply_camera(camera)
   self.look_at = { camera.focus:unpack() }
   self.camera_near = camera.near
   self.camera_far = camera.far
-
-  local w, h = love.graphics.getDimensions()
-  local viewport = { 0, 0, w, h }
-  local p = camera:unproject(w / 2, h, viewport)
-  if p then
-    self.shadow_start_at = { p:unpack() }
-  else
-    self.shadow_start_at = { unpack(self.camera_pos) }
-  end
+  self.camera_space_vertices = camera:get_space_vertices()
 end
 
 -- {
@@ -93,60 +82,16 @@ function M:render(scene)
     send_uniform(self.render_shader, 'render_shadow', false)
   end
   self:render_scene(scene)
-
-  -- local c = self.shadow_depth_map
-  -- c:setDepthSampleMode()
-  -- lg.draw(c, 0, 0, 0, 0.5, 0.5)
-  -- c:setDepthSampleMode('less')
 end
 
 ----------------------------------
 
 function M:build_shadow_map(scene)
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
-
-  local shadow_shader = self.shadow_shader
-  local render_shader = self.render_shader
-
-	lg.setShader(shadow_shader)
-	lg.setCanvas({ depthstencil = self.shadow_depth_map })
-  lg.clear(0, 0, 0, 0)
-
-  local tw, th = love.graphics.getDimensions()
-  local lhw, lhh = tw * 2 / self.view_scale, th * 2 / self.view_scale
-
-  local angle = math.atan2(self.look_at[3] - self.camera_pos[3], self.look_at[1] - self.camera_pos[1])
-  local ox, oy = math.cos(angle) * lhh, math.sin(angle) * lhh
-  local shadow_look_at = Vec3(self.shadow_start_at) + Vec3(ox, 0, oy)
-  local dist = (Vec3(self.camera_pos) - Vec3(self.look_at)):len() * 2
-  local offset = Vec3(self.sun_dir) * dist
-
-  local projection = Mat4.from_ortho(-lhw, lhw, lhh, -lhh, -100, dist * 2.5)
-  local view = Mat4()
-  view = view:look_at(view, shadow_look_at + offset, shadow_look_at, Vec3(0, 1, 0))
-
-  local light_proj_view = Mat4.new()
-  light_proj_view:mul(projection, view)
-
-	shadow_shader:send("projViewMat", 'column', light_proj_view)
-  send_uniform(render_shader, 'lightProjViewMat', 'column', light_proj_view)
-
-	lg.setDepthMode("less", true)
-	lg.setMeshCullMode('front')
-
-  for i, model in ipairs(scene.model) do
-    local mesh = model.mesh
-    local tex = mesh:getTexture()
-    if tex then shadow_shader:send("MainTex", tex) end
-    lg.drawInstanced(mesh, model.total_instances)
-  end
-
-	lg.setMeshCullMode('none')
-  lg.setDepthMode()
-
-	lg.setShader(old_shader)
-	lg.setCanvas(old_canvas)
+  local shadow_depth_map, light_proj_view = self.shadow_builder:build(
+    scene, self.camera_space_vertices, self.sun_dir
+  )
+  send_uniform(self.render_shader, 'lightProjViewMat', 'column', light_proj_view)
+  send_uniform(self.render_shader, "ShadowDepthMap", shadow_depth_map)
 end
 
 function M:render_scene(scene)
@@ -166,9 +111,7 @@ function M:render_scene(scene)
 	  { "cameraPos", self.camera_pos },
   })
 
-  if self.render_shadow then
-    send_uniform(render_shader, "ShadowDepthMap", self.shadow_depth_map)
-  else
+  if not self.render_shadow then
     send_uniform(render_shader, "ShadowDepthMap", self.default_shadow_depth_map)
   end
 
@@ -223,14 +166,6 @@ function M:render_skybox(model)
 	lg.setDepthMode("lequal", true)
   lg.draw(model.mesh)
   lg.setDepthMode()
-end
-
-------------------
-
-function private.new_depth_map(w, h, mode)
-  local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth32f', readable = true })
-  canvas:setDepthSampleMode(mode)
-  return canvas
 end
 
 return M

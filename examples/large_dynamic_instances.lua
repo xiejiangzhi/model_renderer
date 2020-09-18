@@ -1,6 +1,7 @@
 local MR = require 'src'
 local Cpml = require 'cpml'
 local Helper = require 'helper'
+local Util = MR.util
 
 local lg = love.graphics
 
@@ -31,6 +32,8 @@ end
 function love.draw()
   local w, h = lg.getDimensions()
   renderer:apply_camera(camera)
+  local camera_space_vertices = camera:get_space_vertices()
+  local center = Util.vertices_center(camera_space_vertices)
 
   local ts = Helper.ts
 
@@ -65,6 +68,7 @@ function love.draw()
     str = '\nno ray result'
   end
 
+  scene:add_model(model, { center:unpack() }, nil, 10)
   scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 1, 1, 0, 1 }, { 1, 0 })
   scene:add_model(cylinder, { camera.focus.x,  camera.focus.y, camera.focus.z })
   if p then
