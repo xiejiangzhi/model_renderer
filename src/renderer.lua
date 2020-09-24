@@ -29,6 +29,7 @@ local skybox_model
 local brdf_lut_size = 512
 local brdf_lut
 
+
 function M.new(...)
   local obj = setmetatable({}, M)
   obj:init(...)
@@ -62,13 +63,16 @@ function M:init()
 end
 
 function M:apply_camera(camera)
+  self.camera = camera
   self.projection = camera.projection
   self.view = camera.view
   self.camera_pos = { camera.pos:unpack() }
   self.look_at = { camera.focus:unpack() }
-  self.camera_near = camera.near
-  self.camera_far = camera.far
   self.camera_space_vertices = camera:get_space_vertices()
+
+  local pv_mat = Mat4.new()
+  pv_mat:mul(self.projection, self.view)
+  self.proj_view_mat = pv_mat
 end
 
 -- {

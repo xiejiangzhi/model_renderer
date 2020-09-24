@@ -163,7 +163,10 @@ model:set_instances({
 
 ### Renderer
 
-`MR.renderer`(Support Love2D MSAA) and `MR.deferred_renderer`(FXAA)
+`MR.renderer`(Support Love2D MSAA) and `MR.deferred_renderer`(FXAA).
+
+`MR.renderer` is fast for small instances and light. `MR.deferred_renderer` is fast for large instances and light. You can try two and choose the best one.
+
 
 * Renderer.new() return a new instance
 
@@ -194,7 +197,8 @@ renderer:render(scene_instance:build())
 
 **Other Attributes**
 
-* renderer.skybox: a cubeimage texture. A demo in examples/pbr.lua
+* renderer.skybox: a cubeimage texture. A demo in `examples/pbr.lua`.
+* renderer.write_screen_depth: write depth buffer to screen to support `camera:attach()` for deferred_renderer.
 
 
 ### Scene

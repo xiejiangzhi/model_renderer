@@ -49,8 +49,6 @@ function M:init()
   self.view = nil
   self.view_scale = 1
   self.camera_pos = nil
-  self.camera_near = nil
-  self.camera_far = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
   self.fxaa = true
@@ -76,6 +74,7 @@ function M:init()
   self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
   self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
   self.fxaa_shader = Util.new_shader(file_dir..'/shader/fxaa_filter.glsl')
+  self.screen_depth_shader = Util.new_shader(file_dir..'/shader/screen_depth.glsl')
   self.transparent_render_shader = Util.new_shader(
     file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl'
   )
@@ -91,6 +90,8 @@ function M:init()
   self.np_map = private.new_gbuffer(w, h, 'rgba8')
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
   self.depth_map = Util.new_depth_map(w, h, 'less')
+
+  self.write_screen_depth = false
 
   self.screen_tmp_map = self.albedo_map
   self.output_canvas = lg.newCanvas(w, h)
@@ -126,13 +127,16 @@ function M:set_ssao(opts)
 end
 
 function M:apply_camera(camera)
+  self.camera = camera
   self.projection = camera.projection
   self.view = camera.view
   self.camera_pos = { camera.pos:unpack() }
   self.look_at = { camera.focus:unpack() }
-  self.camera_near = camera.near
-  self.camera_far = camera.far
   self.camera_space_vertices = camera:get_space_vertices()
+
+  local pv_mat = Mat4.new()
+  pv_mat:mul(self.projection, self.view)
+  self.proj_view_mat = pv_mat
 end
 
 -- {
@@ -145,10 +149,6 @@ function M:render(scene)
   else
     self.deferred_shader:send('render_shadow', false)
   end
-
-  local pv_mat = Mat4.new()
-  pv_mat:mul(self.projection, self.view)
-  self.proj_view_mat = pv_mat
 
   self:render_gbuffer(scene)
 
@@ -238,8 +238,8 @@ function M:deferred_render()
 	  { "ambient_color", self.ambient_color },
 
 	  { "cameraPos", self.camera_pos },
-	  { "cameraNear", self.camera_near },
-	  { "cameraFar", self.camera_far },
+	  { "cameraNear", self.camera.near },
+	  { "cameraFar", self.camera.far },
 
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
@@ -319,12 +319,29 @@ end
 function M:render_to_screen(x, y, rotate, sx, sy)
   local tex_w, tex_h = self.output_canvas:getDimensions()
 
+
   if self.fxaa then
-    private.attach_shader(self.fxaa_shader, { { 'Resolution', { tex_w, tex_h } } })
+    private.attach_shader(self.fxaa_shader, {
+      { 'Resolution', { tex_w, tex_h } },
+    })
     lg.draw(self.output_canvas, x, y, rotate, sx, sy)
     lg.setShader()
   else
     lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+  end
+
+  if self.write_screen_depth then
+    lg.setDepthMode('less', true)
+    self.depth_map:setDepthSampleMode()
+    private.attach_shader(self.screen_depth_shader, {
+      { 'DepthMap', self.depth_map },
+    })
+
+    lg.draw(self.screen_mesh, 0, 0, 0, self.depth_map:getDimensions())
+
+    lg.setShader()
+    lg.setDepthMode()
+    self.depth_map:setDepthSampleMode('less')
   end
 end
 

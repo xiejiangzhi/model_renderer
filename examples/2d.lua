@@ -68,6 +68,8 @@ function love.draw()
   local transform_mat = Cpml.mat4.identity()
   transform_mat:rotate(transform_mat, math.pi * 0.5, Cpml.vec3.unit_x)
   transform_mat:translate(transform_mat, Cpml.vec3(0, 10, 0))
+  renderer:apply_camera(camera)
+  renderer.write_screen_depth = true
   renderer:render({ model = { model, ground } })
 
   camera:attach(transform_mat)
