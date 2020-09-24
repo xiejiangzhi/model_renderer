@@ -9,24 +9,27 @@ uniform Image AlbedoMap;
 uniform Image ShadowMap;
 uniform Image DepthMap;
 
-uniform vec3 ambient_color;
-uniform vec3 sun_dir;
-uniform vec3 sun_color;
-uniform vec3 light_pos;
-uniform vec3 light_color;
+uniform vec3 ambientColor;
+uniform vec3 sunDir;
+uniform vec3 sunColor;
+
+const int MAX_LIGHTS = 32;
+uniform vec3 lightsPos[MAX_LIGHTS];
+uniform vec3 lightsColor[MAX_LIGHTS];
+uniform float lightsLinear[MAX_LIGHTS];
+uniform float lightsQuadratic[MAX_LIGHTS];
+uniform float lightsCount;
 
 uniform vec3 cameraPos;
 uniform float cameraNear;
 uniform float cameraFar;
-
-uniform float light_far;
 
 uniform bool use_skybox;
 
 uniform mat4 projViewMat;
 uniform mat4 invertedProjMat;
 uniform mat4 invertedViewMat;
-uniform mat4 lightProjViewMat;
+uniform mat4 sunProjViewMat;
 uniform bool render_shadow = true;
 uniform float shadow_bias = -0.003;
 
@@ -73,33 +76,40 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   vec4 ad = Texel(AlbedoMap, tex_coords);
   vec3 albedo = ad.rgb;
   float alpha = 1;
-  /* float shadow = Texel(ShadowMap, tex_coords).r; */
   float valid_gbuffer = step(0.0001, ad.r + ad.g + ad.b + ad.a);
   if (valid_gbuffer == 0) { discard; }
   vec3 normal = decode_normal(np.xy) * valid_gbuffer;
 
   vec3 view_dir = normalize(cameraPos - pos);
-  vec3 light_dir = normalize(light_pos - pos);
 
   float roughness = np.z;
   float metallic = np.w;
-
-  float light_dist = length(light_pos - pos);
-  float attenuation = 1.0 / (1 + light_dist * light_dist);
-  vec3 radiance = light_color * attenuation;
 
   vec3 F0 = vec3(0.04); 
   F0 = mix(F0, albedo, metallic);
 
   vec3 light = vec3(0);
+
+  vec4 light_proj_pos = sunProjViewMat * vec4(pos, 1);
+  light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
+  float shadow = render_shadow ? calc_shadow(light_proj_pos.xyz + vec3(0, 0, shadow_bias)) : 0;
   light += complute_light(
-    normal, light_dir, view_dir, radiance,
+    normal, normalize(sunDir), view_dir, sunColor,
     F0, albedo, roughness, metallic
-  );
-  light += complute_light(
-    normal, normalize(sun_dir), view_dir, sun_color,
-    F0, albedo, roughness, metallic
-  );
+  ) * (1 - shadow);
+
+  for (int i = 0; i < max(lightsCount, MAX_LIGHTS - 1); i++) {
+    vec3 light_dir = normalize(lightsPos[i] - pos);
+    float light_dist = length(lightsPos[i] - pos);
+    float dist = length(lightsPos[i] - pos);
+    float attenuation = 1.0 / (1.0 + lightsLinear[i] * dist + lightsQuadratic[i] * dist * dist);
+    vec3 radiance = lightsColor[i] * attenuation;
+
+    light += complute_light(
+      normal, light_dir, view_dir, radiance,
+      F0, albedo, roughness, metallic
+    );
+  }
   
   vec3 ambient;
   if (use_skybox) {
@@ -107,15 +117,12 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
       normal, view_dir, F0, albedo, roughness, metallic
     ) * valid_gbuffer;
   } else {
-    ambient = ambient_color * albedo;
+    ambient = ambientColor * albedo;
   }
 
-  vec4 light_proj_pos = lightProjViewMat * vec4(pos, 1);
-  light_proj_pos.xyz = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
-  float shadow = render_shadow ? calc_shadow(light_proj_pos.xyz + vec3(0, 0, shadow_bias)) : 0;
 
   float ssao = (SSAOSamplesCount > 0) ? calc_ssao(tex_coords, pos, normal, DepthMap) : 1;
-  vec3 tcolor = ambient * ssao + light * (1 - shadow);
+  vec3 tcolor = ambient * ssao + light;
 
   // HDR tonemapping
   tcolor = tcolor / (tcolor + vec3(1.0));

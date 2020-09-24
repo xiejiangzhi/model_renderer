@@ -16,9 +16,6 @@ local lg = love.graphics
 local default_opts = {
   ambient_color = { 0.03, 0.03, 0.03 },
 
-  light_pos = { 1000, 2000, 1000 },
-  light_color = { 3000, 3000, 3000 },
-
   -- for shadow
   sun_dir = { 1, 1, 1 },
   sun_color = { 1, 1, 1 },
@@ -45,6 +42,7 @@ function M:init()
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
+  self.lights = {}
 
   self.shadow_builder = ShadowBuilder.new(2048, 2048)
   self.default_shadow_depth_map = Util.new_depth_map(1, 1, 'less')
@@ -75,6 +73,15 @@ function M:apply_camera(camera)
   self.proj_view_mat = pv_mat
 end
 
+-- lights: {
+--  { pos = { x, y , z }, color = { r, g, b }, linear = 1, quadratic = 1 },
+--  light2, light3, ...
+-- }
+--
+function M:set_lights(lights)
+  self.lights = lights
+end
+
 -- {
 --  model = { m1, m2, m3 }
 -- }
@@ -91,10 +98,10 @@ end
 ----------------------------------
 
 function M:build_shadow_map(scene)
-  local shadow_depth_map, light_proj_view = self.shadow_builder:build(
+  local shadow_depth_map, sun_proj_view = self.shadow_builder:build(
     scene, self.camera_space_vertices, self.sun_dir
   )
-  send_uniform(self.render_shader, 'lightProjViewMat', 'column', light_proj_view)
+  send_uniform(self.render_shader, 'lightProjViewMat', 'column', sun_proj_view)
   send_uniform(self.render_shader, "ShadowDepthMap", shadow_depth_map)
 end
 
@@ -107,13 +114,25 @@ function M:render_scene(scene)
   pv_mat:mul(self.projection, self.view)
   Util.send_uniforms(render_shader, {
 	  { "projViewMat", 'column', pv_mat },
-	  { "light_pos", self.light_pos },
-	  { "light_color", self.light_color },
-    { 'sun_dir', self.sun_dir },
-    { 'sun_color', self.sun_color },
-	  { "ambient_color", self.ambient_color },
+
+
+    { 'sunDir', self.sun_dir },
+    { 'sunColor', self.sun_color },
+	  { "ambientColor", self.ambient_color },
 	  { "cameraPos", self.camera_pos },
   })
+
+  if #self.lights > 0 then
+    local lights = Util.lights_to_uniforms(self.lights)
+    Util.send_uniforms(render_shader, {
+      { "lightsPos", unpack(lights.pos) },
+      { "lightsColor", unpack(lights.color) },
+      { "lightsLinear", unpack(lights.linear) },
+      { "lightsQuadratic", unpack(lights.quadratic) },
+      { "lightsCount", #lights.pos },
+    })
+  end
+
 
   if not self.render_shadow then
     send_uniform(render_shader, "ShadowDepthMap", self.default_shadow_depth_map)

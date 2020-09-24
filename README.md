@@ -177,6 +177,16 @@ local renderer = MR.deferred_renderer.new()
 ```
 
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
+* renderer:set_lights(lights): Set point light sources. In the shader, max lights limit is 32.
+
+```
+renderer:set_lights({
+  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 } },
+  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 }, linear = 0, quadratic = 1 }, -- same as first
+  ...
+})
+```
+
 * renderer:render(scene_desc): Must call apply_camera before render.
 
 ```
@@ -280,10 +290,11 @@ MR.util.generate_vertices(
 
 * More support for model file(mtl, tex and more)
 * Support Normal, Albedo, Metallic, Roughness and AO texture map
-* Better light & shadow(CSM or other). more light sources
+* Better shadow(CSM or other).
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
 * Support Blend transparent object
+* Dynamic shader macro
 
 
 ## References

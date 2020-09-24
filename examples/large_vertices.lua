@@ -15,8 +15,7 @@ local model = MR.model.new_sphere(20, 20, 20, 100) -- 100x100 vertices
 
 function love.load()
   local r = renderer
-  r.light_pos = { 0, 5000, 1000 }
-  r.light_color = { 10000000, 10000000, 10000000 }
+  r:set_lights({ { pos = { 0, 5000, 1000 }, color = { 10000000, 10000000, 10000000 } } })
   r.ambient_color = { 0.03, 0.03, 0.03 }
   Helper.bind(camera, renderer, 'perspective', 1, 2000)
 

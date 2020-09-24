@@ -15,8 +15,7 @@ local m1 = MR.model.new_sphere(20, 20, 20, 25)
 local m2 = MR.model.new_box(20)
 
 local renderer_opts = {
-  light_pos = { 250, 270, 700 },
-  light_color = { 10000, 10000, 10000 },
+  lights = { pos = { 250, 270, 700 }, color = { 10000, 10000, 10000 } },
   -- sun_dir = { -0.15, 1, -0.35 },
   sun_color = { 0.0, 0.0, 0.0 }
 }

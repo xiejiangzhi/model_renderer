@@ -15,8 +15,7 @@ local random = love.math.random
 
 function love.load()
   local r = renderer
-  r.light_pos = { 0, 1000, 0 }
-  r.light_color = { 1000000, 1000000, 1000000 }
+  r:set_lights({ { pos = { 0, 1000, 0 }, color = { 1000000, 1000000, 1000000 } } })
   r.sun_dir = { -0.15, 1, -0.35 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
   r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })

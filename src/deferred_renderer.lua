@@ -16,9 +16,6 @@ local lg = love.graphics
 local default_opts = {
   ambient_color = { 0.03, 0.03, 0.03 },
 
-  light_pos = { 1000, 2000, 1000 },
-  light_color = { 3000, 3000, 3000 },
-
   -- for shadow
   sun_dir = { 1, 1, 1 },
   sun_color = { 1, 1, 1 },
@@ -58,6 +55,7 @@ function M:init()
     samples_count = 16,
     pow = 0.5
   }
+  self.lights = {}
 
   -- self.shadow_builder = ShadowBuilder.new(1024, 1024)
   self.shadow_builder = ShadowBuilder.new(2048, 2048)
@@ -139,6 +137,10 @@ function M:apply_camera(camera)
   self.proj_view_mat = pv_mat
 end
 
+function M:set_lights(lights)
+  self.lights = lights
+end
+
 -- {
 --  model = { m1, m2, m3 }
 -- }
@@ -151,6 +153,12 @@ function M:render(scene)
   end
 
   self:render_gbuffer(scene)
+
+  if #self.lights > 0 then
+    self.lights_uniforms = Util.lights_to_uniforms(self.lights)
+  else
+    self.lights_uniforms = nil
+  end
 
   if self.debug then
     local w, h = lg.getDimensions()
@@ -181,12 +189,12 @@ function M:render(scene)
 end
 
 function M:build_shadow_map(scene)
-  local shadow_depth_map, light_proj_view = self.shadow_builder:build(
+  local shadow_depth_map, sun_proj_view = self.shadow_builder:build(
     scene, self.camera_space_vertices, self.sun_dir
   )
 
   self.shadow_depth_map = shadow_depth_map
-  self.deferred_shader:send('lightProjViewMat', 'column', light_proj_view)
+  self.deferred_shader:send('sunProjViewMat', 'column', sun_proj_view)
   self.deferred_shader:send("ShadowDepthMap", self.shadow_depth_map)
 end
 
@@ -231,11 +239,9 @@ function M:deferred_render()
     { 'AlbedoMap', self.albedo_map },
     { 'DepthMap', self.depth_map },
 
-	  { "light_pos", self.light_pos },
-	  { "light_color", self.light_color },
-    { 'sun_dir', self.sun_dir },
-    { 'sun_color', self.sun_color },
-	  { "ambient_color", self.ambient_color },
+    { 'sunDir', self.sun_dir },
+    { 'sunColor', self.sun_color },
+	  { "ambientColor", self.ambient_color },
 
 	  { "cameraPos", self.camera_pos },
 	  { "cameraNear", self.camera.near },
@@ -244,8 +250,18 @@ function M:deferred_render()
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
 	  { "projViewMat", 'column', self.proj_view_mat },
-
   })
+
+  local lights = self.lights_uniforms
+  if lights then
+    Util.send_uniforms(render_shader, {
+      { "lightsPos", unpack(lights.pos) },
+      { "lightsColor", unpack(lights.color) },
+      { "lightsLinear", unpack(lights.linear) },
+      { "lightsQuadratic", unpack(lights.quadratic) },
+      { "lightsCount", #lights.pos },
+    })
+  end
 
   if not self.render_shadow then
     render_shader:send("ShadowDepthMap", self.default_shadow_depth_map)
@@ -297,13 +313,22 @@ function M:render_transparent(scene)
 
   Util.send_uniforms(render_shader, {
 	  { "projViewMat", 'column', self.proj_view_mat },
-	  { "light_pos", self.light_pos },
-	  { "light_color", self.light_color },
-    { 'sun_dir', self.sun_dir },
-    { 'sun_color', self.sun_color },
-	  { "ambient_color", self.ambient_color },
+    { 'sunDir', self.sun_dir },
+    { 'sunColor', self.sun_color },
+	  { "ambientColor", self.ambient_color },
 	  { "cameraPos", self.camera_pos },
   })
+
+  local lights = self.lights_uniforms
+  if lights then
+    Util.send_uniforms(render_shader, {
+      { "lightsPos", unpack(lights.pos) },
+      { "lightsColor", unpack(lights.color) },
+      { "lightsLinear", unpack(lights.linear) },
+      { "lightsQuadratic", unpack(lights.quadratic) },
+      { "lightsCount", #lights.pos },
+    })
+  end
 
   -- lg.setBlendMode('alpha', 'premultiplied')
   for i, model in ipairs(tp_model) do

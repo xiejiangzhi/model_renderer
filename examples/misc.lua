@@ -107,8 +107,7 @@ camera:look_at(0, 0, 0, math.rad(60), 0, 0)
 
 function love.load()
   local r = renderer
-  r.light_pos = { 1000, 2000, 1000 }
-  r.light_color = { 0, 1000000, 1000000 }
+  r:set_lights({ { pos = { 1000, 2000, 1000 }, color = { 0, 1000000, 1000000 } } })
   r.ambient_color = { 0.2, 0.2, 0.2 }
 
   local tex = lg.newCanvas(80, 30)

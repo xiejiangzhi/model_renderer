@@ -16,9 +16,6 @@ local random = love.math.random
 
 function love.load()
   local r = renderer
-  r.light_pos = { 0, -1000, 0 }
-  -- r.light_color = { 1000000, 1000000, 1000000 }
-  r.light_color = { 0, 0, 0 }
   r.sun_dir = { -0.15, 1, -0.35 }
   r.sun_color = { 0.4, 0.4, 0.4 }
   r.ambient_color = { 0.03, 0.03, 0.03 }

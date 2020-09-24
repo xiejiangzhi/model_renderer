@@ -17,8 +17,7 @@ local cylinder = MR.model.new_cylinder(10, 3000)
 
 function love.load()
   local r = renderer
-  r.light_pos = { 0, 3000, 0 }
-  r.light_color = { 1000000, 1000000, 1000000 }
+  r:set_lights({ { pos = { 0, 3000, 0 }, color = { 1000000, 1000000, 1000000 } } })
   r.ambient_color = { 0.03, 0.03, 0.03 }
 
   Helper.bind(camera, renderer, 'perspective', 1, 2000)
