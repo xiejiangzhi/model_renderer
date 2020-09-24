@@ -26,8 +26,8 @@ local default_opts = {
 
 local skybox_model
 
-local brdf_lut_size = 512
-local brdf_lut
+local BrdfLUT_size = 512
+local BrdfLUT
 
 local SSAOConf = {
   radius = { uniform = 'SSAORadius' },
@@ -70,12 +70,21 @@ function M:init()
   self.skybox = nil
   if not skybox_model then
     skybox_model = Model.new_skybox()
-    brdf_lut = Util.generate_brdf_lut(brdf_lut_size)
+    BrdfLUT = Util.generate_brdf_lut(BrdfLUT_size)
   end
 
   self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
   self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
   self.fxaa_shader = Util.new_shader(file_dir..'/shader/fxaa_filter.glsl')
+  self.transparent_render_shader = Util.new_shader(
+    file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl'
+  )
+  Util.send_uniforms(self.transparent_render_shader, {
+    { 'render_shadow',  false },
+    { 'use_skybox', false },
+    { 'brdfLUT', BrdfLUT },
+    { 'y_flip', -1 },
+  })
 
   local w, h = lg.getDimensions()
   -- normal, roughness, metallic
@@ -100,7 +109,7 @@ function M:init()
     { 'y_flip', -1 }
   })
   Util.send_uniforms(self.deferred_shader, {
-    { 'brdfLUT', brdf_lut }
+    { 'brdfLUT', BrdfLUT }
   })
   self:set_ssao(self.ssao)
 end
@@ -149,6 +158,7 @@ function M:render(scene)
     local sx, sy = hw / w, hh / h
 
     self:deferred_render()
+    self:render_transparent(scene)
 
     lg.setBlendMode('alpha')
     self.depth_map:setDepthSampleMode()
@@ -165,6 +175,7 @@ function M:render(scene)
     self:render_to_screen(hw, hh, 0, sx * 2, sy * 2)
   else
     self:deferred_render()
+    self:render_transparent(scene)
     self:render_to_screen()
   end
 end
@@ -266,6 +277,41 @@ function M:deferred_render()
 	lg.setDepthMode()
 
   lg.setBlendMode('alpha')
+	lg.setShader(old_shader)
+	lg.setCanvas(old_canvas)
+end
+
+function M:render_transparent(scene)
+  local tp_model = scene.transparent_model
+  if not tp_model or #tp_model == 0 then return end
+
+  local old_shader = lg.getShader()
+  local old_canvas = lg.getCanvas()
+  local output = self.output_canvas
+
+  local render_shader = self.transparent_render_shader
+
+	lg.setShader(render_shader)
+	lg.setCanvas({ output, depthstencil = self.depth_map })
+	lg.setDepthMode("less", true)
+
+  Util.send_uniforms(render_shader, {
+	  { "projViewMat", 'column', self.proj_view_mat },
+	  { "light_pos", self.light_pos },
+	  { "light_color", self.light_color },
+    { 'sun_dir', self.sun_dir },
+    { 'sun_color', self.sun_color },
+	  { "ambient_color", self.ambient_color },
+	  { "cameraPos", self.camera_pos },
+  })
+
+  -- lg.setBlendMode('alpha', 'premultiplied')
+  for i, model in ipairs(tp_model) do
+    self:render_model(model)
+  end
+  -- lg.setBlendMode('alpha')
+
+  lg.setDepthMode()
 	lg.setShader(old_shader)
 	lg.setCanvas(old_canvas)
 end

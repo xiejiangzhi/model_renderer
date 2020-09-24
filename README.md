@@ -120,6 +120,7 @@ MR.model.new(vertices, texture, opts)
 model:set_opts({
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
+  transparent = false, -- model is transparent or not
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream.
   mesh_format = {
     { 'VertexPosition', 'float', 3 },
@@ -157,6 +158,7 @@ model:set_instances({
 ```
 
 * Model:set_raw_instances(raw_attrs): { { x, y, z, rotate_x, rotate_y, rotate_z, scale_x, scale_y, scale_z, albedo_r, albedo_g, albedo_b, albedo_a, roughness, metallic }, ... }. Set intances for render, it will create(if not created or vertices_count < #raw_attrs) a mesh to save all instances data and attach to the model.
+* Model:clone(): clone model without instances data
 
 
 ### Renderer
@@ -172,19 +174,13 @@ local renderer = MR.deferred_renderer.new()
 ```
 
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
-* renderer:render(scene_desc)
+* renderer:render(scene_desc): Must call apply_camera before render.
 
 ```
-renderer:render({ model = { model1, model2, ... } })
+renderer:render({ model = { model1, model2, ... }, transparent_model = { model1, model2, ... } })
+-- or 
+renderer:render(scene_instance:build())
 ```
-
-**Camera Attributes**
-
-* renderer.projection: column major 4x4 matrices
-* renderer.view: column major 4x4 matrices
-* renderer.view_scale: number, scale the shadow view size, default is 1
-* renderer.camera_pos: { x, y, z }, must set before render
-* renderer.look_at: { x, y, z }, must set before render
 
 **Light & Shadow Attributes**
 

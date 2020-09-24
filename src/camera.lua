@@ -26,6 +26,7 @@ function M:init()
 
   self.near = 1
   self.far = 1000
+  self.fov = nil
 
   self.projection = nil
   self.view = Mat4.new()
@@ -40,6 +41,7 @@ function M:perspective(fovy, aspect, near, far)
   if not far then far = self.far end
   self.near, self.far = near, far
   self.projection = Mat4.from_perspective(fovy, aspect, near, far)
+  self.fov = fovy
   self.cache = {}
 end
 

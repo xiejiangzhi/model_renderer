@@ -129,6 +129,12 @@ function M:render_scene(scene)
     self:render_model(model)
   end
 
+  if scene.transparent_model then
+    for i, model in ipairs(scene.transparent_model) do
+      self:render_model(model)
+    end
+  end
+
   if self.skybox then
     self:render_skybox(skybox_model)
   end

@@ -30,9 +30,9 @@ function M.bind(new_camera, new_renderer, new_camera_mode, new_near, new_far, ne
     oc_pos, oc_rotation = camera.pos:clone(), camera.rotation:clone()
   end
 
-  near = new_near or near
-  far = new_far or far
-  fov = new_fov or fov
+  near = new_near or camera.near or near
+  far = new_far or camera.far or far
+  fov = new_fov or camera.fov or fov
 end
 
 function M.update(dt)

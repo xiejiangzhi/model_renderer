@@ -18,7 +18,7 @@ function love.load()
   r.light_pos = { 0, 5000, 1000 }
   r.light_color = { 10000000, 10000000, 10000000 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
-  Helper.bind(camera, renderer, 'perspective')
+  Helper.bind(camera, renderer, 'perspective', 1, 2000)
 
   local tfs = {}
   local row = 20

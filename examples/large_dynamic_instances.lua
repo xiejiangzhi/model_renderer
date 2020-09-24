@@ -12,7 +12,6 @@ local renderer = MR.renderer.new()
 local camera = MR.camera.new()
 camera:move_to(0, 1000, 0, math.rad(30), 0, 0)
 
-
 local scene = MR.scene.new()
 local cylinder = MR.model.new_cylinder(10, 3000)
 
@@ -22,7 +21,7 @@ function love.load()
   r.light_color = { 1000000, 1000000, 1000000 }
   r.ambient_color = { 0.03, 0.03, 0.03 }
 
-  Helper.bind(camera, renderer, 'perspective')
+  Helper.bind(camera, renderer, 'perspective', 1, 2000)
 end
 
 function love.update(dt)

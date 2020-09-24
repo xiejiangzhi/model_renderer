@@ -5,7 +5,10 @@ local Helper = require 'helper'
 local lg = love.graphics
 
 local model = MR.model.load('box.obj')
+local tp_model = model:clone()
+tp_model:set_opts({ transparent = true })
 local image_model = MR.model.new_plane(80, 30)
+image_model:set_opts({ transparent = true })
 
 local renderer = MR.renderer.new()
 local scene = MR.scene.new()
@@ -117,7 +120,7 @@ function love.load()
 
   local w, h = lg.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
-  camera:orthogonal(-hw, hw, hh, -hh, 1, 1500)
+  camera:orthogonal(-hw, hw, hh, -hh, 1, 2000)
 
   Helper.bind(camera, renderer, 'orthogonal')
 end
@@ -135,7 +138,7 @@ function love.draw()
   scene:add_model(model,
     { 0, 100, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }
   , 10, { 1, 1, 1, 1 }, { 0.3, 0.9 })
-  scene:add_model(model,
+  scene:add_model(tp_model,
     { math.sin(ts) * 200, -10, math.cos(ts) * 200 },
     { 0, math.rad(45), 0 },
     { 10, 10, 10 },
@@ -164,7 +167,8 @@ function love.draw()
   )
   scene:add_model(custom_model)
 
-  renderer:render(scene:build())
+  local s = scene:build()
+  renderer:render(s)
   scene:clean()
 
   Helper.debug()

@@ -29,7 +29,7 @@ function love.load()
   for k, v in pairs(renderer_opts) do
     renderer[k] = v
   end
-  Helper.bind(camera, renderer, 'perspective')
+  Helper.bind(camera, renderer, 'perspective', 1, 2000)
   renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
   renderer.render_shadow = false
 end

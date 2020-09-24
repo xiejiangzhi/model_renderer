@@ -26,6 +26,7 @@ M.instance_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
+  transparent = false,
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
   mesh_format = M.mesh_format,
   instance_mesh_format = M.instance_mesh_format,
@@ -88,6 +89,7 @@ function M:init(vertices, texture, opts)
   end
 
   local mesh_format = opts and opts.mesh_format or M.mesh_format
+  self.vertices = vertices
   self.mesh = new_mesh(mesh_format, vertices, "triangles", 'static')
   self.options = setmetatable({}, M.default_opts)
   self.shader = nil
@@ -141,6 +143,10 @@ function M:set_raw_instances(attrs)
   end
 
   self.total_instances = #attrs
+end
+
+function M:clone()
+  return M.new(self.vertices, self.mesh:getTexture(), self.options)
 end
 
 --------------------

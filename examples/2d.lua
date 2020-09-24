@@ -19,8 +19,10 @@ local img
 function love.load()
   local w, h = lg.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
-  camera:orthogonal(-hw, hw, hh, -hh, -500, 2000)
+  camera:orthogonal(-hw, hw, hh, -hh, 1, 2000)
   camera:look_at(0, 0, 0, math.rad(60), 0, 0)
+  Helper.bind(camera, renderer, 'orthogonal')
+
   renderer:apply_camera(camera)
 
   img = lg.newImage('example.png')
