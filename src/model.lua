@@ -30,6 +30,7 @@ M.default_opts = {
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
   mesh_format = M.mesh_format,
   instance_mesh_format = M.instance_mesh_format,
+  ext_pass_id = 0, -- for ext pass, 0 will disable ext pass
 
    -- parser set_instances attrs and return a table value of instance attributes.
    -- must match the `instance_mesh_format`

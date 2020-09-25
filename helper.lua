@@ -238,22 +238,22 @@ function M.keyreleased(key)
 end
 
 function M.convert_to_deferred_renderer()
-  M.replace_renderer(MR.deferred_renderer.new())
+  M.replace_renderer(MR.deferred_renderer.new(renderer.options))
 end
 
 function M.convert_to_normal_renderer()
-  M.replace_renderer(MR.renderer.new())
+  M.replace_renderer(MR.renderer.new(renderer.options))
 end
 
 function M.convert_to_pure3d_renderer()
-  local new = MR.renderer.new()
+  local new = MR.renderer.new(renderer.options)
   new.render_shader = MR.util.new_shader('src/shader/pure3d.glsl')
   new.render_mode = 'pure3d'
   M.replace_renderer(new)
 end
 
 function M.convert_to_phong_renderer()
-  local new = MR.renderer.new()
+  local new = MR.renderer.new(renderer.options)
   new.render_shader = MR.util.new_shader('src/shader/phong.glsl', 'src/shader/vertex.glsl')
   new.render_mode = 'phong'
   M.replace_renderer(new)

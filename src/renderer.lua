@@ -26,15 +26,21 @@ local skybox_model
 local brdf_lut_size = 512
 local brdf_lut
 
-
 function M.new(...)
   local obj = setmetatable({}, M)
   obj:init(...)
   return obj
 end
 
-function M:init()
+-- options:
+--  vertex_code:
+--  pixel_code:
+--  macros
+function M:init(options)
   for k, v in pairs(default_opts) do self[k] = v end
+
+  if not options then options = {} end
+  self.options = options
 
   self.projection = nil
   self.view = nil
@@ -56,8 +62,15 @@ function M:init()
     brdf_lut = Util.generate_brdf_lut(brdf_lut_size)
   end
 
-  self.render_shader = Util.new_shader(file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl')
+  self.render_shader = Util.new_shader(
+    file_dir..'/shader/forward.glsl',
+    file_dir..'/shader/vertex.glsl',
+    options.pixel_code, options.vertex_code, options.macros
+  )
   send_uniform(self.render_shader, 'brdfLUT', brdf_lut)
+
+  local w, h = lg.getDimensions()
+  self.output_canvas = lg.newCanvas(w, h)
 end
 
 function M:apply_camera(camera)
@@ -114,12 +127,11 @@ function M:render_scene(scene)
   pv_mat:mul(self.projection, self.view)
   Util.send_uniforms(render_shader, {
 	  { "projViewMat", 'column', pv_mat },
-
-
     { 'sunDir', self.sun_dir },
     { 'sunColor', self.sun_color },
 	  { "ambientColor", self.ambient_color },
 	  { "cameraPos", self.camera_pos },
+	  { "Time", love.timer.getTime() },
   })
 
   if #self.lights > 0 then
@@ -142,10 +154,10 @@ function M:render_scene(scene)
     Util.send_uniforms(render_shader, {
       { "skybox", self.skybox },
       { "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1 },
-      { "use_skybox", true }
+      { "useSkybox", true }
     })
   else
-    send_uniform(render_shader, "use_skybox", false)
+    send_uniform(render_shader, "useSkybox", false)
   end
 
   for i, model in ipairs(scene.model) do
@@ -171,7 +183,14 @@ function M:render_model(model)
 	lg.setDepthMode("less", model_opts.write_depth)
 	lg.setMeshCullMode(model_opts.face_culling)
 
-  lg.drawInstanced(model.mesh, model.total_instances)
+  if model_opts.ext_pass_id and model_opts.ext_pass_id ~= 0 then
+    local render_shader = self.render_shader
+    send_uniform(render_shader, 'extPassId', model_opts.ext_pass_id)
+    lg.drawInstanced(model.mesh, model.total_instances)
+    send_uniform(render_shader, 'extPassId', 0)
+  else
+    lg.drawInstanced(model.mesh, model.total_instances)
+  end
 
 	lg.setMeshCullMode('none')
   lg.setDepthMode()

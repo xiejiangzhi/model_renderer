@@ -1,5 +1,6 @@
 #pragma language glsl3
 
+#include_macros
 #define PI 3.14159265359
 
 // ------------------------------------------------
@@ -13,7 +14,7 @@ uniform vec3 ambientColor;
 uniform vec3 sunDir;
 uniform vec3 sunColor;
 
-const int MAX_LIGHTS = 32;
+const int MAX_LIGHTS = 64;
 uniform vec3 lightsPos[MAX_LIGHTS];
 uniform vec3 lightsColor[MAX_LIGHTS];
 uniform float lightsLinear[MAX_LIGHTS];
@@ -34,6 +35,9 @@ uniform bool render_shadow = true;
 uniform float shadow_bias = -0.003;
 
 const float y_flip = -1;
+uniform float Time;
+
+#include_pixel_pass
 
 //-------------------------------
 // Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
@@ -73,20 +77,24 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float depth = Texel(DepthMap, tex_coords).r;
   vec3 pos = get_world_pos(depth, tex_coords);
   vec4 np = Texel(NPMap, tex_coords);
-  vec4 ad = Texel(AlbedoMap, tex_coords);
-  vec3 albedo = ad.rgb;
-  float alpha = 1;
-  float valid_gbuffer = step(0.0001, ad.r + ad.g + ad.b + ad.a);
+  vec4 albedo = Texel(AlbedoMap, tex_coords);
+  float valid_gbuffer = step(0.0001, albedo.r + albedo.g + albedo.b + albedo.a);
   if (valid_gbuffer == 0) { discard; }
   vec3 normal = decode_normal(np.xy) * valid_gbuffer;
-
-  vec3 view_dir = normalize(cameraPos - pos);
-
   float roughness = np.z;
   float metallic = np.w;
 
+#ifdef PIXEL_PASS
+  pixel_pass(pos, normal, albedo, roughness, metallic);
+#endif
+
+  vec3 albedo_rgb = albedo.rgb;
+  float alpha = albedo.a;
+
+  vec3 view_dir = normalize(cameraPos - pos);
+
   vec3 F0 = vec3(0.04); 
-  F0 = mix(F0, albedo, metallic);
+  F0 = mix(F0, albedo_rgb, metallic);
 
   vec3 light = vec3(0);
 
@@ -95,7 +103,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float shadow = render_shadow ? calc_shadow(light_proj_pos.xyz + vec3(0, 0, shadow_bias)) : 0;
   light += complute_light(
     normal, normalize(sunDir), view_dir, sunColor,
-    F0, albedo, roughness, metallic
+    F0, albedo_rgb, roughness, metallic
   ) * (1 - shadow);
 
   for (int i = 0; i < max(lightsCount, MAX_LIGHTS - 1); i++) {
@@ -107,17 +115,17 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
 
     light += complute_light(
       normal, light_dir, view_dir, radiance,
-      F0, albedo, roughness, metallic
+      F0, albedo_rgb, roughness, metallic
     );
   }
   
   vec3 ambient;
   if (use_skybox) {
     ambient = complute_skybox_ambient_light(
-      normal, view_dir, F0, albedo, roughness, metallic
+      normal, view_dir, F0, albedo_rgb, roughness, metallic
     ) * valid_gbuffer;
   } else {
-    ambient = ambientColor * albedo;
+    ambient = ambientColor * albedo_rgb;
   }
 
 

@@ -21,16 +21,29 @@ function M.send_uniform(shader, k, ...)
   end
 end
 
--- new_shader('pixel.glsl', 'vertex.glsl')
-function M.new_shader(pixel, vertex, macros)
+-- Support code:
+--  #include_glsl xxx.glsl
+--  #include_macros
+--  #include_vertex_pass
+--  #include_pixel_pass
+--
+-- new_shader('pixel.glsl', 'vertex.glsl', macros_table, pixel_pass, vertex_pass)
+-- new_shader('pixel.glsl', 'vertex.glsl', { macros_name1 = '123', macros_name2 = '321' })
+--
+-- vertex_pass: void vertex_pass(inout vec4 world_pos, inout ver3 normal)
+-- pixel_pass: void vertex_pass(
+--  inout vec4 world_pos, inout vec3 normal, inout vec4 albedo,
+--  inout float roughness, inout float metallic
+-- )
+function M.new_shader(pixel, vertex, pixel_pass, vertex_pass, macros)
   local list = { pixel, vertex }
   local code = {}
   local fid = 0
-  local macros_code, total_lines = private.build_macros(macros)
+  local macros_code = private.build_macros(macros)
 
   for i, filename in ipairs(list) do
-    local str = macros_code
-    local line_no = total_lines
+    local str = ''
+    local line_no = 0
     for line in lfs.lines(filename) do
       line_no = line_no + 1
       local include_name = line:match('^#include_glsl%s+([a-zA-Z0-9_%.-]+)%s*$')
@@ -40,7 +53,37 @@ function M.new_shader(pixel, vertex, macros)
         str = str..private.read_glsl(include_name, filename)..'\n'
         str = str..'#line '..(line_no + 1)..' 0\n'
       else
-        str = str..line..'\n'
+        include_name = line:match('^#include_([a-zA-Z_%.-]+)%s*$')
+        if include_name == 'macros' then
+          fid = fid + 1
+          str = str..'#line 1 '..fid..'\n'
+          str = str..macros_code
+          str = str..'#line '..(line_no + 1)..' 0\n'
+        elseif include_name == 'vertex_pass' then
+          if vertex_pass then
+            fid = fid + 1
+            str = str..'#define VERTEX_PASS 1\n'
+            str = str..'uniform int extPassId = 0;\n'
+            str = str..'#line 1 '..fid..'\n'
+            str = str..vertex_pass
+            str = str..'#line '..(line_no + 1)..' 0\n'
+          else
+            str = str..'\n'
+          end
+        elseif include_name == 'pixel_pass' then
+          if pixel_pass then
+            fid = fid + 1
+            str = str..'#define PIXEL_PASS 1\n'
+            str = str..'uniform int extPassId = 0;\n'
+            str = str..'#line 1 '..fid..'\n'
+            str = str..pixel_pass
+            str = str..'#line '..(line_no + 1)..' 0\n'
+          else
+            str = str..'\n'
+          end
+        else
+          str = str..line..'\n'
+        end
       end
     end
     code[i] = str
@@ -214,12 +257,12 @@ function private.read_glsl(name, filename)
 end
 
 function private.build_macros(macros)
-  local code, total_lines = '', 0
-  if not macros then return code, total_lines end
-  for k, v in ipairs(macros) do
-    code = code..string.format('#define %s %s', k, v)
+  if not macros then return '', 0 end
+  local lines = {}
+  for k, v in pairs(macros) do
+    lines[#lines + 1] = string.format('#define %s %s', k, tostring(v))
   end
-  return code, total_lines
+  return table.concat(lines, '\n'), #lines
 end
 
 return M

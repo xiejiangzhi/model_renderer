@@ -43,9 +43,9 @@ function love.load()
   ground:set_raw_instances(instances)
 
   local lm = 10000
-  for i = 1, 20 do
+  for i = 1, 32 do
     table.insert(lights_info, {
-      center = { (random() * 2 - 1) * 500, random() * 500, (random() * 2 - 1) * 500 },
+      center = { (random() * 2 - 1) * 500, random() * 300, (random() * 2 - 1) * 500 },
       color = { random() * lm, random() * lm, random() * lm },
     })
   end

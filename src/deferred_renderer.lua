@@ -39,8 +39,11 @@ function M.new(...)
   return obj
 end
 
-function M:init()
+function M:init(options)
   for k, v in pairs(default_opts) do self[k] = v end
+
+  if not options then options = {} end
+  self.options = options
 
   self.projection = nil
   self.view = nil
@@ -69,12 +72,19 @@ function M:init()
     BrdfLUT = Util.generate_brdf_lut(BrdfLUT_size)
   end
 
-  self.gbuffer_shader = Util.new_shader(file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl')
-  self.deferred_shader = Util.new_shader(file_dir..'/shader/deferred.glsl')
+  self.gbuffer_shader = Util.new_shader(
+    file_dir..'/shader/gbuffer.glsl', file_dir..'/shader/vertex.glsl',
+    nil, options.vertex_code, options.macros
+  )
+  self.deferred_shader = Util.new_shader(
+    file_dir..'/shader/deferred.glsl', nil,
+    options.pixel_code, nil, options.macrox
+  )
   self.fxaa_shader = Util.new_shader(file_dir..'/shader/fxaa_filter.glsl')
   self.screen_depth_shader = Util.new_shader(file_dir..'/shader/screen_depth.glsl')
   self.transparent_render_shader = Util.new_shader(
-    file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl'
+    file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl',
+    options.pixel_code, options.vertex_code, options.macros
   )
   Util.send_uniforms(self.transparent_render_shader, {
     { 'render_shadow',  false },
@@ -211,11 +221,14 @@ function M:render_gbuffer(scene)
   })
   lg.clear(0, 0, 0, 0)
 
-	gbuffer_shader:send("projViewMat", 'column', self.proj_view_mat)
+  Util.send_uniforms(gbuffer_shader, {
+    { "projViewMat", 'column', self.proj_view_mat },
+    { "Time", love.timer.getTime() }
+  })
 
   lg.setBlendMode('replace', 'premultiplied')
   for i, model in ipairs(scene.model) do
-    self:render_model(model)
+    self:render_model(model, gbuffer_shader)
   end
   lg.setBlendMode('alpha')
 
@@ -250,6 +263,7 @@ function M:deferred_render()
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
 	  { "projViewMat", 'column', self.proj_view_mat },
+	  { "Time", love.timer.getTime() },
   })
 
   local lights = self.lights_uniforms
@@ -317,6 +331,7 @@ function M:render_transparent(scene)
     { 'sunColor', self.sun_color },
 	  { "ambientColor", self.ambient_color },
 	  { "cameraPos", self.camera_pos },
+	  { "Time", love.timer.getTime() },
   })
 
   local lights = self.lights_uniforms
@@ -330,11 +345,9 @@ function M:render_transparent(scene)
     })
   end
 
-  -- lg.setBlendMode('alpha', 'premultiplied')
   for i, model in ipairs(tp_model) do
-    self:render_model(model)
+    self:render_model(model, render_shader)
   end
-  -- lg.setBlendMode('alpha')
 
   lg.setDepthMode()
 	lg.setShader(old_shader)
@@ -343,7 +356,6 @@ end
 
 function M:render_to_screen(x, y, rotate, sx, sy)
   local tex_w, tex_h = self.output_canvas:getDimensions()
-
 
   if self.fxaa then
     private.attach_shader(self.fxaa_shader, {
@@ -370,13 +382,19 @@ function M:render_to_screen(x, y, rotate, sx, sy)
   end
 end
 
-function M:render_model(model)
+function M:render_model(model, render_shader)
   local model_opts = model.options
 
 	lg.setDepthMode("less", model_opts.write_depth)
 	lg.setMeshCullMode(model_opts.face_culling)
 
-  lg.drawInstanced(model.mesh, model.total_instances)
+  if model_opts.ext_pass_id and model_opts.ext_pass_id ~= 0 then
+    Util.send_uniform(render_shader, 'extPassId', model_opts.ext_pass_id)
+    lg.drawInstanced(model.mesh, model.total_instances)
+    Util.send_uniform(render_shader, 'extPassId', 0)
+  else
+    lg.drawInstanced(model.mesh, model.total_instances)
+  end
 
 	lg.setMeshCullMode('none')
   lg.setDepthMode()

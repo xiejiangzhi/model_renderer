@@ -8,5 +8,6 @@ uniform vec2 Resolution;
 #include_glsl fxaa.glsl
 
 vec4 effect(vec4 vcolor, Image tex, vec2 tex_coords, vec2 screen_coords) {
-  return vec4(applyFXAA(tex, tex_coords, Resolution), 1) * vcolor;
+  float alpha = Texel(tex, tex_coords).a;
+  return vec4(applyFXAA(tex, tex_coords, Resolution), alpha) * vcolor;
 }

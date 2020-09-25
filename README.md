@@ -16,6 +16,7 @@ The goal of this project is to easily and quickly create and render 3D geometric
 * Simple PBR
 * Support deferred shading by `DeferredRenderer`
 * Support SSAO by `DeferredRenderer`
+* Custom shader pass
 
 
 ## Example
@@ -135,6 +136,7 @@ model:set_opts({
     { 'ModelPhysics', 'byte', 4 },
   },
   instance_attrs_parser = function(attrs) end, -- to parse attrs for model:set_instances
+  ext_pass_id = 0, -- for extend vertex_code and pixel_code
  }
 })
 ```
@@ -167,11 +169,23 @@ model:set_instances({
 
 `MR.renderer` is fast for small instances and light. `MR.deferred_renderer` is fast for large instances and light. You can try two and choose the best one.
 
-
-* Renderer.new() return a new instance
+* Renderer.new(options) return a new instance
 
 ```lua
-local renderer = MR.renderer.new()
+local opts = {
+  vertex_code = 'void vertex_pass(inout vec4 world_pos, inout vec3 normal) {  }', 
+  pixel_code = [[
+    void pixel_pass(
+      inout vec3 world_pos, inout vec3 normal, inout vec4 albedo,
+      inout float roughness, inout float metallic
+    ) { }
+  ]],
+  macros = {
+    XXX = 1, -- #define XXX 1
+  }
+  
+}
+local renderer = MR.renderer.new(default_opts)
 -- or 
 local renderer = MR.deferred_renderer.new()
 ```
@@ -294,7 +308,6 @@ MR.util.generate_vertices(
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
 * Support Blend transparent object
-* Dynamic shader macro
 
 
 ## References
