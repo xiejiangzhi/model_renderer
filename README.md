@@ -195,7 +195,7 @@ local renderer = MR.deferred_renderer.new()
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
 
 
-* renderer:render(scene_desc): Must call `renderer:apply_camera` before render.
+* renderer:render(scene_desc, time): Must call `renderer:apply_camera` before render. use `love.timer.getTime()` if not give a time
 
 ```
 renderer:render({

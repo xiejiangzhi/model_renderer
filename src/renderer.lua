@@ -87,10 +87,12 @@ end
 --    sun_color = { r, g, b },
 --    ambient_color = { r, g, b },
 -- }
-function M:render(scene)
+function M:render(scene, time)
   if not scene.sun_dir then scene.sun_dir = { 1, 1, 1 } end
   if not scene.sun_color then scene.sun_color = { 0.5, 0.5, 0.5 } end
   if not scene.ambient_color then scene.ambient_color = { 0.1, 0.1, 0.1 } end
+
+  self.time = time or love.timer.getTime()
 
   if self.render_shadow then
     self:build_shadow_map(scene)
@@ -124,7 +126,7 @@ function M:render_scene(scene)
     { 'sunColor', scene.sun_color },
 	  { "ambientColor", scene.ambient_color },
 	  { "cameraPos", self.camera_pos },
-	  { "Time", love.timer.getTime() },
+	  { "Time", self.time },
   })
 
   Util.send_lights_uniforms(render_shader, scene.lights)

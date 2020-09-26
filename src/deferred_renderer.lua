@@ -136,13 +136,12 @@ function M:apply_camera(camera)
   self.proj_view_mat = pv_mat
 end
 
--- {
---  model = { m1, m2, m3 }
--- }
-function M:render(scene)
+function M:render(scene, time)
   if not scene.sun_dir then scene.sun_dir = { 1, 1, 1 } end
   if not scene.sun_color then scene.sun_color = { 0.5, 0.5, 0.5 } end
   if not scene.ambient_color then scene.ambient_color = { 0.1, 0.1, 0.1 } end
+
+  self.time = time or love.timer.getTime()
 
   if self.render_shadow then
     self.deferred_shader:send('render_shadow', true)
@@ -206,7 +205,7 @@ function M:render_gbuffer(scene)
 
   Util.send_uniforms(gbuffer_shader, {
     { "projViewMat", 'column', self.proj_view_mat },
-    { "Time", love.timer.getTime() }
+    { "Time", self.time }
   })
 
   lg.setBlendMode('replace', 'premultiplied')
@@ -246,7 +245,7 @@ function M:deferred_render(scene)
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
 	  { "projViewMat", 'column', self.proj_view_mat },
-	  { "Time", love.timer.getTime() },
+	  { "Time", self.time },
   })
 
   Util.send_lights_uniforms(render_shader, scene.lights)
@@ -305,7 +304,7 @@ function M:render_transparent(scene)
     { 'sunColor', scene.sun_color },
 	  { "ambientColor", scene.ambient_color },
 	  { "cameraPos", self.camera_pos },
-	  { "Time", love.timer.getTime() },
+	  { "Time", self.time },
   })
 
   Util.send_lights_uniforms(render_shader, scene.lights)

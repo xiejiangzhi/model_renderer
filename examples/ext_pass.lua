@@ -17,10 +17,8 @@ local renderer = MR.renderer.new({
 local scene = MR.scene.new()
 local cylinder = MR.model.new_cylinder(100, 300)
 local sphere = MR.model.new_sphere(150)
-local box = MR.model.new_box(150)
 
--- generate random ground cells
-local cell_size = 32
+local cell_size = 8
 local cells = {}
 for y = -1000, 1000, cell_size do
   local row = {}
@@ -53,8 +51,11 @@ end)
 local custom_model = MR.model.new(vertices, nil, {
   transparent = true,
   ext_pass_id = 1,
+  face_culling = 'none',
 })
-custom_model:set_instances({ { coord = { 0, 20, 0 }, albedo = { 0.7, 0.7, 1, 0.2 }, physics = { 0.1, 0 } }})
+custom_model:set_instances({ {
+  coord = { 0, 20, 0 }, albedo = { 0.7, 0.7, 1, 0.3 }, physics = { 0.2, 0 }
+}})
 
 local camera = MR.camera.new()
 camera:look_at(0, 0, 0, math.rad(60), 0, 0)
@@ -62,11 +63,7 @@ camera:look_at(0, 0, 0, math.rad(60), 0, 0)
 function love.load()
   scene.ambient_color = { 0.2, 0.2, 0.2 }
 
-  local w, h = lg.getDimensions()
-  local hw, hh = w * 0.5, h * 0.5
-  camera:orthogonal(-hw, hw, hh, -hh, 1, 2000)
-
-  Helper.bind(camera, renderer, 'orthogonal')
+  Helper.bind(camera, renderer, 'perspective', 1, 2000, 70)
 
   -- lg.setWireframe(true)
 end
@@ -78,7 +75,7 @@ end
 function love.draw()
   renderer:apply_camera(camera)
 
-  lg.clear(0.5, 0.5, 0.5)
+  lg.clear(0.1, 0.1, 0.1)
 
   local ts = Helper.ts
   scene:add_model(model,
@@ -94,22 +91,17 @@ function love.draw()
 
   scene:add_model(cylinder, { -300, 0, -200 })
   scene:add_model(sphere,
-    { -300, 100, 300 },
-    { math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi },
+    { -300, -100, 300 },
+    { 0, 0, 0 },
     nil, nil, { 0.3, 0.9 }
   )
 
-  scene:add_model(box,
-    { 400, 200, 400 },
-    { math.sin(ts) * math.pi, math.rad(45), math.cos(ts) * math.pi }, nil, nil, { 0.3, 0.9 }
-  )
-
-  scene:add_model(box, { 300, 0, -300 })
   scene:add_model(custom_model)
   scene:add_light({ 1000, 2000, 1000 }, { 0, 1000000, 1000000 })
+  scene:add_light({ 0, 300, 0 }, { 1000, 1000, 1000 })
+  scene:add_light({ 0, 300, -500 }, { 10000, 10000, 10000 })
 
-  local s = scene:build()
-  renderer:render(s)
+  renderer:render(scene:build(), ts)
   scene:clean()
 
   Helper.debug()
