@@ -16,9 +16,8 @@ local scene = MR.scene.new()
 local cylinder = MR.model.new_cylinder(10, 3000)
 
 function love.load()
-  local r = renderer
-  r:set_lights({ { pos = { 0, 3000, 0 }, color = { 1000000, 1000000, 1000000 } } })
-  r.ambient_color = { 0.03, 0.03, 0.03 }
+  scene:add_light({ 0, 3000, 0 }, { 1000000, 1000000, 1000000 })
+  scene.ambient_color = { 0.03, 0.03, 0.03 }
 
   Helper.bind(camera, renderer, 'perspective', 1, 2000)
 end
@@ -74,7 +73,7 @@ function love.draw()
   end
 
   renderer:render(scene:build())
-  scene:clean()
+  scene:clean_model()
 
   lg.circle('line', ix, iy, 10)
   lg.circle('line', w / 2, h / 2, 5)

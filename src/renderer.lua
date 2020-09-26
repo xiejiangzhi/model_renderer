@@ -13,14 +13,6 @@ local send_uniform = Util.send_uniform
 
 local lg = love.graphics
 
-local default_opts = {
-  ambient_color = { 0.03, 0.03, 0.03 },
-
-  -- for shadow
-  sun_dir = { 1, 1, 1 },
-  sun_color = { 1, 1, 1 },
-}
-
 local skybox_model
 
 local brdf_lut_size = 512
@@ -37,8 +29,6 @@ end
 --  pixel_code:
 --  macros
 function M:init(options)
-  for k, v in pairs(default_opts) do self[k] = v end
-
   if not options then options = {} end
   self.options = options
 
@@ -48,7 +38,6 @@ function M:init(options)
   self.camera_pos = nil
   self.look_at = { 0, 0, 0 }
   self.render_shadow = true
-  self.lights = {}
 
   self.shadow_builder = ShadowBuilder.new(2048, 2048)
   self.default_shadow_depth_map = Util.new_depth_map(1, 1, 'less')
@@ -86,19 +75,23 @@ function M:apply_camera(camera)
   self.proj_view_mat = pv_mat
 end
 
--- lights: {
---  { pos = { x, y , z }, color = { r, g, b }, linear = 1, quadratic = 1 },
---  light2, light3, ...
--- }
---
-function M:set_lights(lights)
-  self.lights = lights
-end
-
 -- {
---  model = { m1, m2, m3 }
+--    model = { m1, m2, m3 },
+--    lights = {
+--      pos = { { x, y, z }, light2_pos, ... },
+--      color = { { r, g, b }, light2_color, ... },
+--      linear = { 0, light2_linear, ... },
+--      quadratic = { 1, light2_quadratic, ... },
+--    },
+--    sun_dir = { x, y, z },
+--    sun_color = { r, g, b },
+--    ambient_color = { r, g, b },
 -- }
 function M:render(scene)
+  if not scene.sun_dir then scene.sun_dir = { 1, 1, 1 } end
+  if not scene.sun_color then scene.sun_color = { 0.5, 0.5, 0.5 } end
+  if not scene.ambient_color then scene.ambient_color = { 0.1, 0.1, 0.1 } end
+
   if self.render_shadow then
     self:build_shadow_map(scene)
     send_uniform(self.render_shader, 'render_shadow', true)
@@ -112,7 +105,7 @@ end
 
 function M:build_shadow_map(scene)
   local shadow_depth_map, sun_proj_view = self.shadow_builder:build(
-    scene, self.camera_space_vertices, self.sun_dir
+    scene, self.camera_space_vertices, scene.sun_dir
   )
   send_uniform(self.render_shader, 'lightProjViewMat', 'column', sun_proj_view)
   send_uniform(self.render_shader, "ShadowDepthMap", shadow_depth_map)
@@ -127,24 +120,14 @@ function M:render_scene(scene)
   pv_mat:mul(self.projection, self.view)
   Util.send_uniforms(render_shader, {
 	  { "projViewMat", 'column', pv_mat },
-    { 'sunDir', self.sun_dir },
-    { 'sunColor', self.sun_color },
-	  { "ambientColor", self.ambient_color },
+    { 'sunDir', scene.sun_dir },
+    { 'sunColor', scene.sun_color },
+	  { "ambientColor", scene.ambient_color },
 	  { "cameraPos", self.camera_pos },
 	  { "Time", love.timer.getTime() },
   })
 
-  if #self.lights > 0 then
-    local lights = Util.lights_to_uniforms(self.lights)
-    Util.send_uniforms(render_shader, {
-      { "lightsPos", unpack(lights.pos) },
-      { "lightsColor", unpack(lights.color) },
-      { "lightsLinear", unpack(lights.linear) },
-      { "lightsQuadratic", unpack(lights.quadratic) },
-      { "lightsCount", #lights.pos },
-    })
-  end
-
+  Util.send_lights_uniforms(render_shader, scene.lights)
 
   if not self.render_shadow then
     send_uniform(render_shader, "ShadowDepthMap", self.default_shadow_depth_map)

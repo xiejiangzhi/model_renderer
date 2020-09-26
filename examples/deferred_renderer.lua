@@ -15,12 +15,11 @@ camera:move_to(0, 1100, 3000, math.rad(60), 0, 0)
 local random = love.math.random
 
 function love.load()
-  local r = renderer
-  r.sun_dir = { -0.15, 1, -0.35 }
-  r.sun_color = { 0.4, 0.4, 0.4 }
-  r.ambient_color = { 0.03, 0.03, 0.03 }
+  scene.sun_dir = { -0.15, 1, -0.35 }
+  scene.sun_color = { 0.4, 0.4, 0.4 }
+  scene.ambient_color = { 0.03, 0.03, 0.03 }
   Helper.bind(camera, renderer, 'perspective', 1, 5200)
-  r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
+  renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
 
   ground:set_opts({ instance_usage = 'static' })
   local instances = {}

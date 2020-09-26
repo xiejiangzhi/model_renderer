@@ -15,6 +15,11 @@ end
 function M:init()
   self.model = {}
   self.transparent_model = {}
+  self.lights = {}
+
+  self.sun_dir = { 1, 1, 1 }
+  self.sun_color = { 1, 1, 1 }
+  self.ambient_color = { 0.1, 0.1, 0.1 }
 end
 
 -- Params:
@@ -48,6 +53,24 @@ function M:add_model(model, coord, angle, scale, albedo, physics)
   })
 end
 
+-- pos: { x,y,z }
+-- color: { r,g,b }
+-- linear: float
+-- quadratic: float
+function M:add_light(pos, color, linear, quadratic)
+  assert(pos, 'Light pos cannot be nil')
+  assert(color, 'light color cannot be nil')
+  table.insert(self.lights, { pos = pos, color = color, linear = linear or 0, quadratic = quadratic or 1 })
+end
+
+-- lights: {
+--  { pos = { x,y, z}, color = { r, g, b}, linear = 0, quadratic = 1 },
+--  light2, light3, ...
+-- }
+function M:set_lights(lights)
+  self.lights = lights
+end
+
 function M:build()
   local models = {}
   local tp_models = {}
@@ -61,16 +84,37 @@ function M:build()
     table.insert(tp_models, m)
   end
 
+  local lights = { pos = {}, color = {}, linear = {}, quadratic = {} }
+  for i, light in ipairs(self.lights) do
+    if not light.pos then error("light.pos cannot be nil") end
+    if not light.color then error("light.color cannot be nil") end
+    table.insert(lights.pos, light.pos)
+    table.insert(lights.color, light.color)
+    table.insert(lights.linear, light.linear or 0)
+    table.insert(lights.quadratic, light.quadratic or 1)
+  end
+
   return {
     model = models,
-    transparent_model = tp_models
+    transparent_model = tp_models,
+
+    lights = lights,
+
+    sun_dir = self.sun_dir,
+    sun_color = self.sun_color,
+    ambient_color = self.ambient_color,
   }
+end
+
+function M:clean_model()
+  self.model = {}
+  self.transparent_model = {}
 end
 
 function M:clean()
   self.model = {}
   self.transparent_model = {}
+  self.lights = {}
 end
-
 
 return M

@@ -14,20 +14,13 @@ camera:move_to(0, 300, 600, math.pi * 0.5, 0, 0)
 local m1 = MR.model.new_sphere(20, 20, 20, 25)
 local m2 = MR.model.new_box(20)
 
-local renderer_opts = {
-  lights = { pos = { 250, 270, 700 }, color = { 10000, 10000, 10000 } },
-  -- sun_dir = { -0.15, 1, -0.35 },
-  sun_color = { 0.0, 0.0, 0.0 }
-}
-
 local plane_transform = Cpml.mat4.identity()
 plane_transform:rotate(plane_transform, math.pi, Cpml.vec3.unit_x)
 plane_transform:translate(plane_transform, Cpml.vec3(0, 1, 0))
 
 function love.load()
-  for k, v in pairs(renderer_opts) do
-    renderer[k] = v
-  end
+  scene.sun_color = { 0.3, 0.3, 0.3 }
+
   Helper.bind(camera, renderer, 'perspective', 1, 2000)
   renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
   renderer.render_shadow = false
@@ -66,6 +59,9 @@ function love.draw()
       )
     end
   end
+
+  scene:add_light({ 250, 270, 700 }, { 10000, 10000, 10000 })
+
   camera:detach()
   renderer:render(scene:build())
   scene:clean()

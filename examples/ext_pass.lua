@@ -60,9 +60,7 @@ local camera = MR.camera.new()
 camera:look_at(0, 0, 0, math.rad(60), 0, 0)
 
 function love.load()
-  local r = renderer
-  r:set_lights({ { pos = { 1000, 2000, 1000 }, color = { 0, 1000000, 1000000 } } })
-  r.ambient_color = { 0.2, 0.2, 0.2 }
+  scene.ambient_color = { 0.2, 0.2, 0.2 }
 
   local w, h = lg.getDimensions()
   local hw, hh = w * 0.5, h * 0.5
@@ -108,6 +106,7 @@ function love.draw()
 
   scene:add_model(box, { 300, 0, -300 })
   scene:add_model(custom_model)
+  scene:add_light({ 1000, 2000, 1000 }, { 0, 1000000, 1000000 })
 
   local s = scene:build()
   renderer:render(s)

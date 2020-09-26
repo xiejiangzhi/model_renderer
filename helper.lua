@@ -179,9 +179,6 @@ function M.debug(ext_str)
       )
     end
     str = str..string.format('\nsharpen: %.2f', renderer.sharpen or 0)
-    str = str..string.format('\nlights %i', #renderer.lights)
-    str = str..string.format('\nsun dir(%.1f, %.1f, %.1f)',unpack(renderer.sun_dir))
-    str = str..string.format('\nsun color(%.2f, %.2f, %.2f)',unpack(renderer.sun_color))
   end
 
   if camera then

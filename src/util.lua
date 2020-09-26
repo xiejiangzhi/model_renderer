@@ -224,18 +224,18 @@ function M.new_depth_map(w, h, mode, format)
   return canvas
 end
 
-function M.lights_to_uniforms(lights)
-  local output_lights = { pos = {}, color = {}, linear = {}, quadratic = {} }
-  for i, light in ipairs(lights) do
-    if not light.pos then error("light.pos cannot be nil") end
-    if not light.color then error("light.color cannot be nil") end
-    table.insert(output_lights.pos, light.pos)
-    table.insert(output_lights.color, light.color)
-    table.insert(output_lights.linear, light.linear or 0)
-    table.insert(output_lights.quadratic, light.quadratic or 1)
+function M.send_lights_uniforms(shader, lights)
+  if lights and #lights.pos > 0 then
+    M.send_uniforms(shader, {
+      { "lightsPos", unpack(lights.pos) },
+      { "lightsColor", unpack(lights.color) },
+      { "lightsLinear", unpack(lights.linear) },
+      { "lightsQuadratic", unpack(lights.quadratic) },
+      { "lightsCount", #lights.pos },
+    })
+  else
+    M.send_uniform(shader, "lightsCount", 0)
   end
-
-  return output_lights
 end
 
 -------------------------

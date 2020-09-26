@@ -48,11 +48,13 @@ local renderer, scene, camera
 function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
-  renderer.light_pos = { 1000, 2000, 1000 }
-  renderer.light_color = { 500000, 500000, 500000 }
-  renderer.ambient_color = { 0.05, 0.05, 0.05 }
   scene = MR.scene.new()
   camera = MR.camera.new()
+  local pos = { 1000, 2000, 1000 }
+  local color = { 500000, 500000, 500000 }
+  local linear, quadratic = 0, 1
+  scene:add_light(pos, color, linear, quadratic)
+  scene.ambient_color = { 0.05, 0.05, 0.05 }
 
   ground:set_opts({ instance_usage = 'static' })
   ground:set_instances({
@@ -86,9 +88,9 @@ function love.draw()
   scene:add_model(cylinder, { 300, 0, 300 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  -- Render and clean scene
+  -- Render and clean scene models
   renderer:render(scene:build())
-  scene:clean()
+  scene:clean_model()
 end
 ```
 
@@ -191,15 +193,7 @@ local renderer = MR.deferred_renderer.new()
 ```
 
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
-* renderer:set_lights(lights): Set point light sources. In the shader, max lights limit is 32.
 
-```
-renderer:set_lights({
-  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 } },
-  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 }, linear = 0, quadratic = 1 }, -- same as first
-  ...
-})
-```
 
 * renderer:render(scene_desc): Must call apply_camera before render.
 
@@ -209,18 +203,9 @@ renderer:render({ model = { model1, model2, ... }, transparent_model = { model1,
 renderer:render(scene_instance:build())
 ```
 
-**Light & Shadow Attributes**
+**Renderer Attributes**
 
 * renderer.render_shadow: boolean, change it to enable/disable shadow.
-* renderer.light_pos: vec3
-* renderer.light_color: vec3. light radiance strength
-* renderer.sun_dir: vec3, sun direction, shadow is use this.
-* renderer.sun_color: vec3
-* renderer.ambient_color: vec3
-
-
-**Other Attributes**
-
 * renderer.skybox: a cubeimage texture. A demo in `examples/pbr.lua`.
 * renderer.write_screen_depth: write depth buffer to screen to support `camera:attach()` for deferred_renderer.
 
@@ -238,7 +223,18 @@ It is optional, you can also manually build scene description for renderer.
   * albedo: { r, g, b, a } or { r = r, g = g, b = b, a = a }, now alpha is unused.
   * physics: { roughness, metallic } or { roughness = 0.5, metallic = 0.5 }. value 0.0-1.0
 
-* scene:clean(): reset scene, remove all models from scene.
+* scene:add_light(pos, color, linear, quadratic): add point light source.
+* scene:set_lights(lights): Set point light sources. In the shader, max lights limit is 32.
+
+```
+scene:set_lights({
+  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 } },
+  { pos = { 10, 10, 10 }, color = { 10000, 10000, 0 }, linear = 0, quadratic = 1 }, -- same as first
+  ...
+})
+```
+* scene:clean_model(): reset scene, remove all models from scene.
+* scene:clean(): reset scene, remove all models and lights from scene.
 * scene:build(): build scene for renderer. `renderer:render(scene:build())`. Automatically apply all transforms to models by `model:set_instances`
 
 

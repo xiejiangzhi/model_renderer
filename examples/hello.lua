@@ -12,10 +12,13 @@ local renderer, scene, camera
 function love.load()
   -- Initalize render, scene and camera
   renderer = MR.renderer.new()
-  renderer:set_lights({ { pos = { 1000, 2000, 1000 }, color = { 500000, 500000, 500000 } } })
-  renderer.ambient_color = { 0.05, 0.05, 0.05 }
   scene = MR.scene.new()
   camera = MR.camera.new()
+  local pos = { 1000, 2000, 1000 }
+  local color = { 500000, 500000, 500000 }
+  local linear, quadratic = 0, 1
+  scene:add_light(pos, color, linear, quadratic)
+  scene.ambient_color = { 0.05, 0.05, 0.05 }
 
   ground:set_opts({ instance_usage = 'static' })
   ground:set_instances({
@@ -49,7 +52,7 @@ function love.draw()
   scene:add_model(cylinder, { 300, 0, 300 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
-  -- Render and clean scene
+  -- Render and clean scene models
   renderer:render(scene:build())
-  scene:clean()
+  scene:clean_model()
 end

@@ -14,11 +14,11 @@ camera:move_to(0, 1100, 3000, math.rad(60), 0, 0)
 local random = love.math.random
 
 function love.load()
-  local r = renderer
-  r:set_lights({ { pos = { 0, 1000, 0 }, color = { 1000000, 1000000, 1000000 } } })
-  r.sun_dir = { -0.15, 1, -0.35 }
-  r.ambient_color = { 0.03, 0.03, 0.03 }
-  r.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
+  scene.sun_dir = { -0.15, 1, -0.35 }
+  scene.ambient_color = { 0.03, 0.03, 0.03 }
+  scene:set_lights({ { pos = { 0, 1000, 0 }, color = { 1000000, 1000000, 1000000 } } })
+
+  renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
 
   Helper.bind(camera, renderer, 'perspective', 1, 5200)
 
@@ -56,7 +56,7 @@ function love.draw()
 
   lg.clear(0.5, 0.5, 0.5)
   renderer:render(scene:build())
-  scene:clean()
+  scene:clean_model()
 
   Helper.debug()
 end
