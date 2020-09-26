@@ -357,6 +357,7 @@ end
 function M:render_to_screen(x, y, rotate, sx, sy)
   local tex_w, tex_h = self.output_canvas:getDimensions()
 
+  lg.setBlendMode('alpha', 'premultiplied')
   if self.fxaa then
     private.attach_shader(self.fxaa_shader, {
       { 'Resolution', { tex_w, tex_h } },
@@ -366,6 +367,7 @@ function M:render_to_screen(x, y, rotate, sx, sy)
   else
     lg.draw(self.output_canvas, x, y, rotate, sx, sy)
   end
+  lg.setBlendMode('alpha')
 
   if self.write_screen_depth then
     lg.setDepthMode('less', true)
