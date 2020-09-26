@@ -195,10 +195,22 @@ local renderer = MR.deferred_renderer.new()
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
 
 
-* renderer:render(scene_desc): Must call apply_camera before render.
+* renderer:render(scene_desc): Must call `renderer:apply_camera` before render.
 
 ```
-renderer:render({ model = { model1, model2, ... }, transparent_model = { model1, model2, ... } })
+renderer:render({
+  model = { model1, model2, ... },
+  transparent_model = { model1, model2, ... },
+  lights = {
+    pos = { light1_pos, light2_pos, ... },
+    color = { light1_color, light2_color, ... },
+    linear = { light1_linear, light2_linear, ... }
+    quadratic = { light1_q, light2_q, ... }
+  },
+  sun_dir = { x, y, z },
+  sun_color = { r, g, b },
+  ambient_color = { r, g, b },
+})
 -- or 
 renderer:render(scene_instance:build())
 ```
