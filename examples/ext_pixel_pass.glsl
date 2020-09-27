@@ -4,6 +4,5 @@ void pixel_pass(
 ) {
   if (extPassId == 1) {
     albedo.b = sin(Time);
-    /* albedo = vec4(1); */
   }
 }

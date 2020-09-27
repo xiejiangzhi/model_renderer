@@ -54,7 +54,7 @@ local custom_model = MR.model.new(vertices, nil, {
   face_culling = 'none',
 })
 custom_model:set_instances({ {
-  coord = { 0, 20, 0 }, albedo = { 0.7, 0.7, 1, 0.3 }, physics = { 0.2, 0 }
+  coord = { 0, 20, 0 }, albedo = { 0.15, 0.15, 0.15, 0.7 }, physics = { 0.3, 0.0 }
 }})
 
 local camera = MR.camera.new()
@@ -64,6 +64,12 @@ function love.load()
   scene.ambient_color = { 0.2, 0.2, 0.2 }
 
   Helper.bind(camera, renderer, 'perspective', 1, 2000, 70)
+  renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
+
+  scene:add_light({ 1000, 1000, -1000 }, { 1000000, 1000000, 1000000 })
+  scene:add_light({ 0, 300, 0 }, { 1000, 1000, 1000 })
+  scene:add_light({ 0, 300, -500 }, { 10000, 10000, 10000 })
+  scene.sun_dir = { -0.3, 1, -0.2 }
 
   -- lg.setWireframe(true)
 end
@@ -97,12 +103,9 @@ function love.draw()
   )
 
   scene:add_model(custom_model)
-  scene:add_light({ 1000, 2000, 1000 }, { 0, 1000000, 1000000 })
-  scene:add_light({ 0, 300, 0 }, { 1000, 1000, 1000 })
-  scene:add_light({ 0, 300, -500 }, { 10000, 10000, 10000 })
 
   renderer:render(scene:build(), ts)
-  scene:clean()
+  scene:clean_model()
 
   Helper.debug()
 end

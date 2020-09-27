@@ -191,16 +191,12 @@ function M:build_shadow_map(scene)
 end
 
 function M:render_gbuffer(scene)
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
-
   local gbuffer_shader = self.gbuffer_shader
 
-	lg.setShader(gbuffer_shader)
-  lg.setCanvas({
+  Util.push_render_env({
     self.np_map, self.albedo_map,
     depthstencil = self.depth_map
-  })
+  }, gbuffer_shader)
   lg.clear(0, 0, 0, 0)
 
   Util.send_uniforms(gbuffer_shader, {
@@ -214,16 +210,15 @@ function M:render_gbuffer(scene)
   end
   lg.setBlendMode('alpha')
 
-	lg.setShader(old_shader)
-	lg.setCanvas(old_canvas)
+  Util.pop_render_env()
 end
 
 function M:deferred_render(scene)
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
   local output = self.output_canvas
-
   local render_shader = self.deferred_shader
+
+  Util.push_render_env(output, render_shader)
+  lg.clear(0, 0, 0, 0)
 
   self.depth_map:setDepthSampleMode()
   local inverted_proj = Mat4.new():invert(self.projection)
@@ -264,11 +259,8 @@ function M:deferred_render(scene)
     render_shader:send("use_skybox", false)
   end
 
-	lg.setShader(render_shader)
   lg.setBlendMode('alpha', 'premultiplied')
 
-  lg.setCanvas(output)
-  lg.clear(0, 0, 0, 0)
   lg.draw(self.screen_mesh, 0, 0, 0, output:getDimensions())
 
   self.depth_map:setDepthSampleMode('less')
@@ -280,22 +272,18 @@ function M:deferred_render(scene)
 	lg.setDepthMode()
 
   lg.setBlendMode('alpha')
-	lg.setShader(old_shader)
-	lg.setCanvas(old_canvas)
+  Util.pop_render_env()
 end
 
 function M:render_transparent(scene)
   local tp_model = scene.transparent_model
   if not tp_model or #tp_model == 0 then return end
 
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
   local output = self.output_canvas
 
   local render_shader = self.transparent_render_shader
+  Util.push_render_env({ output, depthstencil = self.depth_map }, render_shader)
 
-	lg.setShader(render_shader)
-	lg.setCanvas({ output, depthstencil = self.depth_map })
 	lg.setDepthMode("less", true)
 
   Util.send_uniforms(render_shader, {
@@ -314,8 +302,8 @@ function M:render_transparent(scene)
   end
 
   lg.setDepthMode()
-	lg.setShader(old_shader)
-	lg.setCanvas(old_canvas)
+
+  Util.pop_render_env()
 end
 
 function M:render_to_screen(x, y, rotate, sx, sy)
@@ -387,12 +375,6 @@ function M:render_skybox(model)
 end
 
 ------------------
-
--- function private.new_depth_map(w, h, mode)
---   local canvas = lg.newCanvas(w, h, { type = '2d', format = 'depth24', readable = true })
---   canvas:setDepthSampleMode(mode)
---   return canvas
--- end
 
 function private.new_gbuffer(w, h, format)
   local canvas = lg.newCanvas(w, h, { type = '2d', format = format })

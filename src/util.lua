@@ -218,9 +218,15 @@ function M.vertices_center(vertices)
   return center / #vertices
 end
 
-function M.new_depth_map(w, h, mode, format)
-  local canvas = lg.newCanvas(w, h, { type = '2d', format = format or 'depth32f', readable = true })
-  canvas:setDepthSampleMode(mode)
+function M.new_depth_map(w, h, mode, format, ext_opts)
+  local opts = { type = '2d', format = format or 'depth32f', readable = true }
+  if ext_opts then
+    for k, v in pairs(ext_opts) do opts[k] = v end
+  end
+  local canvas = lg.newCanvas(w, h, opts)
+  if opts.readable then
+    canvas:setDepthSampleMode(mode)
+  end
   return canvas
 end
 
@@ -236,6 +242,26 @@ function M.send_lights_uniforms(shader, lights)
   else
     M.send_uniform(shader, "lightsCount", 0)
   end
+end
+
+M.render_envs = {}
+function M.push_render_env(canvas, shader)
+  table.insert(M.render_envs, {
+    canvas = lg.getCanvas(),
+    shader = lg.getShader()
+  })
+  lg.setCanvas(canvas)
+
+  if shader then
+    lg.setShader(shader)
+  end
+end
+
+function M.pop_render_env()
+  local env = table.remove(M.render_envs, #M.render_envs)
+  if not env then error("env stack is empty") end
+  lg.setCanvas(env.canvas)
+  lg.setShader(env.shader)
 end
 
 -------------------------

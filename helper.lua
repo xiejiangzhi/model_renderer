@@ -211,6 +211,7 @@ function M.debug(ext_str)
   str = str..string.format("\ndraw calls: %i", stats.drawcalls)
   str = str..string.format("\ncanvas switches: %i", stats.canvasswitches)
   str = str..string.format("\ntexture memory: %iM", stats.texturememory / 1024 / 1024)
+  str = str..string.format("\nshader switches: %i", stats.shaderswitches)
 
   str = str.."\n"
   str = str.."\nTab switch renderer"

@@ -51,9 +51,9 @@ vec3 gerstner_wave(vec3 pos, inout vec3 normal, float time) {
     GerstnerWave(vec2(0.7, 0.3), 10, 0.5, 0.03, 3),
     GerstnerWave(vec2(0, 1), 15, 0.5, 0.01, 3),
 
-    GerstnerWave(vec2(0.3, 0.7), 4, 0.5, 0.5, 3),
-    GerstnerWave(vec2(0.7, 0.3), 3, 0.5, 2, 5),
-    GerstnerWave(vec2(0.1, 0.9), 1, 0.5, 5, 5)
+    GerstnerWave(vec2(0.3, 0.7), 2, 0.5, 0.5, 2),
+    GerstnerWave(vec2(0.7, 0.3), 1, 0.7, 2, 1),
+    GerstnerWave(vec2(1, 0), 0.5, 0.9, 2, 1)
   );
 
   vec3 pos_offset = vec3(0);

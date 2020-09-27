@@ -315,7 +315,8 @@ MR.util.generate_vertices(
 * Better shadow(CSM or other).
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
-* Support Blend transparent object
+* Better Blend transparent object
+* SSAO for forward renderer
 
 
 ## References

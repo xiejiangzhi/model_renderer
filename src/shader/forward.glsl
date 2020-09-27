@@ -43,8 +43,8 @@ uniform float Time;
 
 // ----------------------------------------------------------------------------
 
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-  vec4 tex_color = Texel(tex, texture_coords);
+vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
+  vec4 tex_color = Texel(tex, tex_coords);
   if (tex_color.a == 0) { discard; }
 
   vec3 normal = normalize(modelNormal);

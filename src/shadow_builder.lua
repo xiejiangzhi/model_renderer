@@ -26,13 +26,8 @@ function M:init(w, h)
 end
 
 function M:build(scene, camera_space_vertices, sun_dir)
-  local old_shader = lg.getShader()
-  local old_canvas = lg.getCanvas()
-
   local shadow_shader = self.shadow_shader
-
-	lg.setShader(shadow_shader)
-	lg.setCanvas({ depthstencil = self.shadow_depth_map })
+  Util.push_render_env({ depthstencil = self.shadow_depth_map }, shadow_shader)
   lg.clear(0, 0, 0, 0)
 
   local light_proj_view = self:calc_proj_view(camera_space_vertices, sun_dir)
@@ -52,8 +47,7 @@ function M:build(scene, camera_space_vertices, sun_dir)
 	lg.setMeshCullMode('none')
   lg.setDepthMode()
 
-	lg.setShader(old_shader)
-	lg.setCanvas(old_canvas)
+  Util.pop_render_env()
 
   return self.shadow_depth_map, light_proj_view
 end

@@ -44,6 +44,9 @@ function M:init(options)
 
   self.shadow_shader = lg.newShader(file_dir..'/shader/shadow.glsl')
   self.skybox_shader = lg.newShader(file_dir..'/shader/skybox.glsl')
+  Util.send_uniforms(self.skybox_shader, {
+    { 'y_flip', -1 }
+  })
 
   self.skybox = nil
   if not skybox_model then
@@ -56,10 +59,14 @@ function M:init(options)
     file_dir..'/shader/vertex.glsl',
     options.pixel_code, options.vertex_code, options.macros
   )
-  send_uniform(self.render_shader, 'brdfLUT', brdf_lut)
+  Util.send_uniforms(self.render_shader, {
+    { 'brdfLUT', brdf_lut },
+    { 'y_flip', -1 }
+  })
 
   local w, h = lg.getDimensions()
-  self.output_canvas = lg.newCanvas(w, h)
+  self.output_canvas = lg.newCanvas(w, h, { msaa = 4 })
+  self.depth_map = Util.new_depth_map(w, h, 'less', 'depth32f', { msaa = 4, readable = false })
 end
 
 function M:apply_camera(camera)
@@ -100,7 +107,9 @@ function M:render(scene, time)
   else
     send_uniform(self.render_shader, 'render_shadow', false)
   end
+
   self:render_scene(scene)
+  self:render_to_screen()
 end
 
 ----------------------------------
@@ -114,10 +123,11 @@ function M:build_shadow_map(scene)
 end
 
 function M:render_scene(scene)
-  local old_shader = lg.getShader()
   local render_shader = self.render_shader
 
-	lg.setShader(render_shader)
+  Util.push_render_env({ self.output_canvas, depthstencil = self.depth_map }, self.render_shader)
+  lg.clear(0, 0, 0, 0)
+
   local pv_mat = Mat4.new()
   pv_mat:mul(self.projection, self.view)
   Util.send_uniforms(render_shader, {
@@ -149,18 +159,20 @@ function M:render_scene(scene)
     self:render_model(model)
   end
 
-  send_uniform(render_shader, 'render_shadow', false)
+  if self.skybox then
+    self:render_skybox(skybox_model)
+  end
+
+  Util.send_uniforms(render_shader, {
+    { 'render_shadow', false },
+  })
   if scene.transparent_model then
     for i, model in ipairs(scene.transparent_model) do
       self:render_model(model)
     end
   end
 
-  if self.skybox then
-    self:render_skybox(skybox_model)
-  end
-
-	lg.setShader(old_shader)
+  Util.pop_render_env()
 end
 
 function M:render_model(model)
@@ -184,6 +196,7 @@ end
 
 function M:render_skybox(model)
   local skybox_shader = self.skybox_shader
+  local old_shader = lg.getShader()
   lg.setShader(skybox_shader)
 
   -- remove camera move transform
@@ -200,6 +213,14 @@ function M:render_skybox(model)
 	lg.setDepthMode("lequal", true)
   lg.draw(model.mesh)
   lg.setDepthMode()
+
+  lg.setShader(old_shader)
+end
+
+function M:render_to_screen()
+  lg.setBlendMode('alpha', 'premultiplied')
+  lg.draw(self.output_canvas)
+  lg.setBlendMode('alpha')
 end
 
 return M
