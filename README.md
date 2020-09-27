@@ -106,7 +106,9 @@ See examples folder for more.
 MR.model.new(vertices)
 MR.model.new(vertices, opts)
 MR.model.new(vertices, texture)
-MR.model.new(vertices, texture, opts)
+
+-- with vertex map
+MR.model.new({ v1, v2, v3, ..., vertex_map = { vi1, vi2, vi3, ... }, texture, opts)
 ```
 
 * MR.model.load(path): load a model from `.obj` file

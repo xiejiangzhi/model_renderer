@@ -66,7 +66,7 @@ function M:init(options)
 
   local w, h = lg.getDimensions()
   self.output_canvas = lg.newCanvas(w, h, { msaa = 4 })
-  self.depth_map = Util.new_depth_map(w, h, 'less', 'depth32f', { msaa = 4, readable = false })
+  -- self.depth_map = Util.new_depth_map(w, h, 'less', 'depth32f', { msaa = 4, readable = false })
 end
 
 function M:apply_camera(camera)
@@ -125,7 +125,7 @@ end
 function M:render_scene(scene)
   local render_shader = self.render_shader
 
-  Util.push_render_env({ self.output_canvas, depthstencil = self.depth_map }, self.render_shader)
+  Util.push_render_env({ self.output_canvas, depth = true }, self.render_shader)
   lg.clear(0, 0, 0, 0)
 
   local pv_mat = Mat4.new()

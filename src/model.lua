@@ -76,7 +76,7 @@ end
 -- new(vertices, options)
 -- new(vertices, texture)
 -- new(vertices, texture, options)
--- vertices:
+-- vertices: { vertex1, vertex2, ..., vertex_map }
 -- texture:
 -- optsions:
 --  write_depth:
@@ -92,8 +92,10 @@ function M:init(vertices, texture, opts)
   local mesh_format = opts and opts.mesh_format or M.mesh_format
   self.vertices = vertices
   self.mesh = new_mesh(mesh_format, vertices, "triangles", 'static')
+  if vertices.vertex_map then
+    self.mesh:setVertexMap(vertices.vertex_map)
+  end
   self.options = setmetatable({}, M.default_opts)
-  self.shader = nil
 
   if texture then self:set_texture(texture) end
   if opts then self:set_opts(opts) end

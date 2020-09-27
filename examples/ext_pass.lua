@@ -29,32 +29,29 @@ for y = -1000, 1000, cell_size do
 end
 
 -- build vertices from cells
-local vs, fs = {}, {}
-for _, row in ipairs(cells) do
-  for _, cell in ipairs(row) do
-    local x, y, z = cell.x, 0, cell.y
-    local sidx = #vs + 1
-    table.insert(vs, { x,y,z })
-    table.insert(vs, { x+cell_size,y,z })
-    table.insert(vs, { x,y,z+cell_size })
-    table.insert(vs, { x+cell_size,y,z+cell_size })
-
-    local lt, rt, lb, rb = sidx, sidx + 1, sidx + 2, sidx + 3
-    table.insert(fs, { lt, lb, rb })
-    table.insert(fs, { lt, rb, rt })
+local vs, vmap = {}, {}
+for i, row in ipairs(cells) do
+  local w = #row
+  for j, cell in ipairs(row) do
+    table.insert(vs, { cell.x,0,cell.y, 0,0, 0,1,0 })
+    if i > 1 and j > 1 then
+      local idx = (i - 1) * w + j
+      local lt, lb, rt, rb = idx - w - 1, idx - 1, idx - w, idx
+      local vidx = #vmap
+      vmap[vidx + 1], vmap[vidx + 2], vmap[vidx + 3] = lt, lb, rb
+      vmap[vidx + 4], vmap[vidx + 5], vmap[vidx + 6] = lt, rb, rt
+    end
   end
 end
-local vertices = MR.util.generate_vertices(vs, fs, function(vertex, normal)
-  return { vertex[1], vertex[2], vertex[3], 0, 0, normal[1], normal[2], normal[3] }
-end)
+vs.vertex_map = vmap
 
-local custom_model = MR.model.new(vertices, nil, {
+local custom_model = MR.model.new(vs, nil, {
   transparent = true,
   ext_pass_id = 1,
   face_culling = 'none',
 })
 custom_model:set_instances({ {
-  coord = { 0, 20, 0 }, albedo = { 0.15, 0.15, 0.15, 0.7 }, physics = { 0.3, 0.0 }
+  coord = { 0, 20, 0 }, albedo = { 0.15, 0.15, 0.15, 0.7 }, physics = { 0.7, 0.5 }
 }})
 
 local camera = MR.camera.new()
@@ -63,7 +60,7 @@ camera:look_at(0, 0, 0, math.rad(60), 0, 0)
 function love.load()
   scene.ambient_color = { 0.2, 0.2, 0.2 }
 
-  Helper.bind(camera, renderer, 'perspective', 1, 2000, 70)
+  Helper.bind(camera, renderer, 'perspective', 1, 3000, 70)
   renderer.skybox = lg.newCubeImage('skybox.png', { linear = true, mipmaps = true })
 
   scene:add_light({ 1000, 1000, -1000 }, { 1000000, 1000000, 1000000 })
@@ -71,7 +68,6 @@ function love.load()
   scene:add_light({ 0, 300, -500 }, { 10000, 10000, 10000 })
   scene.sun_dir = { -0.3, 1, -0.2 }
 
-  -- lg.setWireframe(true)
 end
 
 function love.update(dt)
@@ -101,6 +97,10 @@ function love.draw()
     { 0, 0, 0 },
     nil, nil, { 0.3, 0.9 }
   )
+
+  for i, l in ipairs(scene.lights) do
+    scene:add_model(model, l.pos)
+  end
 
   scene:add_model(custom_model)
 

@@ -3,6 +3,6 @@ void pixel_pass(
   inout float roughness, inout float metallic
 ) {
   if (extPassId == 1) {
-    albedo.b = sin(Time);
+    albedo.b = sin(Time) * 0.5;
   }
 }
