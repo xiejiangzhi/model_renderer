@@ -71,11 +71,11 @@ function M:init(options)
   )
   self.fxaa_shader = Util.new_shader(file_dir..'/shader/fxaa_filter.glsl')
   self.screen_depth_shader = Util.new_shader(file_dir..'/shader/screen_depth.glsl')
-  self.transparent_render_shader = Util.new_shader(
+  self.forward_render_shader = Util.new_shader(
     file_dir..'/shader/forward.glsl', file_dir..'/shader/vertex.glsl',
     options.pixel_code, options.vertex_code, options.macros
   )
-  Util.send_uniforms(self.transparent_render_shader, {
+  Util.send_uniforms(self.forward_render_shader, {
     { 'render_shadow',  false },
     { 'use_skybox', false },
     { 'brdfLUT', BrdfLUT },
@@ -158,7 +158,7 @@ function M:render(scene, time)
     local sx, sy = hw / w, hh / h
 
     self:deferred_render(scene)
-    self:render_transparent(scene)
+    self:forward_render(scene)
 
     lg.setBlendMode('alpha')
     self.depth_map:setDepthSampleMode()
@@ -175,7 +175,7 @@ function M:render(scene, time)
     self:render_to_screen(hw, hh, 0, sx * 2, sy * 2)
   else
     self:deferred_render(scene)
-    self:render_transparent(scene)
+    self:forward_render(scene)
     self:render_to_screen()
   end
 end
@@ -275,13 +275,13 @@ function M:deferred_render(scene)
   Util.pop_render_env()
 end
 
-function M:render_transparent(scene)
-  local tp_model = scene.transparent_model
+function M:forward_render(scene)
+  local tp_model = scene.ordered_model
   if not tp_model or #tp_model == 0 then return end
 
   local output = self.output_canvas
 
-  local render_shader = self.transparent_render_shader
+  local render_shader = self.forward_render_shader
   Util.push_render_env({ output, depthstencil = self.depth_map }, render_shader)
 
 	lg.setDepthMode("less", true)

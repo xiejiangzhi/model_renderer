@@ -6,9 +6,9 @@ local lg = love.graphics
 
 local model = MR.model.load('box.obj')
 local tp_model = model:clone()
-tp_model:set_opts({ transparent = true })
+tp_model:set_opts({ order = 1 })
 local image_model = MR.model.new_plane(80, 30)
-image_model:set_opts({ transparent = true })
+image_model:set_opts({ order = 2 })
 
 local renderer = MR.renderer.new()
 local scene = MR.scene.new()

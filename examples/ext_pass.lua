@@ -6,7 +6,7 @@ local lg = love.graphics
 
 local model = MR.model.load('box.obj')
 local tp_model = model:clone()
-tp_model:set_opts({ transparent = true })
+tp_model:set_opts({ order = 2 })
 
 local lfs = love.filesystem
 
@@ -46,7 +46,7 @@ end
 vs.vertex_map = vmap
 
 local custom_model = MR.model.new(vs, nil, {
-  transparent = true,
+  order = 1,
   ext_pass_id = 1,
   face_culling = 'none',
 })

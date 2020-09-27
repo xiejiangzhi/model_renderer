@@ -26,7 +26,7 @@ M.instance_mesh_format = {
 M.default_opts = {
   write_depth = true,
   face_culling = 'back', -- 'back', 'front', 'none'
-  transparent = false,
+  order = -1, -- -1 don't sort, must >= 0 for sort
   instance_usage = 'dynamic', -- see love2d SpriteBatchUsage. dynamic, static, stream. defualt: dynamic
   mesh_format = M.mesh_format,
   instance_mesh_format = M.instance_mesh_format,

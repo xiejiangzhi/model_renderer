@@ -166,8 +166,8 @@ function M:render_scene(scene)
   Util.send_uniforms(render_shader, {
     { 'render_shadow', false },
   })
-  if scene.transparent_model then
-    for i, model in ipairs(scene.transparent_model) do
+  if scene.ordered_model then
+    for i, model in ipairs(scene.ordered_model) do
       self:render_model(model)
     end
   end

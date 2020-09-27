@@ -1,5 +1,6 @@
 local M = {}
 M.__index = M
+local private = {}
 
 local default_angle = { 0, 0, 0 }
 local default_scale = { 1, 1, 1 }
@@ -14,7 +15,7 @@ end
 
 function M:init()
   self.model = {}
-  self.transparent_model = {}
+  self.ordered_model = {}
   self.lights = {}
 
   self.sun_dir = { 1, 1, 1 }
@@ -29,7 +30,7 @@ end
 --  albedo: { r, g, b, a } or { r == r, g = g, b = b, a = a }
 --  physics: { roughness, metallic } or { metallic == mv, roughness = rv }, 0.0-1.0
 function M:add_model(model, coord, angle, scale, albedo, physics)
-  local m_set = model.options.transparent and self.transparent_model or self.model
+  local m_set = (model.options.order or -1) >= 0 and self.ordered_model or self.model
 
   local instances_attrs = m_set[model]
   if not instances_attrs then instances_attrs = {}; m_set[model] = instances_attrs end
@@ -73,16 +74,18 @@ end
 
 function M:build()
   local models = {}
-  local tp_models = {}
+  local od_models = {}
 
   for m, instances_attrs in pairs(self.model) do
     if #instances_attrs > 0 then m:set_raw_instances(instances_attrs) end
     table.insert(models, m)
   end
-  for m, instances_attrs in pairs(self.transparent_model) do
+  for m, instances_attrs in pairs(self.ordered_model) do
     if #instances_attrs > 0 then m:set_raw_instances(instances_attrs) end
-    table.insert(tp_models, m)
+    table.insert(od_models, m)
   end
+
+  table.sort(od_models, private.sort_models)
 
   local lights = { pos = {}, color = {}, linear = {}, quadratic = {} }
   for i, light in ipairs(self.lights) do
@@ -96,7 +99,7 @@ function M:build()
 
   return {
     model = models,
-    transparent_model = tp_models,
+    ordered_model = od_models,
 
     lights = lights,
 
@@ -108,13 +111,18 @@ end
 
 function M:clean_model()
   self.model = {}
-  self.transparent_model = {}
+  self.ordered_model = {}
 end
 
 function M:clean()
-  self.model = {}
-  self.transparent_model = {}
+  self:clean_model()
   self.lights = {}
+end
+
+----------------------
+
+function private.sort_models(a, b)
+  return a.options.order < b.options.order
 end
 
 return M
