@@ -68,7 +68,7 @@ vec3 gerstner_wave(vec3 pos, inout vec3 normal, float time) {
     normal += gerstner_wave_normal(pos, time, gws[i]);
   }
 
-  return pos;
+  return pos_offset;
 }
 
 void vertex_pass(inout vec4 world_pos, inout vec3 normal) {
