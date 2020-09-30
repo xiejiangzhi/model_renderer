@@ -264,6 +264,15 @@ function M.pop_render_env()
   lg.setShader(env.shader)
 end
 
+function M.new_screen_mesh()
+  return lg.newMesh({
+    { 0, 0, 0, 0 },
+    { 1, 0, 1, 0 },
+    { 1, 1, 1, 1 },
+    { 0, 1, 0, 1 },
+  }, 'fan')
+end
+
 -------------------------
 
 function private.build_vertex(v, vn)

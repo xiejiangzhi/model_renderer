@@ -1,11 +1,11 @@
-local M = {}
-M.__index = M
 local private = {}
 
 local code_dir = (...):gsub('.[^%.]+$', '')
 local file_dir = code_dir:gsub('%.', '/')
 local Cpml = require 'cpml'
 local Mat4 = Cpml.mat4
+
+local M = require(code_dir..'.base_renderer'):extend()
 
 local Model = require(code_dir..'.model')
 local Util = require(code_dir..'.util')
@@ -25,22 +25,10 @@ local SSAOConf = {
   pow = { uniform = 'SSAOPow' },
 }
 
-function M.new(...)
-  local obj = setmetatable({}, M)
-  obj:init(...)
-  return obj
-end
+function M:init()
+  local options = self.options
+  if options.render_shadow == nil then options.render_shadow = true end
 
-function M:init(options)
-  if not options then options = {} end
-  self.options = options
-
-  self.projection = nil
-  self.view = nil
-  self.view_scale = 1
-  self.camera_pos = nil
-  self.look_at = { 0, 0, 0 }
-  self.render_shadow = true
   self.fxaa = true
   self.ssao = {
     radius = 64,
@@ -91,13 +79,9 @@ function M:init(options)
 
   self.screen_tmp_map = self.albedo_map
   self.output_canvas = lg.newCanvas(w, h)
+  self.tmp_output_canvas = lg.newCanvas(w, h)
 
-  self.screen_mesh = lg.newMesh({
-    { 0, 0, 0, 0 },
-    { 1, 0, 1, 0 },
-    { 1, 1, 1, 1 },
-    { 0, 1, 0, 1 },
-  }, 'fan')
+  self.screen_mesh = Util.new_screen_mesh()
 
   Util.send_uniforms(self.skybox_shader, {
     { 'y_flip', -1 }
@@ -122,27 +106,14 @@ function M:set_ssao(opts)
   end
 end
 
-function M:apply_camera(camera)
-  self.camera = camera
-  self.projection = camera.projection
-  self.view = camera.view
-  self.camera_pos = { camera.pos:unpack() }
-  self.look_at = { camera.focus:unpack() }
-  self.camera_space_vertices = camera:get_space_vertices()
-
-  local pv_mat = Mat4.new()
-  pv_mat:mul(self.projection, self.view)
-  self.proj_view_mat = pv_mat
-end
-
-function M:render(scene, time)
+function M:render(scene, time, draw_to_screen)
   if not scene.sun_dir then scene.sun_dir = { 1, 1, 1 } end
   if not scene.sun_color then scene.sun_color = { 0.5, 0.5, 0.5 } end
   if not scene.ambient_color then scene.ambient_color = { 0.1, 0.1, 0.1 } end
 
   self.time = time or love.timer.getTime()
 
-  if self.render_shadow then
+  if self.options.render_shadow then
     self.deferred_shader:send('render_shadow', true)
     self:build_shadow_map(scene)
   else
@@ -171,12 +142,18 @@ function M:render(scene, time)
     lg.draw(self.shadow_depth_map, 10, hh + 10, 0, sx, sy)
     self.shadow_depth_map:setDepthSampleMode('less')
 
-    self:render_to_screen(hw, hh, 0, sx * 2, sy * 2)
+    self:post_pass(hw, hh, 0, sx * 2, sy * 2)
   else
     self:deferred_render(scene)
     self:forward_render(scene)
-    self:render_to_screen()
+    self:post_pass()
   end
+
+  if draw_to_screen or draw_to_screen == nil then
+    self:draw_to_screen()
+  end
+
+  return self.output_canvas
 end
 
 function M:build_shadow_map(scene)
@@ -213,7 +190,7 @@ function M:render_gbuffer(scene)
 end
 
 function M:deferred_render(scene)
-  local output = self.output_canvas
+  local output = self.tmp_output_canvas
   local render_shader = self.deferred_shader
 
   Util.push_render_env(output, render_shader)
@@ -246,7 +223,7 @@ function M:deferred_render(scene)
 
   Util.send_lights_uniforms(render_shader, scene.lights)
 
-  if not self.render_shadow then
+  if not self.options.render_shadow then
     render_shader:send("ShadowDepthMap", self.default_shadow_depth_map)
   end
 
@@ -268,7 +245,7 @@ function M:deferred_render(scene)
   lg.setCanvas({ output, depthstencil = self.depth_map })
 	lg.setDepthMode("less", false)
   if self.skybox then
-    self:render_skybox(skybox_model)
+    self:render_skybox(skybox_model, self.skybox, self.skybox_shader)
   end
 	lg.setDepthMode()
 
@@ -280,7 +257,7 @@ function M:forward_render(scene)
   local od_model = scene.ordered_model
   if not od_model or #od_model == 0 then return end
 
-  local output = self.output_canvas
+  local output = self.tmp_output_canvas
 
   local render_shader = self.forward_render_shader
   Util.push_render_env({ output, depthstencil = self.depth_map }, render_shader)
@@ -322,72 +299,23 @@ function M:forward_render(scene)
   Util.pop_render_env()
 end
 
-function M:render_to_screen(x, y, rotate, sx, sy)
+function M:post_pass(x, y, rotate, sx, sy)
   local tex_w, tex_h = self.output_canvas:getDimensions()
 
   lg.setBlendMode('alpha', 'premultiplied')
+  Util.push_render_env(self.output_canvas)
+  lg.clear(0, 0, 0, 0)
   if self.fxaa then
     private.attach_shader(self.fxaa_shader, {
       { 'Resolution', { tex_w, tex_h } },
     })
-    lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+    lg.draw(self.tmp_output_canvas, x, y, rotate, sx, sy)
     lg.setShader()
   else
-    lg.draw(self.output_canvas, x, y, rotate, sx, sy)
+    lg.draw(self.tmp_output_canvas, x, y, rotate, sx, sy)
   end
+  Util.pop_render_env()
   lg.setBlendMode('alpha')
-
-  if self.write_screen_depth then
-    lg.setDepthMode('less', true)
-    self.depth_map:setDepthSampleMode()
-    private.attach_shader(self.screen_depth_shader, {
-      { 'DepthMap', self.depth_map },
-    })
-
-    lg.draw(self.screen_mesh, 0, 0, 0, self.depth_map:getDimensions())
-
-    lg.setShader()
-    lg.setDepthMode()
-    self.depth_map:setDepthSampleMode('less')
-  end
-end
-
-function M:render_model(model, render_shader)
-  local model_opts = model.options
-
-	lg.setDepthMode("less", model_opts.write_depth)
-	lg.setMeshCullMode(model_opts.face_culling)
-
-  if model_opts.ext_pass_id and model_opts.ext_pass_id ~= 0 then
-    Util.send_uniform(render_shader, 'extPassId', model_opts.ext_pass_id)
-    lg.drawInstanced(model.mesh, model.total_instances)
-    Util.send_uniform(render_shader, 'extPassId', 0)
-  else
-    lg.drawInstanced(model.mesh, model.total_instances)
-  end
-
-	lg.setMeshCullMode('none')
-  lg.setDepthMode()
-end
-
-function M:render_skybox(model)
-  local skybox_shader = self.skybox_shader
-  lg.setShader(skybox_shader)
-
-  -- remove camera move transform
-  local view = self.view:clone()
-  view[13], view[14], view[15], view[16] = 0, 0, 0, 1
-  local pv_mat = Mat4.new()
-  pv_mat:mul(self.projection, view)
-
-  Util.send_uniforms(skybox_shader, {
-    { "projViewMat", 'column', pv_mat },
-    { "skybox", self.skybox },
-  })
-
-	lg.setDepthMode("lequal", true)
-  lg.draw(model.mesh)
-  lg.setDepthMode()
 end
 
 ------------------

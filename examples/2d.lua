@@ -8,7 +8,7 @@ local lkb = love.keyboard
 local model = MR.model.new_cylinder(10, 100)
 local ground = MR.model.new_plane(2000, 2000)
 
-local renderer = MR.renderer.new()
+local renderer = MR.renderer.new({ depth_map = true })
 local camera = MR.camera.new()
 
 local x, y = 0, 0
@@ -70,9 +70,12 @@ function love.draw()
   transform_mat:translate(transform_mat, Cpml.vec3(0, 10, 0))
   renderer:apply_camera(camera)
   renderer.write_screen_depth = true
-  renderer:render({ model = { model, ground } })
+
+  local draw_to_screen = false
+  renderer:render({ model = { model, ground } }, nil, draw_to_screen)
 
   camera:attach(transform_mat)
+  renderer:attach()
 
   lg.print('Some text\nNew line', 10, 10)
   lg.line(10, 10, 100, 100, -100, 100, -150, -200)
@@ -109,6 +112,9 @@ function love.draw()
 
   lg.setColor(1, 1, 1)
   camera:detach()
+  renderer:detach()
+
+  renderer:draw_to_screen()
 
   Helper.debug()
 end
