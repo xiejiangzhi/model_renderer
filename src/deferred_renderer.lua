@@ -75,8 +75,6 @@ function M:init()
   self.albedo_map = private.new_gbuffer(w, h, 'rgba8')
   self.depth_map = Util.new_depth_map(w, h, 'less')
 
-  self.write_screen_depth = false
-
   self.screen_tmp_map = self.albedo_map
   self.output_canvas = lg.newCanvas(w, h)
   self.tmp_output_canvas = lg.newCanvas(w, h)

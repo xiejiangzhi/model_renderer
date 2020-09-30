@@ -82,14 +82,16 @@ function M:draw_to_screen()
   lg.setBlendMode('alpha')
 end
 
-function M:attach()
+function M:attach(...)
   self.old_canvas = lg.getCanvas()
   lg.setCanvas({ self.output_canvas, depthstencil = self.depth_map })
+  self.camera:attach(...)
 end
 
 function M:detach()
   lg.setCanvas(self.old_canvas)
   self.old_canvas = nil
+  self.camera:detach()
 end
 
 ----------------------------

@@ -95,9 +95,10 @@ function M:render(scene, time, draw_to_screen)
   return self.output_canvas
 end
 
-function M:attach()
+function M:attach(...)
   self.old_canvas = lg.getCanvas()
   lg.setCanvas({ self.output_canvas, depth = true })
+  self.camera:attach(...)
 end
 
 ----------------------------------

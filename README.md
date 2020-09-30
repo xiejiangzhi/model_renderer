@@ -197,7 +197,8 @@ local renderer = MR.deferred_renderer.new()
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
 
 
-* renderer:render(scene_desc, time): Must call `renderer:apply_camera` before render. use `love.timer.getTime()` if not give a time
+* renderer:render(scene_desc, time, draw_to_screen): Must call `renderer:apply_camera` before render. use `love.timer.getTime()` if not give a time. Default value of draw_to_screen is `true`. Return result canvas
+* renderer:draw_to_screen(): draw to render result to screen
 
 ```
 renderer:render({
@@ -215,13 +216,27 @@ renderer:render({
 })
 -- or 
 renderer:render(scene_instance:build())
+
+-- equal
+renderer:render(scene_instance:build(), nil, false)
+renderer:draw_to_screen()
+```
+
+* renderer:attach(...): attach the result canvas, depth buffer and camera. Can draw some 2d object with depth. all arguments pass to `camear:attach`
+* renderer:detach(): detach the result canvas
+
+```
+renderer:render(scene, nil, false)
+renderer:attach(plane_transform)
+love.graphics.circle('fill', 100, 100, 10)
+renderer:detach()
+renderer:draw_to_screen()
 ```
 
 **Renderer Attributes**
 
 * renderer.render_shadow: boolean, change it to enable/disable shadow.
 * renderer.skybox: a cubeimage texture. A demo in `examples/pbr.lua`.
-* renderer.write_screen_depth: write depth buffer to screen to support `camera:attach()` for deferred_renderer.
 
 
 ### Scene

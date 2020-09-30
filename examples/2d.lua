@@ -74,8 +74,8 @@ function love.draw()
   local draw_to_screen = false
   renderer:render({ model = { model, ground } }, nil, draw_to_screen)
 
-  camera:attach(transform_mat)
-  renderer:attach()
+  -- camera:attach(transform_mat)
+  renderer:attach(transform_mat)
 
   lg.print('Some text\nNew line', 10, 10)
   lg.line(10, 10, 100, 100, -100, 100, -150, -200)
@@ -111,7 +111,6 @@ function love.draw()
   lg.circle('line', hw, hh, 45)
 
   lg.setColor(1, 1, 1)
-  camera:detach()
   renderer:detach()
 
   renderer:draw_to_screen()
