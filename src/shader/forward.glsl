@@ -31,7 +31,9 @@ uniform bool render_shadow = true;
 uniform float shadow_bias = -0.003;
 
 uniform bool useSkybox;
+uniform Image DepthMap;
 uniform float Time;
+uniform vec2 cameraClipDist;
 
 // ----------------------------------------------------------------------------
 
@@ -52,7 +54,6 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   float metallic = fragPhysics.y;
   vec4 albedo = fragAlbedo;
   vec3 pos = fragPos;
-
 
 #ifdef PIXEL_PASS
   pixel_pass(pos, normal, albedo, roughness, metallic);

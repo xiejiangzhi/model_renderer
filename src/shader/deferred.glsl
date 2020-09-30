@@ -22,10 +22,8 @@ uniform float lightsQuadratic[MAX_LIGHTS];
 uniform float lightsCount;
 
 uniform vec3 cameraPos;
-uniform float cameraNear;
-uniform float cameraFar;
 
-uniform bool use_skybox;
+uniform bool useSkybox;
 
 uniform mat4 projViewMat;
 uniform mat4 invertedProjMat;
@@ -36,8 +34,7 @@ uniform float shadow_bias = -0.003;
 
 const float y_flip = -1;
 uniform float Time;
-
-#include_pixel_pass
+uniform vec2 cameraClipDist;
 
 //-------------------------------
 // Ref: http://aras-p.info/texts/CompactNormalStorage.html#method04spheremap
@@ -65,6 +62,7 @@ vec3 get_world_pos(float depth, vec2 tex_coords) {
   return worldSpacePosition.xyz / worldSpacePosition.w;
 }
 
+#include_pixel_pass
 
 #include_glsl calc_shadow.glsl
 #include_glsl ssao.glsl
@@ -120,7 +118,7 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   }
   
   vec3 ambient;
-  if (use_skybox) {
+  if (useSkybox) {
     ambient = complute_skybox_ambient_light(
       normal, view_dir, F0, albedo_rgb, roughness, metallic
     ) * valid_gbuffer;

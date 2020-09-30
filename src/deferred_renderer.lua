@@ -77,7 +77,6 @@ function M:init(options)
   )
   Util.send_uniforms(self.forward_render_shader, {
     { 'render_shadow',  false },
-    { 'use_skybox', false },
     { 'brdfLUT', BrdfLUT },
     { 'y_flip', -1 },
   })
@@ -162,7 +161,7 @@ function M:render(scene, time)
 
     lg.setBlendMode('alpha')
     self.depth_map:setDepthSampleMode()
-    lg.draw(self.depth_map, 0, 0, 0, sx, sy)
+    lg.draw(self.depth_map, 0, 0, 0, hw / self.depth_map:getWidth(), hh / self.depth_map:getHeight())
     self.depth_map:setDepthSampleMode('less')
     lg.setBlendMode('replace')
     lg.draw(self.np_map, hw, 0, 0, sx, sy)
@@ -240,7 +239,9 @@ function M:deferred_render(scene)
 	  { "invertedProjMat", 'column', inverted_proj },
 	  { "invertedViewMat", 'column', inverted_view },
 	  { "projViewMat", 'column', self.proj_view_mat },
+
 	  { "Time", self.time },
+    { "cameraClipDist", { self.camera.near, self.camera.far } },
   })
 
   Util.send_lights_uniforms(render_shader, scene.lights)
@@ -253,10 +254,10 @@ function M:deferred_render(scene)
     Util.send_uniforms(render_shader, {
       { "skybox", self.skybox },
       { "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1 },
-      { "use_skybox", true }
+      { "useSkybox", true }
     })
   else
-    render_shader:send("use_skybox", false)
+    render_shader:send("useSkybox", false)
   end
 
   lg.setBlendMode('alpha', 'premultiplied')
@@ -276,8 +277,8 @@ function M:deferred_render(scene)
 end
 
 function M:forward_render(scene)
-  local tp_model = scene.ordered_model
-  if not tp_model or #tp_model == 0 then return end
+  local od_model = scene.ordered_model
+  if not od_model or #od_model == 0 then return end
 
   local output = self.output_canvas
 
@@ -286,6 +287,7 @@ function M:forward_render(scene)
 
 	lg.setDepthMode("less", true)
 
+  self.depth_map:setDepthSampleMode()
   Util.send_uniforms(render_shader, {
 	  { "projViewMat", 'column', self.proj_view_mat },
     { 'sunDir', scene.sun_dir },
@@ -293,11 +295,25 @@ function M:forward_render(scene)
 	  { "ambientColor", scene.ambient_color },
 	  { "cameraPos", self.camera_pos },
 	  { "Time", self.time },
+
+	  { "DepthMap", self.depth_map },
+	  { "cameraClipDist", { self.camera.near, self.camera.far } },
   })
+  self.depth_map:setDepthSampleMode('less')
+
+  if self.skybox then
+    Util.send_uniforms(render_shader, {
+      { "skybox", self.skybox },
+      { "skybox_max_mipmap_lod", self.skybox:getMipmapCount() - 1 },
+      { "useSkybox", true }
+    })
+  else
+    render_shader:send("useSkybox", false)
+  end
 
   Util.send_lights_uniforms(render_shader, scene.lights)
 
-  for i, model in ipairs(tp_model) do
+  for i, model in ipairs(od_model) do
     self:render_model(model, render_shader)
   end
 

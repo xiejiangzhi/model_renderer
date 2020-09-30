@@ -15,9 +15,9 @@ local random = love.math.random
 local min = math.min
 local max = math.max
 
-function M.send_uniform(shader, k, ...)
-  if shader:hasUniform(k) then
-    shader:send(k, ...)
+function M.send_uniform(shader, k, v1, ...)
+  if v1 ~= nil and shader:hasUniform(k) then
+    shader:send(k, v1, ...)
   end
 end
 

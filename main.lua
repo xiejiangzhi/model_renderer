@@ -22,6 +22,7 @@ kr_cb = function(key)
   local path
 
   if v then
+    idx = v
     path = fs[v]
   elseif key == 'up' or key == 'left' then
     idx = (idx - 2) % #fs + 1

@@ -4,19 +4,17 @@ local Helper = require 'helper'
 
 local lg = love.graphics
 
-local model = MR.model.load('box.obj')
-local tp_model = model:clone()
-tp_model:set_opts({ order = 2 })
-
 local lfs = love.filesystem
 
 local renderer = MR.renderer.new({
   pixel_code = lfs.read('examples/ext_pixel_pass.glsl'),
   vertex_code = lfs.read('examples/ext_vertex_pass.glsl'),
+  depth_map = true
 })
 local scene = MR.scene.new()
-local cylinder = MR.model.new_cylinder(100, 300)
+local cylinder = MR.model.new_cylinder(100, 500)
 local sphere = MR.model.new_sphere(150)
+local box = MR.model.new_box(10)
 
 local cell_size = 8
 local cells = {}
@@ -49,9 +47,10 @@ local custom_model = MR.model.new(vs, nil, {
   order = 1,
   ext_pass_id = 1,
   face_culling = 'none',
+  -- write_depth = false
 })
 custom_model:set_instances({ {
-  coord = { 0, 20, 0 }, albedo = { 0.15, 0.15, 0.15, 0.7 }, physics = { 0.7, 0.5 }
+  coord = { 0, 20, 0 }, albedo = { 0.15, 0.25, 0.55, 0.2 }, physics = { 0.7, 0.5 }
 }})
 
 local camera = MR.camera.new()
@@ -80,26 +79,13 @@ function love.draw()
   lg.clear(0.1, 0.1, 0.1)
 
   local ts = Helper.ts
-  scene:add_model(model,
-    { 0, 100, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }
-  , 10, { 1, 1, 1, 1 }, { 0.3, 0.9 })
-  scene:add_model(tp_model,
-    { math.sin(ts) * 200, 10, math.cos(ts) * 200 },
-    { 0, math.rad(45), 0 },
-    { 10, 10, 10 },
-    { 1, 1, 1, 0.5 },
-    { 0.3, 0.5 }
-  )
 
-  scene:add_model(cylinder, { -300, 0, -200 })
-  scene:add_model(sphere,
-    { -300, -100, 300 },
-    { 0, 0, 0 },
-    nil, nil, { 0.3, 0.9 }
-  )
+  scene:add_model(cylinder, { -300, -400, -200 }, nil, nil, { 0.4, 0.3, 0.1 })
+  scene:add_model(sphere, { 300, -200, 300 }, { 0, 0, 0 })
+  scene:add_model(cylinder, { 0, -250, 150 }, { 0, math.pi * 1.25, math.pi * 0.3 }, nil, { 0.1, 0.1, 0.1 })
 
   for i, l in ipairs(scene.lights) do
-    scene:add_model(model, l.pos)
+    scene:add_model(box, l.pos)
   end
 
   scene:add_model(custom_model)
