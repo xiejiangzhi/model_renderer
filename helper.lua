@@ -89,13 +89,8 @@ function M.update(dt)
   end
 
   if renderer then
-    if M.keyreleased('tab') then
-      if renderer.deferred_shader then
-        M.convert_to_normal_renderer()
-      else
-        M.convert_to_deferred_renderer()
-      end
-    end
+    -- if M.keyreleased('tab') then
+    -- end
 
     if M.keyreleased('f1') then
       renderer.render_shadow = not renderer.render_shadow
@@ -146,7 +141,7 @@ function M.update(dt)
       renderer.debug = false
     end
 
-    if not renderer.deferred_shader and M.keyreleased('f2') then
+    if M.keyreleased('tab') then
       if renderer.render_mode == 'pure3d' then
         M.convert_to_normal_renderer()
       elseif renderer.render_mode == 'phong' then
@@ -164,11 +159,7 @@ function M.debug(ext_str)
   str = str..string.format('\nFPS: %i', love.timer.getFPS())
   str = str..string.format('\ntime: %.1f', M.ts)
   if renderer then
-    if renderer.deferred_shader then
-      str = str..string.format('\nrenderer: %s', 'deferred')
-    else
-      str = str..string.format('\nrenderer: %s - %s', 'normal', renderer.render_mode or 'none')
-    end
+    str = str..string.format('\nrenderer: %s - %s', 'normal', renderer.render_mode or 'none')
     str = str..string.format('\nfxaa: %s', tostring(renderer.fxaa or false))
     str = str..string.format('\nshadow: %s', tostring(renderer.render_shadow or false))
     local ssao = renderer.ssao
@@ -233,14 +224,6 @@ function M.keyreleased(key)
   end
 
   return false
-end
-
-function M.convert_to_deferred_renderer()
-  M.replace_renderer(MR.deferred_renderer.new(renderer.options))
-end
-
-function M.convert_to_normal_renderer()
-  M.replace_renderer(MR.renderer.new(renderer.options))
 end
 
 function M.convert_to_pure3d_renderer()

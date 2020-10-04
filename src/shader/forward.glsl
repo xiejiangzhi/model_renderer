@@ -35,6 +35,8 @@ uniform Image DepthMap;
 uniform float Time;
 uniform vec2 cameraClipDist;
 
+uniform Image MainTex;
+
 // ----------------------------------------------------------------------------
 
 #include_pixel_pass
@@ -45,8 +47,8 @@ uniform vec2 cameraClipDist;
 
 // ----------------------------------------------------------------------------
 
-vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
-  vec4 tex_color = Texel(tex, tex_coords);
+void effect() {
+  vec4 tex_color = Texel(MainTex, VaryingTexCoord.xy) * VaryingColor;
   if (tex_color.a == 0) { discard; }
 
   vec3 normal = normalize(modelNormal);
@@ -100,6 +102,6 @@ vec4 effect(vec4 color, Image tex, vec2 tex_coords, vec2 screen_coords) {
   // gamma correct
   tcolor = pow(tcolor, vec3(1.0 / gamma)); 
 
-  return vec4(tcolor, tex_color.a * albedo.a);
+  love_Canvases[0] = vec4(tcolor, tex_color.a * albedo.a);
 }
 

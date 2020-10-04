@@ -23,7 +23,7 @@ function M:extend()
   cls.__index = cls
   cls.new = function(...)
     local obj = setmetatable({}, cls)
-    M.init(obj, ...)
+    M.init(obj)
     obj:init(...)
     return obj
   end
@@ -31,10 +31,7 @@ function M:extend()
   return cls
 end
 
-function M:init(options)
-  if not options then options = {} end
-  self.options = options
-
+function M:init()
   self.camera = nil
   self.projection = nil
   self.view = nil

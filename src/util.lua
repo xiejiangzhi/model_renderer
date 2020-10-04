@@ -273,6 +273,18 @@ function M.new_screen_mesh()
   }, 'fan')
 end
 
+function M.merge_options(default_options, options)
+  local opts = {}
+  for k, v in pairs(default_options) do
+    if options[k] ~= nil then
+      opts[k] = options[k]
+    else
+      opts[k] = v
+    end
+  end
+  return opts
+end
+
 -------------------------
 
 function private.build_vertex(v, vn)

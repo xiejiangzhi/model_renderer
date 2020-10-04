@@ -14,8 +14,6 @@ The goal of this project is to easily and quickly create and render 3D geometric
 * Project Love2D drawing to 3D world.
 * Simple render scene with light and shadow.
 * Simple PBR
-* Support deferred shading by `DeferredRenderer`
-* Support SSAO by `DeferredRenderer`
 * Custom shader pass
 
 
@@ -169,9 +167,8 @@ model:set_instances({
 
 ### Renderer
 
-`MR.renderer`(Support Love2D MSAA) and `MR.deferred_renderer`(FXAA).
 
-`MR.renderer` is fast for small instances and light. `MR.deferred_renderer` is fast for large instances and light. You can try two and choose the best one.
+`MR.renderer` is fast for small instances and light.
 
 * Renderer.new(options) return a new instance
 
@@ -190,8 +187,6 @@ local opts = {
   
 }
 local renderer = MR.renderer.new(default_opts)
--- or 
-local renderer = MR.deferred_renderer.new()
 ```
 
 * renderer:apply_camera(camera_instance): the camera must initialized projection and view. fetch all camera attributes and apply to renderer.
@@ -327,16 +322,17 @@ MR.util.generate_vertices(
 
 ## TODO
 
-* More support for model file(mtl, tex and more)
-* Support Normal, Albedo, Metallic, Roughness and AO texture map
 * Better shadow(CSM or other).
+* SSAO for forward renderer
 * Build better geometry mesh. (vertices, normal or texture coord)
 * More 3D geometry shapes
 * Better Blend transparent object
-* SSAO for forward renderer
+* More support for model file(mtl, tex and more)
+* Support Normal, Albedo, Metallic, Roughness and AO texture map
 
 
 ## References
 
 * [LearnOpenGL](https://learnopengl.com/)
 * [LOVEPBR](https://github.com/pablomayobre/LOVEPBR)
+* [3DreamEngine](https://github.com/3dreamengine/3DreamEngine/) It's a library with more functions

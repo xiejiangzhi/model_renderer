@@ -47,7 +47,7 @@ local custom_model = MR.model.new(vs, nil, {
   order = 1,
   ext_pass_id = 1,
   face_culling = 'none',
-  -- write_depth = false
+  write_depth = false
 })
 custom_model:set_instances({ {
   coord = { 0, 20, 0 }, albedo = { 0.15, 0.25, 0.55, 0.2 }, physics = { 0.7, 0.5 }
