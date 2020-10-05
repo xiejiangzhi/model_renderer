@@ -80,9 +80,9 @@ function love.draw()
 
   local ts = Helper.ts
 
-  scene:add_model(cylinder, { -300, -400, -200 }, nil, nil, { 0.4, 0.3, 0.1 })
-  scene:add_model(sphere, { 300, -200, 300 }, { 0, 0, 0 })
-  scene:add_model(cylinder, { 0, -250, 150 }, { 0, math.pi * 1.25, math.pi * 0.3 }, nil, { 0.1, 0.1, 0.1 })
+  scene:add_model(cylinder, { -300, 0, -200 }, nil, nil, { 0.4, 0.3, 0.1 })
+  scene:add_model(sphere, { 300, 0, 300 }, { 0, 0, 0 })
+  scene:add_model(cylinder, { -100, 0, 250 }, { 0, math.pi * 1.25, math.pi * 0.3 }, nil, { 0.1, 0.1, 0.1 })
 
   for i, l in ipairs(scene.lights) do
     scene:add_model(box, l.pos)

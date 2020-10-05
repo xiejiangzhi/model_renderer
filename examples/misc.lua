@@ -6,7 +6,7 @@ local lg = love.graphics
 
 local model = MR.model.load('box.obj')
 local tp_model = model:clone()
-tp_model:set_opts({ order = 1 })
+tp_model:set_opts({ order = 1, face_culling = 'none', write_depth = false })
 local image_model = MR.model.new_plane(80, 30)
 image_model:set_opts({ order = 2 })
 
@@ -15,6 +15,12 @@ local scene = MR.scene.new()
 local cylinder = MR.model.new_cylinder(100, 300)
 local sphere = MR.model.new_sphere(150)
 local box = MR.model.new_box(150)
+local complex = MR.model.new_complex({
+  { 'cylinder', 10, 300 },
+  { 'sphere', 50, 40, 50, 16, 0, -50, 0 },
+  { 'sphere', 50, 40, 50, 16, 0, 50, 0 },
+  { 'sphere', 50, 40, 50, 16, 0, 150, 0 },
+})
 
 local custom_mesh_format = {
   { 'VertexPosition', 'float', 3 },
@@ -164,6 +170,8 @@ function love.draw()
   )
   scene:add_model(custom_model)
   scene:add_light({ 1000, 2000, 1000 }, { 0, 1000000, 1000000 })
+
+  scene:add_model(complex, { 0, 300, 300 })
 
   local s = scene:build()
   renderer:render(s)

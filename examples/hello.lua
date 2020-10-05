@@ -6,6 +6,12 @@ local model = MR.model.load('3d.obj')
 local box = MR.model.new_box(50)
 local sphere = MR.model.new_sphere(30)
 local cylinder = MR.model.new_cylinder(30, 100)
+local complex = MR.model.new_complex({
+  { 'cylinder', 10, 300 },
+  { 'sphere', 50, 40, 50, 16, 0, -50, 0 },
+  { 'sphere', 50, 40, 50, 16, 0, 50, 0 },
+  { 'sphere', 50, 40, 50, 16, 0, 150, 0 },
+})
 
 local renderer, scene, camera
 
@@ -22,7 +28,7 @@ function love.load()
 
   ground:set_opts({ instance_usage = 'static' })
   ground:set_instances({
-    { coord = { -1000, 0, -1000 }, albedo = { 0, 0.9, 0 }, physics = { roughness = 1, metallic = 0 } }
+    { coord = { 0, 0, 0 }, albedo = { 0, 0.9, 0 }, physics = { roughness = 1, metallic = 0 } }
   })
 end
 
@@ -40,16 +46,17 @@ function love.draw()
   -- Add some model to scene
   scene:add_model(ground) -- static model
   -- dynamic model instances: coord, angle, scale, albedo, physics attributes { roughness, metallic }
-  scene:add_model(model, { 0, 0, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
+  scene:add_model(model, { 0, 100, 0 }, { 0, math.sin(ts) * math.pi * 2, 0 }, 10, { 0, 1, 0, 1 }, { 0.5, 0.5 })
   scene:add_model(model,
     { math.sin(ts) * 100, 0, math.cos(ts) * 100 },
     { 0, math.rad(45), 0 }, 10, { 1, 0, 0, 1 }, { 0.5, 0.5 }
   )
 
   local angle = { 0, ts % (math.pi * 2), 0 }
-  scene:add_model(box, { -300, 0, 0 }, angle)
-  scene:add_model(sphere, { -300, 0, 300 }, angle)
-  scene:add_model(cylinder, { 300, 0, 300 }, angle)
+  scene:add_model(box, { -300, 25, 0 }, angle)
+  scene:add_model(sphere, { -300, 30, 300 }, angle)
+  scene:add_model(cylinder, { 300, 50, 300 }, angle)
+  scene:add_model(complex, { 0, 150, -150 }, angle)
 
   love.graphics.clear(0.5, 0.5, 0.5)
   -- Render and clean scene models

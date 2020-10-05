@@ -1,6 +1,7 @@
 local M = {}
 
 local private = {}
+local mesh_builder = {}
 
 local Cpml = require 'cpml'
 local Vec3 = Cpml.vec3
@@ -24,48 +25,112 @@ end
 
 --------------------
 
-function M.new_plane(w, h)
-  local vertices = Util.generate_vertices({
-    { 0, 0, 0, 0, 0 },
-    { w, 0, 0, 1, 0 },
-    { w, 0, h, 1, 1 },
-    { 0, 0, h, 0, 1 },
-  }, { { 4, 3, 2, 1 } })
+function M.new_plane(...)
+  local vertices = mesh_builder.plane(...)
   return Model.new(vertices)
 end
 
-function M.new_circle(radius, n)
-  if not n then n = 16 end
-  local vs = {}
-  local p = math.pi * 2 / n
-  local f = {}
-  for i = 1, n do
-    local v = i * p
-    local c, s = cos(v), sin(v)
-    table.insert(vs, { c * radius, 0, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
-    table.insert(f, i)
-  end
-
-  local vertices = Util.generate_vertices(vs, { f })
+function M.new_circle(...)
+  local vertices = mesh_builder.circle(...)
   return Model.new(vertices)
 end
 
 -- xlen: size of x axis
 -- ylen: optional, size of y axis, default equal to xlen
 -- zlen: optional, size of z axis, default equal to xlen
-function M.new_box(xlen, ylen, zlen, y_offset)
+function M.new_box(...)
+  local vertices = mesh_builder.box(...)
+  return Model.new(vertices)
+end
+
+function M.new_skybox()
+  local vertices = mesh_builder.box(2, 2, 2)
+  return Model.new(vertices, nil, { face_culling = 'none', instance_usage = 'static' })
+end
+
+function M.new_cylinder(...)
+  local vertices = mesh_builder.cylinder(...)
+  return Model.new(vertices)
+end
+
+
+-- rx, ry, rz: radius of axis
+-- n: segments of split
+function M.new_sphere(...)
+  local vertices = mesh_builder.sphere(...)
+  return Model.new(vertices)
+end
+
+-- conf: { { 'cylinder', 10, 30 }, { 'box', 20, 30, 30, 0, 10, 0 }, ... }
+function M.new_complex(confs)
+  local vs = {}
+  assert(confs and #confs > 0, 'Confs cannot be empty')
+  for _, desc in ipairs(confs) do
+    local builder = mesh_builder[desc[1]]
+    if not builder then error("Invalid build complex object "..desc[1]) end
+    for _, v in ipairs(builder(unpack(desc, 2))) do
+      vs[#vs + 1] = v
+    end
+  end
+  return Model.new(vs)
+end
+
+-------------------------
+
+function mesh_builder.plane(w, h, ox, oy, oz)
+  local hw, hh = w / 2, h / 2
+  if not ox then ox = 0 end
+  if not oy then oy = 0 end
+  if not oz then oz = 0 end
+  return Util.generate_vertices({
+    { -hw + ox, oy, -hh + oz, 0, 0 },
+    {  hw + ox, oy, -hh + oz, 1, 0 },
+    {  hw + ox, oy,  hh + oz, 1, 1 },
+    { -hw + ox, oy,  hh + oz, 0, 1 },
+  }, { { 4, 3, 2, 1 } })
+end
+
+function mesh_builder.circle(radius, n, ox, oy, oz)
+  if not n then n = 16 end
+  if not ox then ox = 0 end
+  if not oy then oy = 0 end
+  if not oz then oz = 0 end
+
+  local vs = {}
+  local p = math.pi * 2 / n
+  local f = {}
+  for i = 1, n do
+    local v = i * p
+    local c, s = cos(v), sin(v)
+    table.insert(vs, { c * radius + ox, oy, s * radius + oz, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(f, i)
+  end
+
+  return Util.generate_vertices(vs, { f })
+end
+
+-- xlen: size of x axis
+-- ylen: optional, size of y axis, default equal to xlen
+-- zlen: optional, size of z axis, default equal to xlen
+function mesh_builder.box(xlen, ylen, zlen, ox, oy, oz)
   assert(xlen, "Invalid box size")
   local hx = xlen / 2
-  local hy = ylen or xlen
+  local hy = (ylen or xlen) / 2
   local hz = (zlen or xlen) / 2
-  if not y_offset then y_offset = 0 end
+  if not ox then ox = 0 end
+  if not oy then oy = 0 end
+  if not oz then oz = 0 end
 
   local vs = {
-    { -hx, y_offset, -hz, 0, 0 }, { hx, y_offset, -hz, 1, 0 },
-    { hx, y_offset, hz, 1, 1 }, { -hx, y_offset, hz, 0, 1 },
+    { -hx + ox, -hy + oy, -hz + oz, 0, 0 },
+    {  hx + ox, -hy + oy, -hz + oz, 1, 0 },
+    {  hx + ox, -hy + oy,  hz + oz, 1, 1 },
+    { -hx + ox, -hy + oy,  hz + oz, 0, 1 },
 
-    { -hx, hy + y_offset, -hz, 0, 0 }, { hx, hy + y_offset, -hz, 1, 0 },
-    { hx, hy + y_offset, hz, 1, 1 }, { -hx, hy + y_offset, hz, 0, 1 },
+    { -hx + ox, hy + oy, -hz + oz, 0, 0 },
+    {  hx + ox, hy + oy, -hz + oz, 1, 0 },
+    {  hx + ox, hy + oy,  hz + oz, 1, 1 },
+    { -hx + ox, hy + oy,  hz + oz, 0, 1 },
   }
 
   local fs = {
@@ -74,27 +139,24 @@ function M.new_box(xlen, ylen, zlen, y_offset)
     { 6, 7, 3, 2 }, { 8, 5, 1, 4 },
   }
 
-  local vertices = Util.generate_vertices(vs, fs)
-  return Model.new(vertices, false)
+  return Util.generate_vertices(vs, fs)
 end
 
-function M.new_skybox()
-  local m =  M.new_box(2, 2, 2, -1)
-  m:set_opts({ face_culling = 'none', instance_usage = 'static' })
-  return m
-end
-
-function M.new_cylinder(radius, height, n)
+function mesh_builder.cylinder(radius, height, n, ox, oy, oz)
   if not n then n = 16 end
+  if not ox then ox = 0 end
+  if not oy then oy = 0 end
+  if not oz then oz = 0 end
 
+  local hh = height / 2
   local vs, vs2 = {}, {}
   local p = math.pi * 2 / n
   local tf, bf = {}, {}
   for i = 1, n do
     local v = i * p
     local c, s = cos(v), sin(v)
-    table.insert(vs, { c * radius, 0, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
-    table.insert(vs2, { c * radius, height, s * radius, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(vs,  { c * radius + ox, -hh + oy, s * radius + oz, (c + 1) * 0.5, (s + 1) * 0.5 })
+    table.insert(vs2, { c * radius + ox,  hh + oy, s * radius + oz, (c + 1) * 0.5, (s + 1) * 0.5 })
     table.insert(bf, i)
     table.insert(tf, n + n - i + 1)
   end
@@ -110,32 +172,34 @@ function M.new_cylinder(radius, height, n)
     end
   end
 
-  local vertices = Util.generate_vertices(vs, fs)
-  return Model.new(vertices)
+  return Util.generate_vertices(vs, fs)
 end
 
 
 -- rx, ry, rz: radius of axis
 -- n: segments of split
-function M.new_sphere(rx, ry, rz, n)
+function mesh_builder.sphere(rx, ry, rz, n, ox, oy, oz)
   assert(rx, "Radius cannot be nil")
   if not ry then ry = rx end
   if not rz then rz = rx end
   if not n then n = 16 end
+  if not ox then ox = 0 end
+  if not oy then oy = 0 end
+  if not oz then oz = 0 end
 
   local pr = math.pi * 2 / n
   local hpr = pr * 0.5
-  local vs, fs = { {0, ry * 2, 0 } }, {}
+  local vs, fs = { { 0 + ox, ry + oy, 0 + oz } }, {}
   local last_layer = nil
   for i = 1, n - 1 do
     local tvs = {}
-    local y = cos(i * hpr) * ry + ry
+    local y = cos(i * hpr) * ry
     for j = n, 1, - 1 do
       local s = sin(i * pr * 0.5)
       table.insert(tvs, {
-        cos(j * pr) * rx * s,
-        y,
-        sin(j * pr) * rz * s
+        cos(j * pr) * rx * s + ox,
+        y + oy,
+        sin(j * pr) * rz * s + oz
       })
     end
     if last_layer then
@@ -144,27 +208,16 @@ function M.new_sphere(rx, ry, rz, n)
     last_layer = tvs
   end
 
-  private.link_vertices(vs, fs, {{ 0, 0, 0 }}, #last_layer)
+  private.link_vertices(vs, fs, {{ 0 + ox, -ry + oy, 0 + oz }}, #last_layer)
 
   for i, f in ipairs(fs) do
     for j, vi in ipairs(f) do
       local v = vs[vi]
-      f[j] = { vi, vn = { Vec3(v[1], v[2] - ry, v[3]):normalize():unpack() } }
+      f[j] = { vi, vn = { Vec3(v[1] - ox, v[2] - oy, v[3] - oz):normalize():unpack() } }
     end
   end
 
-  local vertices = Util.generate_vertices(vs, fs)
-  return Model.new(vertices)
-end
-
-function M.set_default_opts(opts)
-  for k, v in pairs(opts) do
-    if M.default_opts[k] ~= nil then
-      M.default_opts[k] = v
-    else
-      error("Invalid option "..k)
-    end
-  end
+  return Util.generate_vertices(vs, fs)
 end
 
 -----------------------

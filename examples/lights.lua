@@ -59,7 +59,7 @@ function love.draw()
   local ts = Helper.ts
 
   scene:add_model(ground)
-  scene:add_model(ground_plane, { -1000, 0, -1000 })
+  scene:add_model(ground_plane, { 0, 0, 0 })
   scene:add_model(model,
     { 0, 500, 0 },
     { ts, 0, ts },

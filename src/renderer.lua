@@ -77,7 +77,9 @@ function M:render(scene, time, draw_to_screen)
   self:build_shadow_map(scene)
 
   self:render_depth(scene)
+  -- lg.setWireframe(true)
   self:render_scene(scene)
+  -- lg.setWireframe(false)
 
   if draw_to_screen or draw_to_screen == nil then
     self:draw_to_screen()

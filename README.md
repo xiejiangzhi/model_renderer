@@ -110,11 +110,12 @@ MR.model.new({ v1, v2, v3, ..., vertex_map = { vi1, vi2, vi3, ... }, texture, op
 ```
 
 * MR.model.load(path): load a model from `.obj` file
-* MR.model.new_plane(width, height)
-* MR.model.new_circle(radius, segments)
-* MR.model.new_box(xlen, ylen, zlen)
-* MR.model.new_cylinder(radius, height, segments)
-* MR.model.new_sphere(radius_x, radius_y, radius_z, segments)
+* MR.model.new_plane(width, height, ox, oy, oz)
+* MR.model.new_circle(radius, segments, ox, oy, oz)
+* MR.model.new_box(xlen, ylen, zlen, ox, oy, oz)
+* MR.model.new_cylinder(radius, height, segments, ox, oy, oz)
+* MR.model.new_sphere(radius_x, radius_y, radius_z, segments, ox, oy, oz)
+* MR.model.new_complex({ { 'circle', radius, segmetns }, { 'sphere', 30, 20, 30, 16, 0, 10, 0 }, ... })
 * Model:set_texture(texture): image or canvas
 * Model:set_opts(opts).
 

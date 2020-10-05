@@ -30,7 +30,7 @@ function love.load()
   end
   model:set_instances(tfs)
 
-  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground, { 0, 0, 0 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
   scene:add_model(model)
   raw_scene = scene:build()
 end

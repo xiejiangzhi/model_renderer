@@ -66,7 +66,7 @@ function love.draw()
   end
 
   scene:add_model(model, { center:unpack() }, nil, 10)
-  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 1, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground, { 0, 0, 0 }, nil, nil, { 1, 1, 0, 1 }, { 1, 0 })
   scene:add_model(cylinder, { camera.focus.x,  camera.focus.y, camera.focus.z })
   if p then
     scene:add_model(cylinder, { p.x, p.y, p.z }, nil, nil, { 0, 1, 0, 1 }, { 0.5, 0.5 })

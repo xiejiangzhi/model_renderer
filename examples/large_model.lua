@@ -40,7 +40,7 @@ function love.draw()
 
   local angle = Helper.ts % (math.pi * 2)
 
-  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground, { 0, 0, 0 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
   for i, m in ipairs(models) do
     local dist = math.sqrt(i^2 / 2, 2) * 3
     scene:add_model(m,

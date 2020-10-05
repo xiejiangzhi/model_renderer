@@ -36,7 +36,7 @@ function love.draw()
   lg.clear(0.5, 0.5, 0.5)
   local angle = Helper.ts % (math.pi * 2)
 
-  scene:add_model(ground, { -5000, 0, -5000 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
+  scene:add_model(ground, { 0, 0, 0 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
   camera:attach(plane_transform)
   for i = 0, 1, 0.1 do
     lg.print(string.format('R %.1f', i), i * 500 - 15, -630)
