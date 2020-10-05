@@ -28,6 +28,7 @@ local default_options = {
 function M:init(options)
   self.options = Util.merge_options(default_options, options or {})
   local opts = self.options
+  if not opts.macros then opts.macros = {} end
 
   self.shadow_builder = ShadowBuilder.new(2048, 2048)
 
@@ -55,6 +56,7 @@ function M:init(options)
 
   local w, h = lg.getDimensions()
   self.output_canvas = lg.newCanvas(w, h, { msaa = opts.msaa })
+  self.depth_map = Util.new_depth_map(w, h, 'less', 'depth24', { readable = false, msaa = opts.msaa })
 
   self.depth_shader = Util.new_shader(
     file_dir..'/shader/depth.glsl', file_dir..'/shader/vertex.glsl',
@@ -62,9 +64,9 @@ function M:init(options)
   )
   Util.send_uniforms(self.depth_shader, {
     { 'y_flip', -1 },
-    { 'lightProjViewMat', 'column', Mat4.new() }
+    { 'sunProjViewMat', 'column', Mat4.new() }
   })
-  self.depth_map = Util.new_depth_map(w, h, 'less')
+  self.readable_depth_map = Util.new_depth_map(w, h, 'less')
 end
 
 function M:render(scene, time, draw_to_screen)
@@ -77,9 +79,7 @@ function M:render(scene, time, draw_to_screen)
   self:build_shadow_map(scene)
 
   self:render_depth(scene)
-  -- lg.setWireframe(true)
   self:render_scene(scene)
-  -- lg.setWireframe(false)
 
   if draw_to_screen or draw_to_screen == nil then
     self:draw_to_screen()
@@ -89,8 +89,9 @@ function M:render(scene, time, draw_to_screen)
 end
 
 function M:attach(...)
-  self.old_canvas = lg.getCanvas()
-  lg.setCanvas({ self.output_canvas, depth = true })
+  lg.push('all')
+  lg.reset()
+  lg.setCanvas({ self.output_canvas, depthstencil = self.depth_map })
   self.camera:attach(...)
 end
 
@@ -100,14 +101,15 @@ function M:build_shadow_map(scene)
   local shadow_depth_map, sun_proj_view = self.shadow_builder:build(
     scene, self.camera_space_vertices, scene.sun_dir
   )
-  send_uniform(self.render_shader, 'lightProjViewMat', 'column', sun_proj_view)
+
+  send_uniform(self.render_shader, 'sunProjViewMat', 'column', sun_proj_view)
   send_uniform(self.render_shader, "ShadowDepthMap", shadow_depth_map)
 end
 
 function M:render_depth(scene)
   local render_shader = self.depth_shader
 
-  Util.push_render_env({ depthstencil = self.depth_map }, render_shader)
+  Util.push_render_env({ depthstencil = self.readable_depth_map }, render_shader)
   lg.clear(0, 0, 0, 0)
 
   Util.send_uniforms(render_shader, {
@@ -133,9 +135,10 @@ end
 function M:render_scene(scene)
   local render_shader = self.render_shader
 
-  Util.push_render_env({ self.output_canvas, depth = true }, self.render_shader)
+  Util.push_render_env({ self.output_canvas, depthstencil = self.depth_map }, self.render_shader)
   lg.clear(0, 0, 0, 0)
 
+  self.readable_depth_map:setDepthSampleMode()
   Util.send_uniforms(render_shader, {
     { 'render_shadow', true },
 	  { "projViewMat", 'column', self.proj_view_mat },
@@ -145,8 +148,10 @@ function M:render_scene(scene)
 	  { "cameraPos", self.camera_pos },
 	  { "Time", self.time },
 
+	  { "DepthMap", self.readable_depth_map },
 	  { "cameraClipDist", { self.camera.near, self.camera.far } },
   })
+  self.readable_depth_map:setDepthSampleMode('less')
 
   Util.send_lights_uniforms(render_shader, scene.lights)
 
@@ -168,17 +173,14 @@ function M:render_scene(scene)
     self:render_skybox(skybox_model, self.skybox, self.skybox_shader)
   end
 
-  self.depth_map:setDepthSampleMode()
   Util.send_uniforms(render_shader, {
     { 'render_shadow', false },
-	  { "DepthMap", self.depth_map },
   })
   if scene.ordered_model then
     for i, model in ipairs(scene.ordered_model) do
       self:render_model(model, render_shader)
     end
   end
-  self.depth_map:setDepthSampleMode('less')
 
   Util.pop_render_env()
 end

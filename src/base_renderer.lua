@@ -86,8 +86,7 @@ function M:attach(...)
 end
 
 function M:detach()
-  lg.setCanvas(self.old_canvas)
-  self.old_canvas = nil
+  lg.pop()
   self.camera:detach()
 end
 

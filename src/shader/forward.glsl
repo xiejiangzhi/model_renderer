@@ -10,10 +10,9 @@
 // ------------------------------------------------
 
 varying vec3 modelNormal;
-varying vec3 fragPos;
+varying vec3 fragWorldCoord;
 varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
-varying vec3 lightProjPos;
 
 uniform vec3 ambientColor;
 uniform vec3 sunDir;
@@ -27,7 +26,6 @@ uniform float lightsLinear[MAX_LIGHTS];
 uniform float lightsQuadratic[MAX_LIGHTS];
 uniform float lightsCount;
 
-uniform bool render_shadow = true;
 uniform float shadow_bias = -0.003;
 
 uniform bool useSkybox;
@@ -55,7 +53,7 @@ void effect() {
   float roughness = fragPhysics.x;
   float metallic = fragPhysics.y;
   vec4 albedo = fragAlbedo;
-  vec3 pos = fragPos;
+  vec3 pos = fragWorldCoord;
 
 #ifdef PIXEL_PASS
   pixel_pass(pos, normal, albedo, roughness, metallic);
@@ -68,7 +66,7 @@ void effect() {
   F0 = mix(F0, albedo_rgb, metallic);
 
   // shadow
-  float shadow = render_shadow ? calc_shadow(lightProjPos + vec3(0, 0, shadow_bias)) : 0;
+  float shadow = calc_shadow(vec3(0, 0, shadow_bias));
 
   vec3 light = vec3(0);
   light += complute_light(

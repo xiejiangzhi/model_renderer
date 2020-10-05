@@ -1,13 +1,15 @@
 #pragma language glsl3
 
+#include_macros
+
 varying vec3 modelNormal;
-varying vec3 fragPos;
+varying vec3 fragWorldCoord;
 varying vec4 fragAlbedo;
 varying vec4 fragPhysics;
-varying vec3 lightProjPos;
+varying vec3 sunProjCoord;
 
 uniform mat4 projViewMat;
-uniform mat4 lightProjViewMat;
+uniform mat4 sunProjViewMat;
 uniform float y_flip = 1;
 uniform float Time;
 
@@ -33,11 +35,12 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
     vertex_pass(world_pos, normal);
   #endif
 
-  fragPos = world_pos.xyz;
+  fragWorldCoord = world_pos.xyz;
   modelNormal = normal;
-  vec4 light_proj_pos = lightProjViewMat * world_pos;
+
+  vec4 sun_proj_pos = sunProjViewMat * world_pos;
   // -1 - 1 to 0 - 1
-  lightProjPos = light_proj_pos.xyz / light_proj_pos.w * 0.5 + 0.5;
+  sunProjCoord = sun_proj_pos.xyz / sun_proj_pos.w * 0.5 + 0.5;
 
   vec4 r = projViewMat * world_pos;
   r.y *= y_flip;

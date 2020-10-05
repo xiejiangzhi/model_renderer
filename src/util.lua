@@ -89,7 +89,13 @@ function M.new_shader(pixel, vertex, pixel_pass, vertex_pass, macros)
     code[i] = str
   end
 
-  return love.graphics.newShader(unpack(code))
+  local ok, r = pcall(love.graphics.newShader, unpack(code))
+  if ok then
+    return r
+  else
+    for i, c in ipairs(code) do private.print_code(c) end
+    error(r)
+  end
 end
 
 function M.send_uniforms(shader, uniforms)
@@ -246,22 +252,13 @@ end
 
 M.render_envs = {}
 function M.push_render_env(canvas, shader)
-  table.insert(M.render_envs, {
-    canvas = lg.getCanvas(),
-    shader = lg.getShader()
-  })
+  lg.push('all')
   lg.setCanvas(canvas)
-
-  if shader then
-    lg.setShader(shader)
-  end
+  if shader then lg.setShader(shader) end
 end
 
 function M.pop_render_env()
-  local env = table.remove(M.render_envs, #M.render_envs)
-  if not env then error("env stack is empty") end
-  lg.setCanvas(env.canvas)
-  lg.setShader(env.shader)
+  lg.pop()
 end
 
 function M.new_screen_mesh()
@@ -307,9 +304,23 @@ function private.build_macros(macros)
   if not macros then return '', 0 end
   local lines = {}
   for k, v in pairs(macros) do
-    lines[#lines + 1] = string.format('#define %s %s', k, tostring(v))
+    lines[#lines + 1] = string.format('#define %s %s\n', k, tostring(v))
   end
-  return table.concat(lines, '\n'), #lines
+  return table.concat(lines), #lines
+end
+
+function private.print_code(str)
+  local l1, l2 = 0, 0
+  for s in str:gmatch("[^\n]+") do
+    l1 = l1 + 1
+    local _, l = s:match('^#line (%d+) (%d+)%s*$')
+    if l then
+      l2 = tonumber(l)
+    else
+      l2 = l2 + 1
+    end
+    print(string.format("%3i:%3i %s", l1, l2, s))
+  end
 end
 
 return M
