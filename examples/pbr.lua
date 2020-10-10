@@ -37,14 +37,8 @@ function love.draw()
   local angle = Helper.ts % (math.pi * 2)
 
   scene:add_model(ground, { 0, 0, 0 }, nil, nil, { 0, 1, 0, 1 }, { 1, 0 })
-  camera:attach(plane_transform)
   for i = 0, 1, 0.1 do
-    lg.print(string.format('R %.1f', i), i * 500 - 15, -630)
     for j = 0, 1, 0.1 do
-      if i == 0 then
-        lg.print(string.format('M %.1f', j), 550, -50 - j * 500 - 30)
-      end
-
       scene:add_model(m1,
         { i * 500, 50 + j * 500, 0 },
         { 0, 0, 0 }, nil,
@@ -62,9 +56,20 @@ function love.draw()
 
   scene:add_light({ 250, 270, 700 }, { 10000, 10000, 10000 })
 
-  camera:detach()
-  renderer:render(scene:build())
+  renderer:render(scene:build(), false)
   scene:clean()
+
+  renderer:attach(plane_transform)
+  for i = 0, 1, 0.1 do
+    lg.print(string.format('R %.1f', i), i * 500 - 15, -630)
+    for j = 0, 1, 0.1 do
+      if i == 0 then
+        lg.print(string.format('M %.1f', j), 550, -50 - j * 500 - 10)
+      end
+    end
+  end
+  renderer:detach()
+  renderer:draw_to_screen()
 
   Helper.debug()
 end

@@ -73,7 +73,6 @@ function love.draw()
   local draw_to_screen = false
   renderer:render({ model = { model, ground } }, nil, draw_to_screen)
 
-  -- camera:attach(transform_mat)
   renderer:attach(transform_mat)
 
   lg.print('Some text\nNew line', 10, 10)
