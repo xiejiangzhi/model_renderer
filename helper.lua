@@ -89,9 +89,6 @@ function M.update(dt)
   end
 
   if renderer then
-    -- if M.keyreleased('tab') then
-    -- end
-
     if M.keyreleased('f1') then
       renderer.render_shadow = not renderer.render_shadow
     end
@@ -139,16 +136,6 @@ function M.update(dt)
       renderer.debug = true
     else
       renderer.debug = false
-    end
-
-    if M.keyreleased('tab') then
-      if renderer.render_mode == 'pure3d' then
-        M.convert_to_normal_renderer()
-      elseif renderer.render_mode == 'phong' then
-        M.convert_to_pure3d_renderer()
-      else
-        M.convert_to_phong_renderer()
-      end
     end
   end
 end
@@ -205,7 +192,6 @@ function M.debug(ext_str)
   str = str..string.format("\nshader switches: %i", stats.shaderswitches)
 
   str = str.."\n"
-  str = str.."\nTab switch renderer"
   str = str.."\nF1 toggle shadow"
   str = str.."\nF2 switch light mode"
   str = str.."\n1-9, left or right to switch examples"
@@ -224,20 +210,6 @@ function M.keyreleased(key)
   end
 
   return false
-end
-
-function M.convert_to_pure3d_renderer()
-  local new = MR.renderer.new(renderer.options)
-  new.render_shader = MR.util.new_shader('src/shader/pure3d.glsl')
-  new.render_mode = 'pure3d'
-  M.replace_renderer(new)
-end
-
-function M.convert_to_phong_renderer()
-  local new = MR.renderer.new(renderer.options)
-  new.render_shader = MR.util.new_shader('src/shader/phong.glsl', 'src/shader/vertex.glsl')
-  new.render_mode = 'phong'
-  M.replace_renderer(new)
 end
 
 function M.replace_renderer(new)
