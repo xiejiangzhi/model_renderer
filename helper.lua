@@ -1,6 +1,6 @@
 local M = {}
 
-local Cpml = require 'Cpml'
+local Cpml = require 'cpml'
 local MR = require 'src'
 
 local lkb = love.keyboard
